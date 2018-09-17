@@ -37,8 +37,12 @@ var deleteCacheCmd = &cobra.Command{
 // Whether we nuke *all* assets, i.e. sources too
 var purgeAll bool
 
+// Whether we should nuke images
+var purgeImages bool
+
 func init() {
-	deleteCacheCmd.Flags().BoolVarP(&purgeAll, "all", "a", false, "Also delete ccache, packages and sources")
+	deleteCacheCmd.Flags().BoolVarP(&purgeAll, "all", "a", false, "Also delete ccache, packages and sources. Does not delete images.")
+	deleteCacheCmd.Flags().BoolVarP(&purgeImages, "images", "i", false, "Deletes solbuild cached images.")
 	RootCmd.AddCommand(deleteCacheCmd)
 }
 
@@ -69,6 +73,10 @@ func deleteCache(cmd *cobra.Command, args []string) {
 			builder.PackageCacheDirectory,
 			source.SourceDir,
 		}...)
+	}
+
+	if purgeImages {
+		nukeDirs = append(nukeDirs, []string { builder.ImagesDir }...)
 	}
 
 	for _, p := range nukeDirs {
