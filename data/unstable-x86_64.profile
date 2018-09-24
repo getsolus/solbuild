@@ -33,7 +33,7 @@ image = "unstable-x86_64"
 
 # Example of adding a remote repo
 # [repo.Solus]
-# uri = "https://packages.solus-project.com/unstable/eopkg-index.xml.xz"
+# uri = "https://mirrors.rit.edu/solus/packages/unstable/eopkg-index.xml.xz"
 
 # Add a local repository by bind mounting it into chroot on each build
 # [repo.Local]
