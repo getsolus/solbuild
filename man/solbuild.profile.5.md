@@ -114,7 +114,7 @@ strict validation occurs against expected key types.
 
 ## COPYRIGHT
 
- * Copyright © 2016 Ikey Doherty, License: CC-BY-SA-3.0
+ * Copyright © 2016-2018 Ikey Doherty, License: CC-BY-SA-3.0
 
 
 ## SEE ALSO
