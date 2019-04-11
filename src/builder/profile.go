@@ -37,11 +37,11 @@ type Repo struct {
 // A Profile is a configuration defining what backing image to use, what repos
 // to add, etc.
 type Profile struct {
-	Name        string           `toml:"-"`            // Name of this profile, set by file name not toml
+	AddRepos    []string         `toml:"add_repos"`    // Allow locking to a single set of repos
 	Image       string           `toml:"image"`        // The backing image for this profile
+	Name        string           `toml:"-"`            // Name of this profile, set by file name not toml
 	RemoveRepos []string         `toml:"remove_repos"` // A set of repos to remove. ["*"] is valid here.
 	Repos       map[string]*Repo `toml:"repo"`         // Allow defining custom repos
-	AddRepos    []string         `toml:"add_repos"`    // Allow locking to a single set of repos
 }
 
 var (

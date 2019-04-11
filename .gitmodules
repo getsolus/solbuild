@@ -28,6 +28,9 @@
 [submodule "src/vendor/github.com/mattn/go-runewidth"]
 	path = src/vendor/github.com/mattn/go-runewidth
 	url = https://github.com/mattn/go-runewidth.git
-[submodule "src/vendor/github.com/andelf/go-curl"]
-	path = src/vendor/github.com/andelf/go-curl
-	url = https://github.com/andelf/go-curl.git
+[submodule "src/vendor/github.com/JoshStrobl"]
+	path = src/vendor/github.com/JoshStrobl
+	url = https://github.com/JoshStrobl/go-curl.git
+[submodule "src/vendor/github.com/JoshStrobl/go-curl"]
+	path = src/vendor/github.com/JoshStrobl/go-curl
+	url = https://github.com/JoshStrobl/go-curl.git

@@ -22,7 +22,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	curl "github.com/andelf/go-curl"
+	curl "github.com/JoshStrobl/go-curl"
 	"github.com/cheggaaa/pb"
 	"io/ioutil"
 	"net/url"

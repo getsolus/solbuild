@@ -59,6 +59,8 @@ var (
 // The consumer should create a new manager instance and only use these methods,
 // not bypass and use API methods.
 type Manager struct {
+	Config *Config // Our config from the merged system/vendor configs
+
 	image      *BackingImage // Storage for the overlay
 	overlay    *Overlay      // OverlayFS configuration
 	pkg        *Package      // Current package, if any
@@ -71,8 +73,6 @@ type Manager struct {
 
 	cancelled  bool // Whether or not we've been cancelled
 	updateMode bool // Whether we're just updating an image
-
-	config *Config // Our config from the merged system/vendor configs
 
 	history *PackageHistory // Given package history, if any
 
@@ -97,7 +97,7 @@ func NewManager() (*Manager, error) {
 
 	// Now load the configuration in
 	if config, err := NewConfig(); err == nil {
-		man.config = config
+		man.Config = config
 	} else {
 		log.WithFields(log.Fields{
 			"error": err,
@@ -134,7 +134,7 @@ func (m *Manager) SetProfile(profile string) error {
 	// Passed an empty profile from the CLI flags, so set our default profile
 	// as the one to use.
 	if profile == "" {
-		profile = m.config.DefaultProfile
+		profile = m.Config.DefaultProfile
 	}
 
 	prof, err := NewProfile(profile)
@@ -194,7 +194,7 @@ func (m *Manager) SetPackage(pkg *Package) error {
 	}
 
 	m.pkg = pkg
-	m.overlay = NewOverlay(m.profile, m.image, m.pkg)
+	m.overlay = NewOverlay(m.Config, m.profile, m.image, m.pkg)
 	m.pkgManager = NewEopkgManager(m, m.overlay.MountPoint)
 	return nil
 }
@@ -350,8 +350,8 @@ func (m *Manager) Build() error {
 	m.SigIntCleanup()
 
 	// Now set our options according to the config
-	m.overlay.EnableTmpfs = m.config.EnableTmpfs
-	m.overlay.TmpfsSize = m.config.TmpfsSize
+	m.overlay.EnableTmpfs = m.Config.EnableTmpfs
+	m.overlay.TmpfsSize = m.Config.TmpfsSize
 
 	if err := m.doLock(m.overlay.LockPath, "building"); err != nil {
 		return err
@@ -430,8 +430,8 @@ func (m *Manager) Index(dir string) error {
 	m.SigIntCleanup()
 
 	// Now set our options according to the config
-	m.overlay.EnableTmpfs = m.config.EnableTmpfs
-	m.overlay.TmpfsSize = m.config.TmpfsSize
+	m.overlay.EnableTmpfs = m.Config.EnableTmpfs
+	m.overlay.TmpfsSize = m.Config.TmpfsSize
 
 	if err := m.doLock(m.overlay.LockPath, "indexing"); err != nil {
 		return err
@@ -448,7 +448,7 @@ func (m *Manager) SetTmpfs(enable bool, size string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	if m.overlay != nil {
-		m.config.EnableTmpfs = enable
-		m.config.TmpfsSize = strings.TrimSpace(size)
+		m.Config.EnableTmpfs = enable
+		m.Config.TmpfsSize = strings.TrimSpace(size)
 	}
 }

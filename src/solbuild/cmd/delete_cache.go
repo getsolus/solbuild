@@ -61,9 +61,15 @@ func deleteCache(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	manager, err := builder.NewManager()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to create new Manager: %v", err)
+		os.Exit(1)
+	}
+
 	// By default include /var/lib/solbuild
 	nukeDirs := []string{
-		builder.OverlayRootDir,
+		manager.Config.OverlayRootDir,
 	}
 
 	if purgeAll {
