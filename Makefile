@@ -1,5 +1,5 @@
 PROJECT_ROOT := src/
-VERSION = 1.4.5
+VERSION = 1.4.5.1
 
 .DEFAULT_GOAL := all
 
@@ -58,6 +58,7 @@ gen_docs:
 
 # See: https://github.com/meitar/git-archive-all.sh/blob/master/git-archive-all.sh
 release: ensure_modules
-	git-archive-all --format tar.gz --prefix solbuild-$(VERSION)/ --verbose -t HEAD solbuild-$(VERSION).tar.gz
+	git-archive-all --format tar --prefix solbuild-$(VERSION)/ --verbose -t HEAD solbuild-$(VERSION).tar
+	xz -9 "solbuild-${VERSION}.tar"
 
 all: $(BINS)
