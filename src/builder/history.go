@@ -20,7 +20,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/libgit2/git2go"
+	"github.com/JoshStrobl/git2go"
 	"os"
 	"path/filepath"
 	"regexp"

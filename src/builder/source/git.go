@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/libgit2/git2go"
+	"github.com/JoshStrobl/git2go"
 	"github.com/solus-project/libosdev/commands"
 	"net/url"
 	"os"
