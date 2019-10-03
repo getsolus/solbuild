@@ -1,5 +1,5 @@
 PROJECT_ROOT := src/
-VERSION = 1.4.5.1
+VERSION = 1.4.5.2
 
 .DEFAULT_GOAL := all
 
