@@ -44,7 +44,7 @@ Getting started
 
 **Everyone else**
 
-    git clone https://github.com/solus-project/solbuild.git
+    git clone https://github.com/getsolus/solbuild.git
     cd solbuild
     make ensure_modules
     make
@@ -96,6 +96,6 @@ Git is required as `solbuild` supports the `git|` source type of ypkg files. Add
 License
 -------
 
-Copyright © 2016-2018 Solus Project
+Copyright © 2016-2019 Solus Project
 
 `solbuild` is available under the terms of the Apache-2.0 license
