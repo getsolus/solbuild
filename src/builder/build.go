@@ -23,6 +23,7 @@ import (
 	"github.com/solus-project/libosdev/disk"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 // CreateDirs creates any directories we may need later on
@@ -112,24 +113,36 @@ func (p *Package) BindSources(o *Overlay) error {
 			}
 		}
 
+		// Check if a path is already used by another package, in this case create existingPath.1, then existingPath.2 and so on
+		targetPath := bindConfig.BindTarget
+		targetPathToCheck := targetPath
+
+		pathSuffix := 1
+		for PathExists(targetPathToCheck) {
+			targetPathToCheck = targetPath + "." + strconv.Itoa(pathSuffix)
+			pathSuffix++
+		}
+
+		targetPath = targetPathToCheck
+
 		// Find the target path in the chroot
 		log.WithFields(log.Fields{
-			"target": bindConfig.BindTarget,
+			"target": targetPath,
 		}).Debug("Exposing source to container")
 
 		if st, err := os.Stat(bindConfig.BindSource); err == nil && st != nil {
 			if st.IsDir() {
-				if err := os.MkdirAll(bindConfig.BindTarget, 00755); err != nil {
+				if err := os.MkdirAll(targetPath, 00755); err != nil {
 					log.WithFields(log.Fields{
-						"target": bindConfig.BindTarget,
+						"target": targetPath,
 						"error":  err,
 					}).Error("Failed to create bind mount target")
 					return nil
 				}
 			} else {
-				if err := TouchFile(bindConfig.BindTarget); err != nil {
+				if err := TouchFile(targetPath); err != nil {
 					log.WithFields(log.Fields{
-						"target": bindConfig.BindTarget,
+						"target": targetPath,
 						"error":  err,
 					}).Error("Failed to create bind mount target")
 					return nil
@@ -138,16 +151,16 @@ func (p *Package) BindSources(o *Overlay) error {
 		}
 
 		// Bind mount local source into chroot
-		if err := mountMan.BindMount(bindConfig.BindSource, bindConfig.BindTarget, "ro"); err != nil {
+		if err := mountMan.BindMount(bindConfig.BindSource, targetPath, "ro"); err != nil {
 			log.WithFields(log.Fields{
-				"target": bindConfig.BindTarget,
+				"target": targetPath,
 				"error":  err,
 			}).Error("Failed to bind mount source")
 			return err
 		}
 
 		// Account for these to help cleanups
-		o.ExtraMounts = append(o.ExtraMounts, bindConfig.BindTarget)
+		o.ExtraMounts = append(o.ExtraMounts, targetPath)
 	}
 	return nil
 }
