@@ -26,7 +26,7 @@ import (
 	"strconv"
 )
 
-// UserInfo is required for ypkg builds, to set the .solus/package internally
+// UserInfo is required for ypkg builds, to set the .config/solus/package internally
 // and propagate the author details.
 type UserInfo struct {
 	Name     string // Actual name
@@ -119,10 +119,10 @@ func (u *UserInfo) SetFromCurrent() {
 	}
 }
 
-// SetFromPackager will set the username/email fields from the legacy solus
-// packager file.
+// SetFromPackager will set the username/email fields from one of our packager files
 func (u *UserInfo) SetFromPackager() bool {
 	candidatePaths := []string{
+		filepath.Join(u.HomeDir, ".config", "solus", "packager"),
 		filepath.Join(u.HomeDir, ".solus", "packager"),
 		filepath.Join(u.HomeDir, ".evolveos", "packager"),
 	}

@@ -268,7 +268,7 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 // PrepYpkg will do the initial leg work of preparing us for a ypkg build.
 func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager, overlay *Overlay, h *PackageHistory) error {
 	log.Debug("Writing packager file")
-	fp := filepath.Join(overlay.MountPoint, BuildUserHome, ".solus", "packager")
+	fp := filepath.Join(overlay.MountPoint, BuildUserHome, ".config", "solus", "packager")
 	fpd := filepath.Dir(fp)
 
 	if !PathExists(fpd) {
