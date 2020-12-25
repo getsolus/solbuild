@@ -2,7 +2,7 @@ CUR_DIR = $(shell pwd)
 
 # "Normal" static binary
 %.statbin:
-	GO111MODULE=off GOPATH=$(CUR_DIR) go install -v $(subst .statbin,,$@)
+	go build -o bin/$(BINARIES) $(CURDIR)/main.go
 
 clean:
 	test ! -d $(CUR_DIR)/pkg || rm -rvf $(CUR_DIR)/pkg; \
@@ -10,18 +10,17 @@ clean:
 
 spellcheck:
 	@ ( \
-		misspell -error -i 'evolveos' `find $(PROJECT_ROOT) -not -path '*/vendor/*' -name '*.go'`; \
+		misspell -error -i 'evolveos' `find $(CUR_DIR) -not -path '*/vendor/*' -name '*.go'`; \
 	);
 
 %.compliant: spellcheck
 	@ ( \
-		cd "$(PROJECT_ROOT)/$(subst .compliant,,$@)" >/dev/null || exit 1; \
-		go fmt || exit 1; \
-		GOPATH=$(CUR_DIR)/ golint || exit 1; \
-		GOPATH=$(CUR_DIR)/ go vet || exit 1; \
+		go fmt ./... || exit 1; \
+		golint ./... || exit 1; \
+		go vet ./... || exit 1; \
 	);
 
 %.test:
-	GOPATH=$(CUR_DIR) go test $(subst .test,,$@)
+	go test ./...
 
 check: $(GO_TESTS)
