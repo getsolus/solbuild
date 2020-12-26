@@ -1,5 +1,5 @@
 //
-// Copyright © 2016-2018 Ikey Doherty <ikey@solus-project.com>
+// Copyright © 2016-2020 Solus Project <copyright@getsol.us>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
