@@ -1,55 +1,43 @@
-PROJECT_ROOT := src/
-VERSION = 1.4.5.2
+VERSION := 1.4.5.2
+BINNAME := solbuild
 
-.DEFAULT_GOAL := all
+.PHONY: build
+build:
+	go build -o bin/$(BINNAME) $(CURDIR)/main.go
 
-# The resulting binaries map to the subproject names
-BINARIES = \
-	solbuild
+.PHONY: install
+install: build
+	test -d $(DESTDIR)/usr/bin || install -Ddm 00755 $(DESTDIR)/usr/bin
+	install -m 00755 bin/* $(DESTDIR)/usr/bin/.
+	test -d $(DESTDIR)/usr/share/solbuild || install -Ddm 00755 $(DESTDIR)/usr/share/solbuild
+	install -m 00644 data/*.profile $(DESTDIR)/usr/share/solbuild/.
+	install -m 00644 data/00_solbuild.conf $(DESTDIR)/usr/share/solbuild/.
+	test -d $(DESTDIR)/usr/share/man/man1 || install -Ddm 00755 $(DESTDIR)/usr/share/man/man1
+	install -m 00644 man/*.1 $(DESTDIR)/usr/share/man/man1/.
+	test -d $(DESTDIR)/usr/share/man/man5 || install -Ddm 00755 $(DESTDIR)/usr/share/man/man5
+	install -m 00644 man/*.5 $(DESTDIR)/usr/share/man/man5/.
 
-GO_TESTS = \
-	builder.test
+.PHONY: check
+check:
+	go test ./...
 
-include Makefile.gobuild
+.PHONY: spellcheck
+spellcheck:
+	misspell -error -i 'evolveos' $(shell find $(CURDIR) -name '*.go')
 
-_PKGS = \
-	builder \
-	builder/source \
-	solbuild \
-	solbuild/cmd
-
-# We want to add compliance for all built binaries
-_CHECK_COMPLIANCE = $(addsuffix .compliant,$(_PKGS))
-
-# Build all binaries as static binary
-BINS = $(addsuffix .statbin,$(BINARIES))
-
-# Ensure our own code is compliant..
-compliant: $(_CHECK_COMPLIANCE)
-install: $(BINS)
-	test -d $(DESTDIR)/usr/bin || install -D -d -m 00755 $(DESTDIR)/usr/bin; \
-	install -m 00755 bin/* $(DESTDIR)/usr/bin/.; \
-	test -d $(DESTDIR)/usr/share/solbuild || install -D -d -m 00755 $(DESTDIR)/usr/share/solbuild; \
-	install -m 00644 data/*.profile $(DESTDIR)/usr/share/solbuild/.;
-	install -m 00644 data/00_solbuild.conf $(DESTDIR)/usr/share/solbuild/.;
-	test -d $(DESTDIR)/usr/share/man/man1 || install -D -d -m 00755 $(DESTDIR)/usr/share/man/man1; \
-	install -m 00644 man/*.1 $(DESTDIR)/usr/share/man/man1/.; \
-	test -d $(DESTDIR)/usr/share/man/man5 || install -D -d -m 00755 $(DESTDIR)/usr/share/man/man5; \
-	install -m 00644 man/*.5 $(DESTDIR)/usr/share/man/man5/.;
-
-
-ensure_modules:
-	@ ( \
-		git submodule init; \
-		git submodule update; \
-	);
+.PHONY: compliant
+compliant: spellcheck
+	go fmt ./...
+	golint ./...
+	go vet ./...
 
 # Credit to swupd developers: https://github.com/clearlinux/swupd-client
-MANPAGES = \
+MANPAGES := \
 	man/solbuild.1 \
 	man/solbuild.conf.5 \
 	man/solbuild.profile.5
 
+.PHONY: gen_docs
 gen_docs:
 	for MANPAGE in $(MANPAGES); do \
 		ronn --roff < $${MANPAGE}.md > $${MANPAGE}; \
@@ -57,8 +45,11 @@ gen_docs:
 	done
 
 # See: https://github.com/meitar/git-archive-all.sh/blob/master/git-archive-all.sh
-release: ensure_modules
+.PHONY: release
+release:
 	git-archive-all --format tar --prefix solbuild-$(VERSION)/ --verbose -t HEAD solbuild-$(VERSION).tar
 	xz -9 "solbuild-${VERSION}.tar"
 
-all: $(BINS)
+.PHONY: clean
+clean:
+	rm -rf $(CURDIR)/bin
