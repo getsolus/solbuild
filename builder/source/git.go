@@ -253,8 +253,12 @@ func (g *GitSource) resetOnto(repo *git.Repository, ref string) error {
 // submodules will handle setup of the git submodules after a
 // reset has taken place.
 func (g *GitSource) submodules() error {
+    cmd := []string{"submodule", "sync"}
+    if err := commands.ExecStdoutArgsDir(g.ClonePath, "git", cmd); err != nil {
+        return err
+    }
 	// IDK What else to tell ya, git2go submodules is broken
-	cmd := []string{"submodule", "update", "--init", "--recursive"}
+	cmd = []string{"submodule", "update", "--init", "--recursive"}
 	return commands.ExecStdoutArgsDir(g.ClonePath, "git", cmd)
 }
 
