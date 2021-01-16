@@ -1,5 +1,5 @@
 //
-// Copyright © 2016-2020 Solus Project <copyright@getsol.us>
+// Copyright © 2016-2021 Solus Project <copyright@getsol.us>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,58 +14,54 @@
 // limitations under the License.
 //
 
-package cmd
+package cli
 
 import (
 	"fmt"
+	"github.com/DataDrake/cli-ng/cmd"
+	log "github.com/DataDrake/waterlog"
+	"github.com/DataDrake/waterlog/format"
+	"github.com/DataDrake/waterlog/level"
 	"github.com/getsolus/solbuild/builder"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"os"
-	"strings"
 )
 
-var updateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "update a solbuild profile",
-	Long: `Update the base image of the specified solbuild profile, helping to
-minimize the build times in future updates with this profile.`,
-	Aliases: []string{"up"},
-	Run:     updateProfile,
-}
-
 func init() {
-	RootCmd.AddCommand(updateCmd)
+	cmd.Register(&Update)
 }
 
-func updateProfile(cmd *cobra.Command, args []string) {
-	if len(args) == 1 {
-		profile = strings.TrimSpace(args[0])
-	}
+// Update updates a solbuild image with the latest available packages
+var Update = cmd.Sub{
+	Name:  "update",
+	Alias: "up",
+	Short: "Update a solbuild profile",
+	Run:   UpdateRun,
+}
 
-	if CLIDebug {
-		log.SetLevel(log.DebugLevel)
+// UpdateRun carries out the "update" sub-command
+func UpdateRun(r *cmd.Root, c *cmd.Sub) {
+	rFlags := r.Flags.(*GlobalFlags)
+	if rFlags.Debug {
+		log.SetLevel(level.Debug)
 	}
-	log.StandardLogger().Formatter.(*log.TextFormatter).DisableColors = builder.DisableColors
-
+	if rFlags.NoColor {
+		log.SetFormat(format.Un)
+	}
 	if os.Geteuid() != 0 {
-		fmt.Fprintf(os.Stderr, "You must be root to run init profiles\n")
-		os.Exit(1)
+		log.Fatalln("You must be root to run init profiles")
 	}
-
 	// Initialise the build manager
 	manager, err := builder.NewManager()
 	if err != nil {
-		return
+		log.Fatalln(err.Error())
 	}
 	// Safety first..
-	if err = manager.SetProfile(profile); err != nil {
+	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		if err == builder.ErrProfileNotInstalled {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
-		return
+		os.Exit(1)
 	}
-
 	if err := manager.Update(); err != nil {
 		if err == builder.ErrProfileNotInstalled {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)

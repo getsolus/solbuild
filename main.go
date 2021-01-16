@@ -1,5 +1,5 @@
 //
-// Copyright © 2016-2020 Solus Project <copyright@getsol.us>
+// Copyright © 2016-2021 Solus Project <copyright@getsol.us>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,22 +17,18 @@
 package main
 
 import (
+	log "github.com/DataDrake/waterlog"
+	"github.com/DataDrake/waterlog/format"
 	_ "github.com/getsolus/solbuild/builder"
-	"github.com/getsolus/solbuild/cmd"
-	log "github.com/sirupsen/logrus"
-	"os"
+	"github.com/getsolus/solbuild/cli"
+	log2 "log"
 )
 
-// Set up the main logger formatting used in USpin
 func init() {
-	form := &log.TextFormatter{}
-	form.FullTimestamp = true
-	form.TimestampFormat = "15:04:05"
-	log.SetFormatter(form)
+	log.SetFormat(format.Min)
+	log.SetFlags(log2.Ltime | log2.Ldate | log2.LUTC)
 }
 
 func main() {
-	if err := cmd.RootCmd.Execute(); err != nil {
-		os.Exit(1)
-	}
+	cli.Root.Run()
 }

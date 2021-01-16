@@ -1,5 +1,5 @@
 //
-// Copyright © 2016-2020 Solus Project <copyright@getsol.us>
+// Copyright © 2016-2021 Solus Project <copyright@getsol.us>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,30 +14,31 @@
 // limitations under the License.
 //
 
-package cmd
+package cli
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
+	"github.com/DataDrake/cli-ng/cmd"
 )
 
 const (
 	// SolbuildVersion is the current public version of solbuild
-	SolbuildVersion = "1.4.5.2"
+	SolbuildVersion = "1.5.0.0"
 )
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "show version",
-	Long:  "Print the solbuild version and exit",
-	Run:   printVersion,
-}
-
 func init() {
-	RootCmd.AddCommand(versionCmd)
+	cmd.Register(&Version)
 }
 
-func printVersion(cmd *cobra.Command, args []string) {
-	fmt.Printf("solbuild version %v\n\nCopyright © 2016-2018 Solus Project\n", SolbuildVersion)
-	fmt.Printf("Licensed under the Apache License, Version 2.0\n")
+// Version prints out the version of this executable
+var Version = cmd.Sub{
+	Name:  "version",
+	Short: "Print the solbuild version and exit",
+	Run:   VersionRun,
+}
+
+// VersionRun carries out the "version" sub-command
+func VersionRun(_ *cmd.Root, _ *cmd.Sub) {
+	fmt.Printf("solbuild version %v\n\nCopyright © 2016-2021 Solus Project\n", SolbuildVersion)
+	fmt.Println("Licensed under the Apache License, Version 2.0")
 }
