@@ -6,7 +6,7 @@ build:
 	go build -o bin/$(BINNAME) $(CURDIR)/main.go
 
 .PHONY: install
-install: build
+install:
 	test -d $(DESTDIR)/usr/bin || install -Ddm 00755 $(DESTDIR)/usr/bin
 	install -m 00755 bin/* $(DESTDIR)/usr/bin/.
 	test -d $(DESTDIR)/usr/share/solbuild || install -Ddm 00755 $(DESTDIR)/usr/share/solbuild

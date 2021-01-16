@@ -68,12 +68,12 @@ func buildPackage(cmd *cobra.Command, args []string) error {
 	// Initialise the build manager
 	manager, err := builder.NewManager()
 	if err != nil {
-		return nil
+		os.Exit(1)
 	}
 
 	// Safety first..
 	if err = manager.SetProfile(profile); err != nil {
-		return nil
+		os.Exit(1)
 	}
 
 	pkgPath = strings.TrimSpace(pkgPath)
@@ -85,7 +85,7 @@ func buildPackage(cmd *cobra.Command, args []string) error {
 	pkg, err := builder.NewPackage(pkgPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load package: %v\n", err)
-		return nil
+		os.Exit(1)
 	}
 
 	manager.SetManifestTarget(manifest)
@@ -95,13 +95,14 @@ func buildPackage(cmd *cobra.Command, args []string) error {
 		if err == builder.ErrProfileNotInstalled {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
-		return nil
+
+		os.Exit(1)
 	}
 
 	manager.SetTmpfs(tmpfs, tmpfsSize)
 	if err := manager.Build(); err != nil {
 		log.Error("Failed to build packages")
-		return nil
+		os.Exit(1)
 	}
 
 	log.Info("Building succeeded")
