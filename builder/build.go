@@ -395,6 +395,16 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 		}).Error("Failed to build package")
 		return err
 	}
+
+	// Generate ABI Report
+	log.Debug("Attempting to generate ABI report")
+	if err := p.GenerateABIReport(notif, overlay); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to generate ABI report within solbuild")
+		return err
+	}
+
 	notif.SetActivePID(0)
 	return nil
 }
@@ -450,6 +460,21 @@ func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overl
 	return nil
 }
 
+// GenerateABIReport will take care of generating the abireport using abi-wizard
+func (p *Package) GenerateABIReport(notif PidNotifier, overlay *Overlay) error {
+	wdir := p.GetWorkDirInternal()
+	log.Printf("Generating ABI Report...")
+	cmd := fmt.Sprintf("cd %s; abi-wizard %s/YPKG/root/%s/install", wdir, BuildUserHome, p.Name)
+		if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
+			log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to generate abireport with abi-wizard")
+		return err
+	}
+	notif.SetActivePID(0)
+	return nil
+}
+
 // CollectAssets will search for the build files and copy them back to the
 // users current directory. If solbuild was invoked via sudo, solbuild will
 // then attempt to set the owner as the original user.
@@ -487,6 +512,10 @@ func (p *Package) CollectAssets(overlay *Overlay, usr *UserInfo, manifestTarget 
 		// Worked, great. Now ensure our next cycle collects, chowns, etc.
 		collections = append(collections, tramPath)
 	}
+
+	// Collect files from abireport
+	abireportfiles, _ := filepath.Glob(filepath.Join(collectionDir, "abi_*"))
+	collections = append(collections, abireportfiles...)
 
 	if p.Type == PackageTypeYpkg {
 		pspecs, _ := filepath.Glob(filepath.Join(collectionDir, "pspec_*.xml"))
