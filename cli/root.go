@@ -26,7 +26,7 @@ func init() {
 	cmd.Register(&cmd.Help)
 }
 
-// Root is the root command for sobuild
+// Root is the root command for solbuild
 var Root = cmd.Root{
 	Name:  "solbuild",
 	Short: "solbuild is the Solus package builder",

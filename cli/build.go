@@ -54,6 +54,7 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	}
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
+		builder.DisableColors = true
 	}
 	pkgPath := FindLikelyArg()
 	if os.Geteuid() != 0 {
