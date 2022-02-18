@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getsolus/libosdev/disk"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"os"
 	"path/filepath"
 )
@@ -35,9 +35,7 @@ var (
 
 // Index will attempt to index the given directory
 func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
-	log.WithFields(log.Fields{
-		"profile": overlay.Back.Name,
-	}).Debug("Beginning indexer")
+	log.Debugf("Beginning indexer: profile='%s'\n", overlay.Back.Name)
 
 	mman := disk.GetMountManager()
 
@@ -45,9 +43,7 @@ func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 
 	// Check the source exists first!
 	if !PathExists(dir) {
-		log.WithFields(log.Fields{
-			"dir": dir,
-		}).Error("Directory does not exist")
+		log.Errorf("Directory does not exist dir='%s'\n", dir)
 		return ErrCannotContinue
 	}
 
@@ -63,35 +59,24 @@ func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 	// Create the target
 	target := filepath.Join(overlay.MountPoint, IndexBindTarget[1:])
 	if err := os.MkdirAll(target, 00755); err != nil {
-		log.WithFields(log.Fields{
-			"dir":   target,
-			"error": err,
-		}).Error("Cannot create bind target")
+		log.Errorf("Cannot create bind target %s, reason: %s\n", target, err)
 		return err
 	}
 
-	log.WithFields(log.Fields{
-		"dir": dir,
-	}).Debug("Bind mounting directory for indexing")
+	log.Debugf("Bind mounting directory for indexing %s\n", dir)
 
 	if err := mman.BindMount(dir, target); err != nil {
-		log.WithFields(log.Fields{
-			"dir":   target,
-			"error": err,
-		}).Error("Cannot bind mount directory")
+		log.Errorf("Cannot bind mount directory %s, reason: %s\n", target, err)
 		return err
 	}
 
 	// Ensure it gets cleaned up
 	overlay.ExtraMounts = append(overlay.ExtraMounts, target)
 
-	log.Debug("Now indexing")
+	log.Debugln("Now indexing")
 	command := fmt.Sprintf("cd %s; %s", IndexBindTarget, eopkgCommand("eopkg index --skip-signing ."))
 	if err := ChrootExec(notif, overlay.MountPoint, command); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"dir":   dir,
-		}).Error("Indexing failed")
+		log.Errorf("Indexing failed: dir='%s', reason: %s\n", dir, err)
 		return err
 	}
 	return nil

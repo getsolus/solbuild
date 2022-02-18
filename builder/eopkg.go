@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/getsolus/libosdev/commands"
 	"github.com/getsolus/libosdev/disk"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -82,26 +82,14 @@ func (e *EopkgManager) CopyAssets() error {
 		}
 		dirName := filepath.Dir(value)
 		if !PathExists(dirName) {
-			log.WithFields(log.Fields{
-				"dir": dirName,
-			}).Debug("Creating required directory")
+            log.Debugf("Creating required directory: %s\n", dirName)
 			if err := os.MkdirAll(dirName, 00755); err != nil {
-				log.WithFields(log.Fields{
-					"dir":   dirName,
-					"error": err,
-				}).Error("Failed to create required asset directory")
-				return err
+				return fmt.Errorf("Failed to create required asset directory %s, reason %s\n", dirName, err)
 			}
 		}
-		log.WithFields(log.Fields{
-			"file": key,
-		}).Debug("Copying host asset")
+		log.Debugf("Copying host asset %s\n", key)
 		if err := disk.CopyFile(key, value); err != nil {
-			log.WithFields(log.Fields{
-				"file":  key,
-				"error": err,
-			}).Error("Failed to copy host asset")
-			return err
+			return fmt.Errorf("Failed to copy host asset %s, reason: %s\n", key, err)
 		}
 	}
 	return nil
@@ -122,15 +110,9 @@ func (e *EopkgManager) Init() error {
 
 	// Ensure system wide cache exists
 	if !PathExists(e.cacheSource) {
-		log.WithFields(log.Fields{
-			"dir": e.cacheSource,
-		}).Debug("Creating system-wide package cache")
+		log.Debugf("Creating system-wide package cache: %s\n", e.cacheSource)
 		if err := os.MkdirAll(e.cacheSource, 00755); err != nil {
-			log.WithFields(log.Fields{
-				"dir":   e.cacheSource,
-				"error": err,
-			}).Error("Failed to create package cache")
-			return err
+			return fmt.Errorf("Failed to create package cache %s, reason: %s\n", e.cacheSource, err)
 		}
 	}
 
@@ -231,18 +213,12 @@ func EnsureEopkgLayout(root string) error {
 	runPath := filepath.Join(root, "run")
 	if PathExists(runPath) {
 		if err := os.RemoveAll(runPath); err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failed to clean stale /run")
-			return err
+			return fmt.Errorf("Failed to clean stale /run, reason: %s\n", err)
 		}
 	}
 
 	if err := os.MkdirAll(runPath, 00755); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to clean create /run")
-		return err
+		return fmt.Errorf("Failed to clean stale /run, reason: %s\n", err)
 	}
 
 	// Construct the required directories in the tree
@@ -288,7 +264,7 @@ func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 	globPat := filepath.Join(e.root, "var", "lib", "eopkg", "index", "*", "uri")
 	var repoFiles []string
 
-	log.Debug("Discovering repos in rootfs")
+	log.Debugln("Discovering repos in rootfs")
 
 	repoFiles, _ = filepath.Glob(globPat)
 	// No repos
@@ -301,10 +277,7 @@ func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 	for _, repo := range repoFiles {
 		uri, err := readURIFile(repo)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-				"path":  repo,
-			}).Error("Unable to read repository file")
+			log.Errorf("Unable to read repository file %s, reason: %s\n", repo, err)
 			return nil, err
 		}
 		repoName := filepath.Base(filepath.Dir(repo))

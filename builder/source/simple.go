@@ -23,7 +23,7 @@ import (
 	"fmt"
 	curl "github.com/andelf/go-curl"
 	"github.com/cheggaaa/pb/v3"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -154,9 +154,7 @@ func (s *SimpleSource) download(destination string) error {
 // Fetch will download the given source and cache it locally
 func (s *SimpleSource) Fetch() error {
 	// Now go and download it
-	log.WithFields(log.Fields{
-		"uri": s.URI,
-	}).Debug("Downloading source")
+	log.Debugf("Downloading source %s\n", s.URI)
 
 	destPath := filepath.Join(SourceStagingDir, s.File)
 

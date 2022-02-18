@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"github.com/getsolus/libosdev/commands"
 	git "github.com/libgit2/git2go/v28"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -75,9 +75,7 @@ func NewGit(uri, ref string) (*GitSource, error) {
 
 // completed is called when the fetch is done
 func (g *GitSource) completed(r git.RemoteCompletion) git.ErrorCode {
-	log.WithFields(log.Fields{
-		"source": g.BaseName,
-	}).Debug("Completed fetch of git source")
+	log.Debugf("Completed fetch of git source %s\n", g.BaseName)
 	return 0
 }
 
@@ -98,9 +96,7 @@ func (g *GitSource) CreateCallbacks() git.RemoteCallbacks {
 // cache.
 func (g *GitSource) Clone() error {
 	// Attempt cloning
-	log.WithFields(log.Fields{
-		"uri": g.URI,
-	}).Debug("Cloning git source")
+	log.Debugf("Cloning git source %s\n", g.URI)
 
 	fetchOpts := &git.FetchOptions{
 		RemoteCallbacks: g.CreateCallbacks(),
@@ -127,15 +123,10 @@ func (g *GitSource) HasTag(repo *git.Repository, tagName string) bool {
 
 // fetch will attempt
 func (g *GitSource) fetch(repo *git.Repository) error {
-	log.WithFields(log.Fields{
-		"uri": g.URI,
-	}).Info("Git fetching existing clone")
+	log.Infof("Git fetching existing clone %s\n", g.URI)
 	remote, err := repo.Remotes.Lookup("origin")
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"uri":   g.URI,
-		}).Error("Failed to find git remote")
+		log.Errorf("Failed to find git remote %s %s\n", g.URI, err)
 		return err
 	}
 
@@ -153,10 +144,7 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 	branch, err := repo.LookupBranch(g.Ref, git.BranchAll)
 	if err == nil {
 		oid = branch.Target().String()
-		log.WithFields(log.Fields{
-			"branch": g.Ref,
-			"sha":    oid,
-		}).Debug("Found git commit of branch")
+		log.Debugf("Found git commit of branch %s %s\n", g.Ref, oid)
 		return oid
 	}
 
@@ -176,10 +164,7 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 
 	// Tag set the oid
 	if oid != "" {
-		log.WithFields(log.Fields{
-			"tag": tagName,
-			"sha": oid,
-		}).Debug("Found git commit of tag")
+		log.Debugf("Found git commit of tag %s %s\n", tagName, oid)
 		return oid
 	}
 
@@ -195,10 +180,7 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 	if err != nil {
 		return ""
 	}
-	log.WithFields(log.Fields{
-		"tag": tagName,
-		"sha": oid,
-	}).Debug("Found git commit")
+	log.Debugf("Found git commit %s %s\n", tagName, oid)
 	return obj.String()
 }
 
@@ -232,18 +214,13 @@ func (g *GitSource) resetOnto(repo *git.Repository, ref string) error {
 		return err
 	}
 
-	log.WithFields(log.Fields{
-		"sha": ref,
-	}).Debug("Resetting git repository to commit")
+	log.Debugf("Resetting git repository to commit %s\n", ref)
 
 	checkOpts := &git.CheckoutOpts{
 		Strategy: git.CheckoutForce | git.CheckoutRemoveUntracked | git.CheckoutRemoveIgnored}
 
 	if err := repo.ResetToCommit(commit, git.ResetHard, checkOpts); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"sha":   ref,
-		}).Error("Failed to reset git repository")
+		log.Errorf("Failed to reset git repository %s %s\n", ref, err)
 		return err
 	}
 
@@ -266,10 +243,7 @@ func (g *GitSource) Fetch() error {
 	// First things first, clone if necessary
 	if !PathExists(g.ClonePath) {
 		if err := g.Clone(); err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-				"uri":   g.URI,
-			}).Error("Failed to clone remote repository")
+			log.Errorf("Failed to clone remote repository %s %s\n", g.URI, err)
 			return err
 		}
 		hadRepo = false

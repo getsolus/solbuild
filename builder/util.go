@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"github.com/getsolus/libosdev/commands"
 	"github.com/getsolus/libosdev/disk"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -50,7 +50,7 @@ type PidNotifier interface {
 // ActivateRoot will do the hard work of actually bring up the overlayfs
 // system to allow manipulation of the roots for builds, etc.
 func (p *Package) ActivateRoot(overlay *Overlay) error {
-	log.Debug("Configuring overlay storage")
+	log.Debugln("Configuring overlay storage")
 
 	// Now mount the overlayfs
 	if err := overlay.Mount(); err != nil {
@@ -64,7 +64,7 @@ func (p *Package) ActivateRoot(overlay *Overlay) error {
 		}
 	}
 
-	log.Debug("Bringing up virtual filesystems")
+	log.Debugln("Bringing up virtual filesystems")
 	return overlay.MountVFS()
 }
 
@@ -74,7 +74,7 @@ func (p *Package) DeactivateRoot(overlay *Overlay) {
 	mountMan := disk.GetMountManager()
 	commands.SetStdin(nil)
 	overlay.Unmount()
-	log.Debug("Requesting unmount of all remaining mountpoints")
+	log.Debugln("Requesting unmount of all remaining mountpoints")
 	mountMan.UnmountAll()
 }
 
@@ -108,26 +108,16 @@ func MurderDeathKill(root string) error {
 		var pid int
 
 		if pid, err = strconv.Atoi(spid); err != nil {
-			log.WithFields(log.Fields{
-				"pid":   spid,
-				"error": err,
-			}).Error("POSIX Weeps - broken pid identifier")
-			return err
+			return fmt.Errorf("POSIX Weeps - broken pid identifier %d, reason: %s\n", spid, err)
 		}
 
-		log.WithFields(log.Fields{
-			"pid": pid,
-		}).Debug("Killing child process in chroot")
+		log.Debugf("Killing child process in chroot %s\n", pid)
 
 		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
-			log.WithFields(log.Fields{
-				"pid": pid,
-			}).Error("Error terminating process, attempting force kill")
+			log.Errorf("Error terminating process, attempting force kill %d\n", pid)
 			time.Sleep(400 * time.Millisecond)
 			if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
-				log.WithFields(log.Fields{
-					"pid": pid,
-				}).Error("Error killing (-9) process")
+				log.Errorf("Error killing (-9) process %d\n", pid)
 			}
 		}
 	}
@@ -226,37 +216,21 @@ func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 func AddBuildUser(rootfs string) error {
 	pwd, err := NewPasswd(filepath.Join(rootfs, "etc"))
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Unable to discover chroot users")
-		return err
+		return fmt.Errorf("Unable to discover chroot users, reason: %s\n", err)
 	}
 	// User already exists
 	if _, ok := pwd.Users[BuildUser]; ok {
 		return nil
 	}
-	log.WithFields(log.Fields{
-		"username": BuildUser,
-		"uid":      BuildUserID,
-		"gid":      BuildUserGID,
-		"home":     BuildUserHome,
-		"shell":    BuildUserShell,
-		"gecos":    BuildUserGecos,
-	}).Debug("Adding build user to system")
+	log.Debugf("Adding build user to system: user='%s' uid='%d' gid='%d' home='%s' shell='%s' gecos='%s'\n", BuildUser, BuildUserID, BuildUserGID, BuildUserHome, BuildUserShell, BuildUserGecos)
 
 	// Add the build group
 	if err := commands.AddGroup(rootfs, BuildUser, BuildUserGID); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to add build group to system")
-		return err
+		return fmt.Errorf("Failed to add build group to system, reason: %s\n", err)
 	}
 
 	if err := commands.AddUser(rootfs, BuildUser, BuildUserGecos, BuildUserHome, BuildUserShell, BuildUserID, BuildUserGID); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to add build user to system")
-		return err
+		return fmt.Errorf("Failed to add build user to system, reason: %s\n", err)
 	}
 	return nil
 }

@@ -18,7 +18,7 @@ package builder
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"gopkg.in/ini.v1"
 	"os"
 	"os/user"
@@ -62,18 +62,12 @@ func (u *UserInfo) SetFromSudo() bool {
 	}
 
 	if uid, err = strconv.Atoi(sudoUID); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"uid":   sudoUID,
-		}).Error("Malformed SUDO_UID in environment")
+		log.Errorf("Malformed SUDO_UID in environment %s %s\n", sudoUID, err)
 		return false
 	}
 
 	if gid, err = strconv.Atoi(sudoGID); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"gid":   sudoGID,
-		}).Error("Malformed SUDO_GID in environment")
+		log.Errorf("Malformed SUDO_GID in environment %s %s\n", sudoGID, err)
 		return false
 	}
 
@@ -83,10 +77,7 @@ func (u *UserInfo) SetFromSudo() bool {
 	// Try to set the home directory
 	usr, err := user.LookupId(sudoUID)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"uid":   uid,
-		}).Error("Failed to lookup SUDO_USER entry")
+		log.Errorf("Failed to lookup SUDO_USER entry %s %s\n", uid, err)
 		return false
 	}
 
@@ -109,10 +100,7 @@ func (u *UserInfo) SetFromCurrent() {
 		u.Username = usr.Username
 		u.Name = usr.Name
 	} else {
-		log.WithFields(log.Fields{
-			"error": err,
-			"uid":   u.UID,
-		}).Error("Failed to lookup current user")
+		log.Errorf("Failed to lookup current user %s %s\n", u.UID, err)
 		u.Username = os.Getenv("USERNAME")
 		u.Name = u.Username
 		u.HomeDir = filepath.Join("/home", u.Username)
@@ -134,40 +122,29 @@ func (u *UserInfo) SetFromPackager() bool {
 		}
 		cfg, err := ini.Load(p)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-				"path":  p,
-			}).Error("Error loading INI file")
+			log.Errorf("Error loading INI file %s %s\n", p, err)
 			continue
 		}
 
 		section, err := cfg.GetSection("Packager")
 		if err != nil {
-			log.WithFields(log.Fields{
-				"path": p,
-			}).Error("Missing [Packager] section in file")
+			log.Errorf("Missing [Packager] section in file %s\n", p)
 			continue
 		}
 
 		uname, err := section.GetKey("Name")
 		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-				"path":  p,
-			}).Error("Packager file has missing Name")
+			log.Errorf("Packager file has missing Name %s %s\n", p, err)
 			continue
 		}
 		email, err := section.GetKey("Email")
 		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-				"path":  p,
-			}).Error("Packager file has missing Email")
+			log.Errorf("Packager file has missing Email %s %s\n", p, err)
 			continue
 		}
 		u.Name = uname.String()
 		u.Email = email.String()
-		log.Debug("Setting packager details from packager INI file")
+		log.Debugln("Setting packager details from packager INI file")
 		return true
 	}
 
@@ -183,40 +160,29 @@ func (u *UserInfo) SetFromGit() bool {
 
 	cfg, err := ini.Load(gitConfPath)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  gitConfPath,
-		}).Error("Error loading gitconfig")
+		log.Errorf("Error loading gitconfig %s %s\n", gitConfPath, err)
 		return false
 	}
 
 	section, err := cfg.GetSection("user")
 	if err != nil {
-		log.WithFields(log.Fields{
-			"path": gitConfPath,
-		}).Error("Missing [user] section in gitconfig")
+		log.Errorf("Missing [user] section in gitconfig %s\n", gitConfPath)
 		return false
 	}
 
 	uname, err := section.GetKey("name")
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  gitConfPath,
-		}).Error("gitconfig file has missing name")
+		log.Errorf("gitconfig file has missing name %s %s\n", gitConfPath, err)
 		return false
 	}
 	email, err := section.GetKey("email")
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  gitConfPath,
-		}).Error("gitconfig file has missing email")
+		log.Errorf("gitconfig file has missing email %s %s\n", gitConfPath, err)
 		return false
 	}
 	u.Name = uname.String()
 	u.Email = email.String()
-	log.Debug("Setting packager details from git config")
+	log.Debugln("Setting packager details from git config")
 
 	return true
 }

@@ -19,7 +19,7 @@ package builder
 import (
 	"fmt"
 	"github.com/getsolus/libosdev/disk"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"os"
 	"path/filepath"
 )
@@ -54,9 +54,7 @@ func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgM
 
 	// Attempt to autoindex the repo
 	if repo.AutoIndex {
-		log.WithFields(log.Fields{
-			"name": repo.Name,
-		}).Debug("Reindexing repository")
+		log.Debugf("Reindexing repository %s\n", repo.Name)
 
 		command := fmt.Sprintf("cd %s/%s; %s", BindRepoDir, repo.Name, eopkgCommand("eopkg index --skip-signing ."))
 		err := ChrootExec(notif, o.MountPoint, command)
@@ -67,9 +65,7 @@ func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgM
 	} else {
 		tgtIndex := filepath.Join(tgt, "eopkg-index.xml.xz")
 		if !PathExists(tgtIndex) {
-			log.WithFields(log.Fields{
-				"name": repo.Name,
-			}).Warning("Repository index doesn't exist. Please index it to use it")
+			log.Warnf("Repository index doesn't exist. Please index it to use it. %s\n", repo.Name)
 		}
 	}
 
@@ -83,15 +79,9 @@ func (p *Package) removeRepos(pkgManager *EopkgManager, repos []string) error {
 		return nil
 	}
 	for _, id := range repos {
-		log.WithFields(log.Fields{
-			"name": id,
-		}).Debug("Removing repository")
+		log.Debugf("Removing repository %s\n", id)
 		if err := pkgManager.RemoveRepo(id); err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-				"name":  id,
-			}).Error("Failed to remove repository")
-			return err
+			return fmt.Errorf("Failed to remove repository %s, reason: %s\n", id, err)
 		}
 	}
 	return nil
@@ -104,30 +94,16 @@ func (p *Package) addRepos(notif PidNotifier, o *Overlay, pkgManager *EopkgManag
 	}
 	for _, repo := range repos {
 		if repo.Local {
-			log.WithFields(log.Fields{
-				"name": repo.Name,
-				"path": repo.URI,
-			}).Debug("Adding local repo to system")
+			log.Debugf("Adding local repo to system %s %s\n", repo.Name, repo.URI)
 
 			if err := p.addLocalRepo(notif, o, pkgManager, repo); err != nil {
-				log.WithFields(log.Fields{
-					"name":  repo.Name,
-					"error": err,
-				}).Error("Failed to add local repo to system")
-				return err
+				return fmt.Errorf("Failed to add local repo to system %s, reason: %s\n", repo.Name, err)
 			}
 			continue
 		}
-		log.WithFields(log.Fields{
-			"name": repo.Name,
-			"url":  repo.URI,
-		}).Debug("Adding repo to system")
+		log.Debugf("Adding repo to system %s %s\n", repo.Name, repo.URI)
 		if err := pkgManager.AddRepo(repo.Name, repo.URI); err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-				"name":  repo.Name,
-			}).Error("Failed to add repo to system")
-			return err
+			return fmt.Errorf("Failed to add repo to system %s, reason: %s\n", repo.Name, err)
 		}
 	}
 	return nil

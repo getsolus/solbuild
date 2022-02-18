@@ -19,7 +19,7 @@ package builder
 import (
 	"errors"
 	"github.com/getsolus/libosdev/disk"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -99,9 +99,7 @@ func NewManager() (*Manager, error) {
 	if config, err := NewConfig(); err == nil {
 		man.Config = config
 	} else {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to load solbuild configuration")
+		log.Errorf("Failed to load solbuild configuration %s\n", err)
 		return nil, err
 	}
 
@@ -183,12 +181,10 @@ func (m *Manager) SetPackage(pkg *Package) error {
 		repoDir := filepath.Dir(pkg.Path)
 		if PathExists(filepath.Join(repoDir, ".git")) {
 			if history, err := NewPackageHistory(pkg.Path); err == nil {
-				log.Debug("Obtained package history")
+				log.Debugln("Obtained package history")
 				m.history = history
 			} else {
-				log.WithFields(log.Fields{
-					"error": err,
-				}).Warning("Failed to obtain package git history")
+				log.Warnf("Failed to obtain package git history %s\n", err)
 			}
 		}
 	}
@@ -223,10 +219,10 @@ func (m *Manager) Cleanup() {
 	if !m.didStart {
 		return
 	}
-	log.Debug("Acquiring global lock")
+	log.Debugln("Acquiring global lock")
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	log.Debug("Cleaning up")
+	log.Debugln("Cleaning up")
 
 	if m.pkgManager != nil {
 		// Potentially unnecessary but meh
@@ -273,14 +269,10 @@ func (m *Manager) Cleanup() {
 	// Finally clean out the lock files
 	if m.lockfile != nil {
 		if err := m.lockfile.Unlock(); err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failure in unlocking root")
+			log.Errorf("Failure in unlocking root %s\n", err)
 		}
 		if err := m.lockfile.Clean(); err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failure in cleaning lockfile")
+			log.Errorf("Failure in cleaning lockfile %s\n", err)
 		}
 	}
 }
@@ -290,26 +282,16 @@ func (m *Manager) doLock(path, opType string) error {
 	// Handle file locking
 	lock, err := NewLockFile(path)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"file":  path,
-		}).Error("Failed to lock root for " + opType)
+		log.Errorf("Failed to lock root for %s %s %s\n", opType, path, err)
 		return err
 	}
 	m.lockfile = lock
 
 	if err = m.lockfile.Lock(); err != nil {
 		if err == ErrOwnedLockFile {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"pid":     m.lockfile.GetOwnerPID(),
-				"process": m.lockfile.GetOwnerProcess(),
-			}).Error("Failed to lock root - another process is using it")
+			log.Errorf("Failed to lock root - another process (%s,%s) is using it\n", m.lockfile.GetOwnerProcess(), m.lockfile.GetOwnerPID(), err)
 		} else {
-			log.WithFields(log.Fields{
-				"error": err,
-				"pid":   m.lockfile.GetOwnerPID(),
-			}).Error("Failed to lock root")
+			log.Errorf("Failed to lock root pid='%s' %s\n", m.lockfile.GetOwnerPID(), err)
 		}
 		return err
 	}
@@ -323,10 +305,10 @@ func (m *Manager) SigIntCleanup() {
 	signal.Notify(ch, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-ch
-		log.Warning("CTRL+C interrupted, cleaning up")
+		log.Warnln("CTRL+C interrupted, cleaning up")
 		m.SetCancelled()
 		m.Cleanup()
-		log.Error("Exiting due to interruption")
+		log.Errorln("Exiting due to interruption")
 		os.Exit(1)
 	}()
 }

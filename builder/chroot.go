@@ -19,19 +19,13 @@ package builder
 import (
 	"fmt"
 	"github.com/getsolus/libosdev/commands"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"os"
 )
 
 // Chroot will attempt to spawn a chroot in the overlayfs system
 func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay) error {
-	log.WithFields(log.Fields{
-		"profile": overlay.Back.Name,
-		"version": p.Version,
-		"package": p.Name,
-		"type":    p.Type,
-		"release": p.Release,
-	}).Debug("Beginning chroot")
+    log.Debugf("Beginning chroot: profile='%s' version='%s' package='%s' type='%s' release='%d'\n", overlay.Back.Name, p.Version, p.Name, p.Type, p.Release)
 
 	var env []string
 	if p.Type == PackageTypeXML {
@@ -57,11 +51,11 @@ func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay
 				return err
 			}
 		} else {
-			log.Warning("Package has explicitly requested networking, sandboxing disabled")
+			log.Warnln("Package has explicitly requested networking, sandboxing disabled")
 		}
 	}
 
-	log.Debug("Spawning login shell")
+	log.Debugln("Spawning login shell")
 	// Allow bash to work
 	commands.SetStdin(os.Stdin)
 

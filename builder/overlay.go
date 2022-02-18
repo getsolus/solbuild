@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/getsolus/libosdev/commands"
 	"github.com/getsolus/libosdev/disk"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"os"
 	"path/filepath"
 )
@@ -91,15 +91,9 @@ func (o *Overlay) EnsureDirs() error {
 		if PathExists(p) {
 			continue
 		}
-		log.WithFields(log.Fields{
-			"dir": p,
-		}).Debug("Creating overlay storage directory")
+		log.Debugf("Creating overlay storage directory: %s\n", p)
 		if err := os.MkdirAll(p, 00755); err != nil {
-			log.WithFields(log.Fields{
-				"dir":   p,
-				"error": err,
-			}).Error("Failed to create overlay storage directory")
-			return err
+			return fmt.Errorf("Failed to create overlay storage directory: dir='%s', reason: %s\n", p, err)
 		}
 	}
 	return nil
@@ -111,15 +105,9 @@ func (o *Overlay) CleanExisting() error {
 	if !PathExists(o.BaseDir) {
 		return nil
 	}
-	log.WithFields(log.Fields{
-		"dir": o.BaseDir,
-	}).Debug("Removing stale workspace")
+	log.Debugf("Removing stale workspace: %s\n", o.BaseDir)
 	if err := os.RemoveAll(o.BaseDir); err != nil {
-		log.WithFields(log.Fields{
-			"dir":   o.BaseDir,
-			"error": err,
-		}).Error("Failed to remove stale workspace")
-		return err
+		return fmt.Errorf("Failed to remove stale workspace: dir='%s', reason: %s\n", o.BaseDir, err)
 	}
 	return nil
 }
@@ -127,24 +115,17 @@ func (o *Overlay) CleanExisting() error {
 // Mount will set up the overlayfs structure with the lower/upper respected
 // properly.
 func (o *Overlay) Mount() error {
-	log.Debug("Mounting overlayfs")
+	log.Debugln("Mounting overlayfs")
 
 	mountMan := disk.GetMountManager()
 
 	// Mount tmpfs as the root of all other mounts if requested
 	if o.EnableTmpfs {
 		if err := os.MkdirAll(o.BaseDir, 00755); err != nil {
-			log.WithFields(log.Fields{
-				"dir":   o.BaseDir,
-				"error": err,
-			}).Error("Failed to create tmpfs directory")
+			log.Errorf("Failed to create tmpfs directory: dir='%s', reason: %s\n", o.BaseDir, err)
 			return nil
 		}
-
-		log.WithFields(log.Fields{
-			"point": o.BaseDir,
-			"size":  o.TmpfsSize,
-		}).Debug("Mounting root tmpfs")
+		log.Debugf("Mounting root tmpfs: point='%s' size='%s'\n", o.BaseDir, o.TmpfsSize)
 
 		var tmpfsOptions []string
 		if o.TmpfsSize != "" {
@@ -155,11 +136,7 @@ func (o *Overlay) Mount() error {
 			"relatime",
 		}...)
 		if err := mountMan.Mount("tmpfs-root", o.BaseDir, "tmpfs", tmpfsOptions...); err != nil {
-			log.WithFields(log.Fields{
-				"point": o.BaseDir,
-				"size":  o.TmpfsSize,
-			}).Error("Failed to mount root tmpfs")
-			return err
+			return fmt.Errorf("Failed to mount root tmpfs: point='%s' size='%s', reason: %s\n", o.BaseDir, o.TmpfsSize, err)
 		}
 	}
 
@@ -169,25 +146,14 @@ func (o *Overlay) Mount() error {
 	}
 
 	// First up, mount the backing image
-	log.WithFields(log.Fields{
-		"point": o.Back.ImagePath,
-	}).Debug("Mounting backing image")
+	log.Debugf("Mounting backing image: point='%s'\n", o.Back.ImagePath)
 	if err := mountMan.Mount(o.Back.ImagePath, o.ImgDir, "auto", "ro", "loop"); err != nil {
-		log.WithFields(log.Fields{
-			"point": o.Back.ImagePath,
-			"error": err,
-		}).Error("Failed to mount backing image")
-		return err
+		return fmt.Errorf("Failed to mount backing image: point='%s', reason: %s\n", o.Back.ImagePath, err)
 	}
 	o.mountedImg = true
 
 	// Now mount the overlayfs
-	log.WithFields(log.Fields{
-		"upper":   o.UpperDir,
-		"lower":   o.ImgDir,
-		"workdir": o.WorkDir,
-		"target":  o.MountPoint,
-	}).Debug("Mounting overlayfs")
+    log.Debugf("Mounting overlayfs: upper='%s' lower='%s' workdir='%s' target='%s'\n", o.UpperDir, o.ImgDir, o.WorkDir, o.MountPoint)
 
 	// Mounting overlayfs..
 	err := mountMan.Mount("overlay", o.MountPoint, "overlay",
@@ -197,11 +163,7 @@ func (o *Overlay) Mount() error {
 
 	// Check non-fatal..
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"point": o.MountPoint,
-		}).Error("Failed to mount overlayfs")
-		return err
+		log.Fatalf("Failed to mount overlayfs: point='%s', reason: %s\n", o.MountPoint, err)
 	}
 	o.mountedOverlay = true
 
@@ -270,72 +232,42 @@ func (o *Overlay) MountVFS() error {
 			continue
 		}
 
-		log.WithFields(log.Fields{
-			"dir": p,
-		}).Debug("Creating VFS directory")
+		log.Debugf("Creating VFS directory: dir='%s'\n", p)
 
 		if err := os.MkdirAll(p, 00755); err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failed to create VFS directory")
-			return err
+			return fmt.Errorf("Failed to create VFS directory. dir='%s', reason: %s\n", p, err)
 		}
 	}
 
 	// Bring up dev
-	log.WithFields(log.Fields{
-		"vfs": "/dev",
-	}).Debug("Mounting vfs")
+	log.Debugln("Mounting vfs /dev")
 	if err := mountMan.Mount("devtmpfs", vfsPoints[0], "devtmpfs", "nosuid", "mode=755"); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to mount /dev")
-		return err
+		return fmt.Errorf("Failed to mount /dev, reason: %s\n", err)
 	}
 	o.mountedVFS = true
 
 	// Bring up dev/pts
-	log.WithFields(log.Fields{
-		"vfs": "/dev/pts",
-	}).Debug("Mounting vfs")
+	log.Debugln("Mounting vfs /dev/pts")
 	if err := mountMan.Mount("devpts", vfsPoints[1], "devpts", "gid=5", "mode=620", "nosuid", "noexec"); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to mount /dev/pts")
-		return err
+		return fmt.Errorf("Failed to mount /dev/pts, reason: %s\n", err)
 	}
 
 	// Bring up proc
-	log.WithFields(log.Fields{
-		"vfs": "/proc",
-	}).Debug("Mounting vfs")
+	log.Debugln("Mounting vfs /proc")
 	if err := mountMan.Mount("proc", vfsPoints[2], "proc", "nosuid", "noexec"); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to mount /proc")
-		return err
+		return fmt.Errorf("Failed to mount /proc, reason: %s\n", err)
 	}
 
 	// Bring up sys
-	log.WithFields(log.Fields{
-		"vfs": "/sys",
-	}).Debug("Mounting vfs")
+	log.Debugln("Mounting vfs /sys")
 	if err := mountMan.Mount("sysfs", vfsPoints[3], "sysfs"); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to mount /sys")
-		return err
+		return fmt.Errorf("Failed to mount /sys, reason: %s\n", err)
 	}
 
 	// Bring up shm
-	log.WithFields(log.Fields{
-		"vfs": "/dev/shm",
-	}).Debug("Mounting vfs")
+	log.Debugln("Mounting vfs /dev/shm")
 	if err := mountMan.Mount("tmpfs-shm", vfsPoints[4], "tmpfs"); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to mount /sys")
-		return err
+		return fmt.Errorf("Failed to mount /dev/shm, reason: %s\n", err)
 	}
 	return nil
 }
@@ -344,12 +276,9 @@ func (o *Overlay) MountVFS() error {
 // that localhost networking will still work
 func (o *Overlay) ConfigureNetworking() error {
 	ipCommand := "/sbin/ip link set lo up"
-	log.Debug("Configuring container networking")
+	log.Debugln("Configuring container networking")
 	if err := commands.ChrootExec(o.MountPoint, ipCommand); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to configure networking")
-		return err
+		return fmt.Errorf("Failed to configure networking, reason: %s\n", err)
 	}
 	return nil
 }

@@ -17,54 +17,40 @@
 package builder
 
 import (
+	"fmt"
 	"github.com/getsolus/libosdev/disk"
-	log "github.com/sirupsen/logrus"
+	log "github.com/DataDrake/waterlog"
 	"os"
 	"path/filepath"
 )
 
 func (b *BackingImage) updatePackages(notif PidNotifier, pkgManager *EopkgManager) error {
-	log.Debug("Initialising package manager")
+	log.Debugln("Initialising package manager")
 
 	if err := pkgManager.Init(); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to initialise package manager")
-		return err
+		return fmt.Errorf("Failed to initialise package manager, reason: %s\n", err)
 	}
 
 	// Bring up dbus to do Things
-	log.Debug("Starting D-BUS")
+	log.Debugln("Starting D-BUS")
 	if err := pkgManager.StartDBUS(); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to start d-bus")
-		return err
+		return fmt.Errorf("Failed to start d-bus, reason: %s\n", err)
 	}
 
-	log.Debug("Upgrading builder image")
+	log.Debugln("Upgrading builder image")
 	if err := pkgManager.Upgrade(); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to perform upgrade")
-		return err
+		return fmt.Errorf("Failed to perform upgrade, reason: %s\n", err)
 	}
 
-	log.Debug("Asserting system.devel component")
+	log.Debugln("Asserting system.devel component")
 	if err := pkgManager.InstallComponent("system.devel"); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to install system.devel")
-		return err
+		return fmt.Errorf("Failed to install system.devel, reason: %s\n", err)
 	}
 
 	// Cleanup now
-	log.Debug("Stopping D-BUS")
+	log.Debugln("Stopping D-BUS")
 	if err := pkgManager.StopDBUS(); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to stop d-bus")
-		return err
+		return fmt.Errorf("Failed to stop d-bus, reason: %s\n", err)
 	}
 
 	return nil
@@ -74,55 +60,32 @@ func (b *BackingImage) updatePackages(notif PidNotifier, pkgManager *EopkgManage
 // internally.
 func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error {
 	mountMan := disk.GetMountManager()
-	log.WithFields(log.Fields{
-		"image": b.Name,
-	}).Debug("Updating backing image")
+	log.Debugf("Updating backing image %s\n", b.Name)
 
 	if !PathExists(b.RootDir) {
 		if err := os.MkdirAll(b.RootDir, 00755); err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failed to create required directories")
-			return err
+			return fmt.Errorf("Failed to create required directories, reason: %s\n", err)
 		}
-		log.WithFields(log.Fields{
-			"dir": b.RootDir,
-		}).Debug("Created root directory")
+		log.Debugf("Created root directory %s\n", b.Name)
 	}
 
-	log.WithFields(log.Fields{
-		"image": b.ImagePath,
-		"root":  b.RootDir,
-	}).Debug("Mounting rootfs")
+	log.Debugf("Mounting rootfs %s %s\n", b.ImagePath, b.RootDir)
 
 	// Mount the rootfs
 	if err := mountMan.Mount(b.ImagePath, b.RootDir, "auto", "loop"); err != nil {
-		log.WithFields(log.Fields{
-			"image": b.ImagePath,
-			"error": err,
-		}).Error("Failed to mount rootfs")
-		return err
+		return fmt.Errorf("Failed to mount rootfs %s, reason: %s\n", b.ImagePath, err)
 	}
 
 	if err := EnsureEopkgLayout(b.RootDir); err != nil {
-		log.WithFields(log.Fields{
-			"image": b.ImagePath,
-			"error": err,
-		}).Error("Failed to fix filesystem layout")
-		return err
+		return fmt.Errorf("Failed to fix filesystem layout %s, reason: %s\n", b.ImagePath, err)
 	}
 
 	procPoint := filepath.Join(b.RootDir, "proc")
 
 	// Bring up proc
-	log.WithFields(log.Fields{
-		"vfs": "/proc",
-	}).Debug("Mounting vfs")
+	log.Debugln("Mounting vfs /proc")
 	if err := mountMan.Mount("proc", procPoint, "proc", "nosuid", "noexec"); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to mount /proc")
-		return err
+		return fmt.Errorf("Failed to mount /proc, reason: %s\n", err)
 	}
 
 	// Hand over to package management to do the updates
@@ -135,9 +98,7 @@ func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error
 		return err
 	}
 
-	log.WithFields(log.Fields{
-		"profile": b.Name,
-	}).Debug("Image successfully updated")
+	log.Debugf("Image successfully updated %s\n", b.Name)
 
 	return nil
 }
