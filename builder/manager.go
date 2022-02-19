@@ -302,7 +302,7 @@ func (m *Manager) doLock(path, opType string) error {
 // SigIntCleanup will take care of cleaning up the build process.
 func (m *Manager) SigIntCleanup() {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-ch
 		log.Warnln("CTRL+C interrupted, cleaning up")
