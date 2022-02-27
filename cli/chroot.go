@@ -24,6 +24,7 @@ import (
 	"github.com/DataDrake/waterlog/level"
 	"github.com/getsolus/solbuild/builder"
 	"os"
+	"strings"
 )
 
 func init() {
@@ -34,7 +35,13 @@ func init() {
 var Chroot = cmd.Sub{
 	Name:  "chroot",
 	Short: "Interactively chroot into the package's build environment",
+	Args:  &ChrootArgs{},
 	Run:   ChrootRun,
+}
+
+// ChrootArgs are arguments for the "chroot" sub-command
+type ChrootArgs struct {
+	Path []string `zero:"yes" desc:"Chroot into the environment for a [package.yml|pspec.xml] receipe."`
 }
 
 // ChrootRun carries out the "chroot" sub-command
@@ -45,11 +52,24 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 	}
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
+		builder.DisableColors = true
 	}
-	pkgPath := FindLikelyArg()
+
+	// Allow chrooting into an environment for a build recipe for a given file
+	// (Convert from []string to string to allow usage of cli-ng's zero (optional) property.)
+	pkgPath := strings.Join(s.Args.(*ChrootArgs).Path, "")
+	if len(pkgPath) == 0 {
+		// Otherwise look for a suitable file to chroot into from the current directory
+		pkgPath = FindLikelyArg()
+	}
+	if len(pkgPath) == 0 {
+		log.Fatalln("No package.yml or pspec.xml found in current directory and no file provided.")
+	}
+
 	if os.Geteuid() != 0 {
 		log.Fatalln("You must be root to use chroot")
 	}
+
 	// Initialise the build manager
 	manager, err := builder.NewManager()
 	if err != nil {
