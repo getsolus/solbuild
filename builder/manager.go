@@ -18,8 +18,8 @@ package builder
 
 import (
 	"errors"
-	"github.com/getsolus/libosdev/disk"
 	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -289,9 +289,9 @@ func (m *Manager) doLock(path, opType string) error {
 
 	if err = m.lockfile.Lock(); err != nil {
 		if err == ErrOwnedLockFile {
-			log.Errorf("Failed to lock root - another process (%s,%s) is using it\n", m.lockfile.GetOwnerProcess(), m.lockfile.GetOwnerPID(), err)
+			log.Errorf("Failed to lock root - another process (%s,%d) is using it, reason: %s\n", m.lockfile.GetOwnerProcess(), m.lockfile.GetOwnerPID(), err)
 		} else {
-			log.Errorf("Failed to lock root pid='%s' %s\n", m.lockfile.GetOwnerPID(), err)
+			log.Errorf("Failed to lock root pid='%d' %s\n", m.lockfile.GetOwnerPID(), err)
 		}
 		return err
 	}

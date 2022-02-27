@@ -18,9 +18,9 @@ package builder
 
 import (
 	"fmt"
+	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
 	"github.com/getsolus/libosdev/disk"
-	log "github.com/DataDrake/waterlog"
 	"os"
 	"path/filepath"
 )
@@ -153,7 +153,7 @@ func (o *Overlay) Mount() error {
 	o.mountedImg = true
 
 	// Now mount the overlayfs
-    log.Debugf("Mounting overlayfs: upper='%s' lower='%s' workdir='%s' target='%s'\n", o.UpperDir, o.ImgDir, o.WorkDir, o.MountPoint)
+	log.Debugf("Mounting overlayfs: upper='%s' lower='%s' workdir='%s' target='%s'\n", o.UpperDir, o.ImgDir, o.WorkDir, o.MountPoint)
 
 	// Mounting overlayfs..
 	err := mountMan.Mount("overlay", o.MountPoint, "overlay",

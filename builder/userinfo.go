@@ -77,7 +77,7 @@ func (u *UserInfo) SetFromSudo() bool {
 	// Try to set the home directory
 	usr, err := user.LookupId(sudoUID)
 	if err != nil {
-		log.Errorf("Failed to lookup SUDO_USER entry %s %s\n", uid, err)
+		log.Errorf("Failed to lookup SUDO_USER entry %d %s\n", uid, err)
 		return false
 	}
 
@@ -100,7 +100,7 @@ func (u *UserInfo) SetFromCurrent() {
 		u.Username = usr.Username
 		u.Name = usr.Name
 	} else {
-		log.Errorf("Failed to lookup current user %s %s\n", u.UID, err)
+		log.Errorf("Failed to lookup current user %d %s\n", u.UID, err)
 		u.Username = os.Getenv("USERNAME")
 		u.Name = u.Username
 		u.HomeDir = filepath.Join("/home", u.Username)

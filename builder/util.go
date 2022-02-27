@@ -20,9 +20,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
 	"github.com/getsolus/libosdev/disk"
-	log "github.com/DataDrake/waterlog"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -108,10 +108,10 @@ func MurderDeathKill(root string) error {
 		var pid int
 
 		if pid, err = strconv.Atoi(spid); err != nil {
-			return fmt.Errorf("POSIX Weeps - broken pid identifier %d, reason: %s\n", spid, err)
+			return fmt.Errorf("POSIX Weeps - broken pid identifier %s, reason: %s\n", spid, err)
 		}
 
-		log.Debugf("Killing child process in chroot %s\n", pid)
+		log.Debugf("Killing child process in chroot %d\n", pid)
 
 		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
 			log.Errorf("Error terminating process, attempting force kill %d\n", pid)

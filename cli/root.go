@@ -33,7 +33,7 @@ var Root = cmd.Root{
 	Flags: &GlobalFlags{},
 }
 
-// GlobalFlags are availabe to all sub-commands
+// GlobalFlags are available to all sub-commands
 type GlobalFlags struct {
 	Debug   bool   `short:"d" long:"debug"    desc:"Enable debug message"`
 	NoColor bool   `short:"n" long:"no-color" desc:"Disable color output"`

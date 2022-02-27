@@ -19,9 +19,9 @@ package source
 import (
 	"errors"
 	"fmt"
+	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
 	git "github.com/libgit2/git2go/v28"
-	log "github.com/DataDrake/waterlog"
 	"net/url"
 	"os"
 	"path/filepath"

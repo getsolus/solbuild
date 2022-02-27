@@ -19,8 +19,8 @@ package builder
 import (
 	"errors"
 	"fmt"
-	"github.com/getsolus/libosdev/disk"
 	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 	"os"
 	"path/filepath"
 )
@@ -43,21 +43,21 @@ func (p *Package) CreateDirs(o *Overlay) error {
 	if p.Type == PackageTypeXML {
 		// Ensure we have root owned ccache
 		if err := os.MkdirAll(LegacyCcacheDirectory, 00755); err != nil {
-			return fmt.Errorf("Failed to create ccache directory %s, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to create ccache directory %+v, reason: %s\n", p, err)
 		}
 	} else {
 		// Ensure we have root owned ccache/sccache
 		if err := os.MkdirAll(CcacheDirectory, 00755); err != nil {
-			return fmt.Errorf("Failed to create ccache directory %s, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to create ccache directory %+v, reason: %s\n", p, err)
 		}
 		if err := os.Chown(CcacheDirectory, BuildUserID, BuildUserGID); err != nil {
-			return fmt.Errorf("Failed to chown ccache directory %s, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to chown ccache directory %+v, reason: %s\n", p, err)
 		}
 		if err := os.MkdirAll(SccacheDirectory, 00755); err != nil {
-			return fmt.Errorf("Failed to create sccache directory %s, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to create sccache directory %+v, reason: %s\n", p, err)
 		}
 		if err := os.Chown(SccacheDirectory, BuildUserID, BuildUserGID); err != nil {
-			return fmt.Errorf("Failed to chown sccache directory %s, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to chown sccache directory %+v, reason: %s\n", p, err)
 		}
 	}
 
@@ -517,7 +517,7 @@ func (p *Package) CollectAssets(overlay *Overlay, usr *UserInfo, manifestTarget 
 
 // Build will attempt to build the package in the overlayfs system
 func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Profile, pman *EopkgManager, overlay *Overlay, manifestTarget string) error {
-	log.Debugf("Building package %s %s %d %s %s\n", p.Name, p.Version, p.Release, p.Type, overlay.Back.Name,)
+	log.Debugf("Building package %s %s %d %s %s\n", p.Name, p.Version, p.Release, p.Type, overlay.Back.Name)
 
 	usr := GetUserInfo()
 

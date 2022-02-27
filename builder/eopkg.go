@@ -18,9 +18,9 @@ package builder
 
 import (
 	"fmt"
+	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
 	"github.com/getsolus/libosdev/disk"
-	log "github.com/DataDrake/waterlog"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -82,7 +82,7 @@ func (e *EopkgManager) CopyAssets() error {
 		}
 		dirName := filepath.Dir(value)
 		if !PathExists(dirName) {
-            log.Debugf("Creating required directory: %s\n", dirName)
+			log.Debugf("Creating required directory: %s\n", dirName)
 			if err := os.MkdirAll(dirName, 00755); err != nil {
 				return fmt.Errorf("Failed to create required asset directory %s, reason %s\n", dirName, err)
 			}

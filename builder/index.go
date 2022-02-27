@@ -19,8 +19,8 @@ package builder
 import (
 	"errors"
 	"fmt"
-	"github.com/getsolus/libosdev/disk"
 	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 	"os"
 	"path/filepath"
 )

@@ -18,14 +18,14 @@ package builder
 
 import (
 	"fmt"
-	"github.com/getsolus/libosdev/commands"
 	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/commands"
 	"os"
 )
 
 // Chroot will attempt to spawn a chroot in the overlayfs system
 func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay) error {
-    log.Debugf("Beginning chroot: profile='%s' version='%s' package='%s' type='%s' release='%d'\n", overlay.Back.Name, p.Version, p.Name, p.Type, p.Release)
+	log.Debugf("Beginning chroot: profile='%s' version='%s' package='%s' type='%s' release='%d'\n", overlay.Back.Name, p.Version, p.Name, p.Type, p.Release)
 
 	var env []string
 	if p.Type == PackageTypeXML {

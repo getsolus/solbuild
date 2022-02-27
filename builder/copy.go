@@ -18,8 +18,8 @@ package builder
 
 import (
 	"fmt"
-	"github.com/getsolus/libosdev/disk"
 	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -54,13 +54,13 @@ func CopyAll(source, destdir string) error {
 		}
 	} else {
 		if !PathExists(destdir) {
-            log.Debugf("Creating target directory: %s\n", destdir)
+			log.Debugf("Creating target directory: %s\n", destdir)
 			if err = os.MkdirAll(destdir, 00755); err != nil {
 				return fmt.Errorf("Failed to create target directory: %s, reason: %s\n", destdir, err)
 			}
 		}
 		tgt := filepath.Join(destdir, filepath.Base(source))
-        log.Debugf("Copying source asset %s to %s\n", source, tgt)
+		log.Debugf("Copying source asset %s to %s\n", source, tgt)
 		if err = disk.CopyFile(source, tgt); err != nil {
 			return fmt.Errorf("Failed to copy source asset to target: source='%s' target='%s', reason: %s\n", source, tgt, err)
 		}
