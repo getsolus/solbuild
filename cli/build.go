@@ -48,7 +48,7 @@ type BuildFlags struct {
 	ABIReport       bool   `short:"r" long:"disable-abi-report" desc:"Don't generate an ABI report of the completed build"`
 }
 
-// BuildFlags are flags for the "build" sub-command
+// BuildArgs are arguments for the "build" sub-command
 type BuildArgs struct {
 	Path []string `zero:"yes" desc:"Location of [package.yml|pspec.xml] file to build."`
 }
