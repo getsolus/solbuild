@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv='content-type' value='text/html;charset=utf8'>
-  <meta name='generator' value='Ronn/v0.7.3 (http://github.com/rtomayko/ronn/tree/0.7.3)'>
+  <meta http-equiv='content-type' content='text/html;charset=utf8'>
+  <meta name='generator' content='Ronn-NG/v0.9.1 (http://github.com/apjanke/ronn-ng/tree/0.9.1)'>
   <title>solbuild.conf(5) - solbuild configuration</title>
   <style type='text/css' media='all'>
   /* style: man */
@@ -70,11 +70,12 @@
     <li class='tr'>solbuild.conf(5)</li>
   </ol>
 
-  <h2 id="NAME">NAME</h2>
+  
+
+<h2 id="NAME">NAME</h2>
 <p class="man-name">
   <code>solbuild.conf</code> - <span class="man-whatis">solbuild configuration</span>
 </p>
-
 <h2 id="NAME">NAME</h2>
 
 <pre><code>solbuild.conf - configuration for solbuild
@@ -109,26 +110,31 @@ configuration files. This is a strongly typed configuration format, whereby
 strict validation occurs against expected key types.</p>
 
 <ul>
-<li><p><code>default_profile</code></p>
+  <li>
+    <p><code>default_profile</code></p>
 
-<p> Set the default profile used by <code>solbuild(1)</code>. This must have a string value,
+    <p>Set the default profile used by <code>solbuild(1)</code>. This must have a string value,
  and will be used by <code>solbuild(1)</code> in the absence of the <code>-p</code>,<code>--profile</code>
- flag.</p></li>
-<li><p><code>enable_tmpfs</code></p>
+ flag.</p>
+  </li>
+  <li>
+    <p><code>enable_tmpfs</code></p>
 
-<p> Instruct <code>solbuild(1)</code> to use tmpfs mounts by default for all builds. Note
+    <p>Instruct <code>solbuild(1)</code> to use tmpfs mounts by default for all builds. Note
  that even if this is disabled, as it is by default, you may still override
- this at runtime with the <code>-t</code>,<code>--tmpfs</code> flag.</p></li>
-<li><p><code>tmpfs_size</code></p>
+ this at runtime with the <code>-t</code>,<code>--tmpfs</code> flag.</p>
+  </li>
+  <li>
+    <p><code>tmpfs_size</code></p>
 
-<p> Set the default tmpfs size used by <code>solbuild(1)</code> when tmpfs builds are
+    <p>Set the default tmpfs size used by <code>solbuild(1)</code> when tmpfs builds are
  enabled. An empty value, the default, will mean an unbounded size to
  the tmpfs. This value should be a string value, with the same syntax
  that one would pass to <code>mount(8)</code>.</p>
 
-<p> See <code>solbuild(1)</code> for more details on the <code>-t</code>,<code>--tmpfs</code> option behaviour.</p></li>
+    <p>See <code>solbuild(1)</code> for more details on the <code>-t</code>,<code>--tmpfs</code> option behaviour.</p>
+  </li>
 </ul>
-
 
 <h2 id="EXAMPLE">EXAMPLE</h2>
 
@@ -142,9 +148,8 @@ enable_tmpfs = true
 <h2 id="COPYRIGHT">COPYRIGHT</h2>
 
 <ul>
-<li>Copyright © 2016-2018 Ikey Doherty, License: CC-BY-SA-3.0</li>
+  <li>Copyright © 2016-2018 Ikey Doherty, License: CC-BY-SA-3.0</li>
 </ul>
-
 
 <h2 id="SEE-ALSO">SEE ALSO</h2>
 
@@ -157,14 +162,12 @@ enable_tmpfs = true
 <p>Creative Commons Attribution-ShareAlike 3.0 Unported</p>
 
 <ul>
-<li>http://creativecommons.org/licenses/by-sa/3.0/</li>
+  <li>http://creativecommons.org/licenses/by-sa/3.0/</li>
 </ul>
-
-
 
   <ol class='man-decor man-foot man foot'>
     <li class='tl'></li>
-    <li class='tc'>September 2018</li>
+    <li class='tc'>February 2022</li>
     <li class='tr'>solbuild.conf(5)</li>
   </ol>
 

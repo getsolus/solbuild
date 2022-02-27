@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv='content-type' value='text/html;charset=utf8'>
-  <meta name='generator' value='Ronn/v0.7.3 (http://github.com/rtomayko/ronn/tree/0.7.3)'>
+  <meta http-equiv='content-type' content='text/html;charset=utf8'>
+  <meta name='generator' content='Ronn-NG/v0.9.1 (http://github.com/apjanke/ronn-ng/tree/0.9.1)'>
   <title>solbuild.profile(5) - Profile definitions for solbuild</title>
   <style type='text/css' media='all'>
   /* style: man */
@@ -69,11 +69,12 @@
     <li class='tr'>solbuild.profile(5)</li>
   </ol>
 
-  <h2 id="NAME">NAME</h2>
+  
+
+<h2 id="NAME">NAME</h2>
 <p class="man-name">
   <code>solbuild.profile</code> - <span class="man-whatis">Profile definitions for solbuild</span>
 </p>
-
 <h2 id="SYNOPSIS">SYNOPSIS</h2>
 
 <pre><code>/usr/share/solbuild/*.profile
@@ -101,64 +102,76 @@ configuration files. This is a strongly typed configuration format, whereby
 strict validation occurs against expected key types.</p>
 
 <ul>
-<li><p><code>image</code></p>
+  <li>
+    <p><code>image</code></p>
 
-<p>  Set the backing image to one of the (currently Solus) provided backing
+    <p>Set the backing image to one of the (currently Solus) provided backing
   images. Valid values include:</p>
 
-<pre><code>  * `main-x86_64`
+    <pre><code>  * `main-x86_64`
   * `unstable-x86_64`
 </code></pre>
 
-<p>  A string value is expected for this key.</p></li>
-<li><p><code>remove_repos</code></p>
+    <p>A string value is expected for this key.</p>
+  </li>
+  <li>
+    <p><code>remove_repos</code></p>
 
-<p>  This key expects an array of strings for the repo names to remove from the
+    <p>This key expects an array of strings for the repo names to remove from the
   existing base image during builds. Currently the Solus provided images all
   use the name <strong>Solus</strong> for the repo they ship with.</p>
 
-<p>  Setting this to a value of <code>['*']</code> will indicate removal of all repos.</p></li>
-<li><p><code>add_repos</code></p>
+    <p>Setting this to a value of <code>['*']</code> will indicate removal of all repos.</p>
+  </li>
+  <li>
+    <p><code>add_repos</code></p>
 
-<p>  This key expects an array of strings for the repo names defined in this
+    <p>This key expects an array of strings for the repo names defined in this
   profile to add to the image. The default unset value, i.e. an absence
   of this key, or the special value <code>['*']</code> will enable all of the repos
   in the profile.</p>
 
-<p>  This option may be useful for testing repos and conditionally disabling
-  them for testing, without having to remove them from the file.</p></li>
-<li><p><code>[repo.$Name]</code></p>
+    <p>This option may be useful for testing repos and conditionally disabling
+  them for testing, without having to remove them from the file.</p>
+  </li>
+  <li>
+    <p><code>[repo.$Name]</code></p>
 
-<p>  A repository is defined with this key, where <code>$Name</code> is replaced with the
+    <p>A repository is defined with this key, where <code>$Name</code> is replaced with the
   name you intend to assign to the repository. By default, a repo definition
   is configured for a remote repository.</p>
 
-<ul>
-<li><p><code>[repo.$Name]</code> <code>uri</code></p>
+    <ul>
+      <li>
+        <p><code>[repo.$Name]</code> <code>uri</code></p>
 
-<p>  Set this to the remote repository URL, including the <code>eopkg-index.xml.xz</code>
+        <p>Set this to the remote repository URL, including the <code>eopkg-index.xml.xz</code>
   If the repository is a <strong>local</strong> one, you must include the path to the
-  directory, with no suffix.</p></li>
-<li><p><code>[repo.$Name]</code> <code>local</code></p>
+  directory, with no suffix.</p>
+      </li>
+      <li>
+        <p><code>[repo.$Name]</code> <code>local</code></p>
 
-<p>  Set this to true to configure <code>solbuild(1)</code> to add a local repository
+        <p>Set this to true to configure <code>solbuild(1)</code> to add a local repository
   to the build. The build process will bind-mount the <code>uri</code> configured
-  directory into the build and make it available.</p></li>
-<li><p><code>[repo.$Name]</code> <code>autoindex</code></p>
+  directory into the build and make it available.</p>
+      </li>
+      <li>
+        <p><code>[repo.$Name]</code> <code>autoindex</code></p>
 
-<p>  Set this to true to instruct <code>solbuild(1)</code> to automatically reindex this
+        <p>Set this to true to instruct <code>solbuild(1)</code> to automatically reindex this
   local repository while in the container. This may be useful if you do
   not have the appropriate host side tools.</p>
 
-<p>  <code>solbuild(1)</code> will only index the files once, at startup, before it has
+        <p><code>solbuild(1)</code> will only index the files once, at startup, before it has
   performed the upgrade and component validation. Once your build has
   completed, and your <code>*.eopkg</code> files are deposited in your current directory,
   you can simply copy them to your local repository directory, and then
-  <code>solbuild</code> will be able to use them immediately in your next build.</p></li>
+  <code>solbuild</code> will be able to use them immediately in your next build.</p>
+      </li>
+    </ul>
+  </li>
 </ul>
-</li>
-</ul>
-
 
 <h2 id="EXAMPLE">EXAMPLE</h2>
 
@@ -187,9 +200,8 @@ add_repos = ['Local','Solus']
 <h2 id="COPYRIGHT">COPYRIGHT</h2>
 
 <ul>
-<li>Copyright © 2016-2018 Ikey Doherty, License: CC-BY-SA-3.0</li>
+  <li>Copyright © 2016-2018 Ikey Doherty, License: CC-BY-SA-3.0</li>
 </ul>
-
 
 <h2 id="SEE-ALSO">SEE ALSO</h2>
 
@@ -202,14 +214,12 @@ add_repos = ['Local','Solus']
 <p>Creative Commons Attribution-ShareAlike 3.0 Unported</p>
 
 <ul>
-<li>http://creativecommons.org/licenses/by-sa/3.0/</li>
+  <li>http://creativecommons.org/licenses/by-sa/3.0/</li>
 </ul>
-
-
 
   <ol class='man-decor man-foot man foot'>
     <li class='tl'></li>
-    <li class='tc'>September 2018</li>
+    <li class='tc'>February 2022</li>
     <li class='tr'>solbuild.profile(5)</li>
   </ol>
 
