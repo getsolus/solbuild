@@ -182,6 +182,7 @@ func (e *EopkgManager) Upgrade() error {
 	// proper containerized functionality.
 	newReqs := []string{
 		"iproute2",
+		"sccache",
 	}
 	if err := ChrootExec(e.notif, e.root, eopkgCommand("eopkg upgrade -y")); err != nil {
 		return err

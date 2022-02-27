@@ -41,7 +41,7 @@ var DeleteCache = cmd.Sub{
 
 // DeleteCacheFlags are the flags for the "delete-cache" sub-command
 type DeleteCacheFlags struct {
-	All    bool `short:"a" long:"all"    desc:"Additionally delete ccache, packages and sources"`
+	All    bool `short:"a" long:"all"    desc:"Additionally delete (s)ccache, packages and sources"`
 	Images bool `short:"i" long:"images" desc:"Additionally delete solbuild images"`
 }
 
@@ -70,6 +70,8 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 		nukeDirs = append(nukeDirs, []string{
 			builder.CcacheDirectory,
 			builder.LegacyCcacheDirectory,
+			builder.SccacheDirectory,
+			builder.LegacySccacheDirectory,
 			builder.PackageCacheDirectory,
 			source.SourceDir,
 		}...)

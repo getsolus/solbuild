@@ -53,6 +53,12 @@ const (
 
 	// LegacyCcacheDirectory is the root owned ccache directory for pspec.xml
 	LegacyCcacheDirectory = "/var/lib/solbuild/ccache/legacy"
+
+	// SccacheDirectory is the root owned sccache directory
+	SccacheDirectory = "/var/lib/solbuild/sccache/ypkg"
+
+	// LegacySccacheDirectory is the root owned ccache directory for pspec.xml
+	LegacySccacheDirectory = "/var/lib/solbuild/sccache/legacy"
 )
 
 const (

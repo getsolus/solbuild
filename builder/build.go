@@ -31,6 +31,7 @@ func (p *Package) CreateDirs(o *Overlay) error {
 		p.GetWorkDir(o),
 		p.GetSourceDir(o),
 		p.GetCcacheDir(o),
+		p.GetSccacheDir(o),
 	}
 	for _, p := range dirs {
 		if err := os.MkdirAll(p, 00755); err != nil {
@@ -45,12 +46,18 @@ func (p *Package) CreateDirs(o *Overlay) error {
 			return fmt.Errorf("Failed to create ccache directory %s, reason: %s\n", p, err)
 		}
 	} else {
-		// Ensure we have root owned ccache
+		// Ensure we have root owned ccache/sccache
 		if err := os.MkdirAll(CcacheDirectory, 00755); err != nil {
 			return fmt.Errorf("Failed to create ccache directory %s, reason: %s\n", p, err)
 		}
 		if err := os.Chown(CcacheDirectory, BuildUserID, BuildUserGID); err != nil {
 			return fmt.Errorf("Failed to chown ccache directory %s, reason: %s\n", p, err)
+		}
+		if err := os.MkdirAll(SccacheDirectory, 00755); err != nil {
+			return fmt.Errorf("Failed to create sccache directory %s, reason: %s\n", p, err)
+		}
+		if err := os.Chown(SccacheDirectory, BuildUserID, BuildUserGID); err != nil {
+			return fmt.Errorf("Failed to chown sccache directory %s, reason: %s\n", p, err)
 		}
 	}
 
@@ -138,6 +145,28 @@ func (p *Package) BindCcache(o *Overlay) error {
 	return nil
 }
 
+// BindSccache will make the sccache directory available to the build
+func (p *Package) BindSccache(o *Overlay) error {
+	mountMan := disk.GetMountManager()
+	sccacheDir := p.GetSccacheDir(o)
+
+	var sccacheSource string
+	if p.Type == PackageTypeXML {
+		sccacheSource = LegacySccacheDirectory
+	} else {
+		sccacheSource = SccacheDirectory
+	}
+
+	log.Debugf("Exposing sccache to build %s\n", sccacheDir)
+
+	// Bind mount local sccache into chroot
+	if err := mountMan.BindMount(sccacheSource, sccacheDir); err != nil {
+		return fmt.Errorf("Failed to bind mount sccache %s, reason: %s\n", sccacheDir, err)
+	}
+	o.ExtraMounts = append(o.ExtraMounts, sccacheDir)
+	return nil
+}
+
 // GetWorkDir will return the externally visible work directory for the
 // given build type.
 func (p *Package) GetWorkDir(o *Overlay) string {
@@ -178,6 +207,20 @@ func (p *Package) GetCcacheDirInternal() string {
 		return "/root/.ccache"
 	}
 	return filepath.Join(BuildUserHome, ".ccache")
+}
+
+// GetSccacheDir will return the externally visible sccache directory
+func (p *Package) GetSccacheDir(o *Overlay) string {
+	return filepath.Join(o.MountPoint, p.GetSccacheDirInternal()[1:])
+}
+
+// GetSccacheDirInternal will return the chroot-internal sccache
+// directory for the given build type
+func (p *Package) GetSccacheDirInternal() string {
+	if p.Type == PackageTypeXML {
+		return "/root/.cache/sccache"
+	}
+	return filepath.Join(BuildUserHome, ".cache", "sccache")
 }
 
 // CopyAssets will copy all of the required assets into the builder root
@@ -305,6 +348,11 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 		return err
 	}
 
+	// Ensure we have sccache available
+	if err := p.BindSccache(overlay); err != nil {
+		return err
+	}
+
 	// Now recopy the assets prior to build
 	if err := pman.CopyAssets(); err != nil {
 		return err
@@ -355,6 +403,11 @@ func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overl
 
 	// Ensure we have ccache available
 	if err := p.BindCcache(overlay); err != nil {
+		return err
+	}
+
+	// Ensure we have ccache available
+	if err := p.BindSccache(overlay); err != nil {
 		return err
 	}
 
