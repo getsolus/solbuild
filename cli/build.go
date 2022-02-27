@@ -24,6 +24,7 @@ import (
 	"github.com/DataDrake/waterlog/level"
 	"github.com/getsolus/solbuild/builder"
 	"os"
+	"strings"
 )
 
 func init() {
@@ -35,6 +36,7 @@ var Build = cmd.Sub{
 	Name:  "build",
 	Short: "Build the given package(s) in a chroot environment",
 	Flags: &BuildFlags{},
+	Args:  &BuildArgs{},
 	Run:   BuildRun,
 }
 
@@ -44,6 +46,11 @@ type BuildFlags struct {
 	Memory          string `short:"m" long:"memory"             desc:"Set the tmpfs size to use"`
 	TransitManifest string `long:"transit-manifest"             desc:"Create transit manifest for the given target"`
 	ABIReport       bool   `short:"r" long:"disable-abi-report" desc:"Don't generate an ABI report of the completed build"`
+}
+
+// BuildFlags are flags for the "build" sub-command
+type BuildArgs struct {
+	Path []string `zero:"yes" desc:"Location of [package.yml|pspec.xml] file to build."`
 }
 
 // BuildRun carries out the "build" sub-command
@@ -64,7 +71,17 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 		builder.DisableABIReport = true
 	}
 
-	pkgPath := FindLikelyArg()
+	// Allow loading a build recipe from an arbitrary location
+	// (Convert from []string to string to allow usage of cli-ng's zero (optional) property.)
+	pkgPath := strings.Join(s.Args.(*BuildArgs).Path, "")
+	if len(pkgPath) == 0 {
+		// Otherwise look for a suitable file in the current directory
+		pkgPath = FindLikelyArg()
+	}
+	if len(pkgPath) == 0 {
+		log.Fatalln("No package.yml or pspec.xml file in current directory and no file provided.")
+	}
+
 	if os.Geteuid() != 0 {
 		log.Fatalln("You must be root to run build packages")
 	}
