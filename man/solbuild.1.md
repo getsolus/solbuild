@@ -98,7 +98,7 @@ These options apply to all subcommands within `solbuild(1)`.
  *  `-a`, `--all`
 
         In addition to deleting the build root caches, the packages, sources,
-        and ccache (compiler) caches will also be purged from disk.
+        and ccache/sccache (compiler) caches will also be purged from disk.
 
 `index [directory]`
 
