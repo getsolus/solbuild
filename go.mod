@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/DataDrake/cli-ng v1.1.1-0.20210114031627-8f88f2ecc142
+	github.com/DataDrake/cli-ng/v2 v2.0.2
 	github.com/DataDrake/waterlog v1.0.5
 	github.com/andelf/go-curl v0.0.0-20200630032108-fd49ff24ed97
 	github.com/cheggaaa/pb/v3 v3.0.5
