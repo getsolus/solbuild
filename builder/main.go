@@ -27,6 +27,9 @@ import (
 // Spelled this way so people don't get confused :P
 var DisableColors bool
 
+// Controls whether or not we generate an ABI report.
+var DisableABIReport bool
+
 const (
 	// ImagesDir is where we keep the rootfs images for build profiles
 	ImagesDir = "/var/lib/solbuild/images"

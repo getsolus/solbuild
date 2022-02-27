@@ -40,9 +40,10 @@ var Build = cmd.Sub{
 
 // BuildFlags are flags for the "build" sub-command
 type BuildFlags struct {
-	Tmpfs           bool   `short:"t" long:"tmpfs"  desc:"Enable building in a tmpfs"`
-	Memory          string `short:"m" long:"memory" desc:"Set the tmpfs size to use"`
-	TransitManifest string `long:"transit-manifest" desc:"Create transit manifest for the given target"`
+	Tmpfs           bool   `short:"t" long:"tmpfs"              desc:"Enable building in a tmpfs"`
+	Memory          string `short:"m" long:"memory"             desc:"Set the tmpfs size to use"`
+	TransitManifest string `long:"transit-manifest"             desc:"Create transit manifest for the given target"`
+	ABIReport       bool   `short:"r" long:"disable-abi-report" desc:"Don't generate an ABI report of the completed build"`
 }
 
 // BuildRun carries out the "build" sub-command
@@ -52,10 +53,17 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
+
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
 		builder.DisableColors = true
 	}
+
+	if sFlags.ABIReport {
+		log.Debugln("Not attempting generation of an ABI report")
+		builder.DisableABIReport = true
+	}
+
 	pkgPath := FindLikelyArg()
 	if os.Geteuid() != 0 {
 		log.Fatalln("You must be root to run build packages")

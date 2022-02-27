@@ -377,10 +377,12 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 	}
 
 	// Generate ABI Report
-	log.Debugln("Attempting to generate ABI report")
-	if err := p.GenerateABIReport(notif, overlay); err != nil {
-		log.Warnf("Failed to generate ABI report, reason: %s\n", err)
-		return nil
+	if !DisableABIReport {
+		log.Debugln("Attempting to generate ABI report")
+		if err := p.GenerateABIReport(notif, overlay); err != nil {
+			log.Warnf("Failed to generate ABI report, reason: %s\n", err)
+			return nil
+		}
 	}
 
 	notif.SetActivePID(0)
