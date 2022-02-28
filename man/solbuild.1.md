@@ -160,9 +160,9 @@ On success, 0 is returned. A non-zero return code signals a failure.
 
 `solbuild.conf(5)`, `solbuild.profile(5)`
 
-https://github.com/solus-project/solbuild
+https://github.com/getsolus/solbuild
 
-https://github.com/solus-project/ypkg
+https://github.com/getsolus/ypkg
 
 
 ## NOTES
