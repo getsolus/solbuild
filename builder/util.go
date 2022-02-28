@@ -175,6 +175,43 @@ func SaneEnvironment(username, home string) []string {
 	return environment
 }
 
+// Chroot is a simple helper function that helps us chroot into a directory and
+// return back to the original root and working directory when we're finished.
+func Chroot(path string) (func() error, error) {
+	// Get a file descriptor for our real root directory
+	fd, err := os.Open("/")
+	if err != nil {
+		return nil, err
+	}
+
+	// Remember our working directory
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	// Chroot into the provided path
+	if err := syscall.Chroot(path); err != nil {
+		fd.Close()
+		return nil, err
+	}
+
+	// Return back to the original root and working directory
+	return func() error {
+		defer fd.Close()
+		if err := fd.Chdir(); err != nil {
+			return err
+		}
+		if err := syscall.Chroot("."); err != nil {
+			return err
+		}
+		if err := os.Chdir(wd); err != nil {
+			return err
+		}
+		return err
+	}, nil
+}
+
 // ChrootExec is a simple wrapper to return a correctly set up chroot command,
 // so that we can store the PID, for long running tasks
 func ChrootExec(notif PidNotifier, dir, command string) error {
