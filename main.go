@@ -19,6 +19,7 @@ package main
 import (
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
+	"github.com/DataDrake/waterlog/level"
 	_ "github.com/getsolus/solbuild/builder"
 	"github.com/getsolus/solbuild/cli"
 	log2 "log"
@@ -26,6 +27,7 @@ import (
 
 func init() {
 	log.SetFormat(format.Min)
+	log.SetLevel(level.Info)
 	log.SetFlags(log2.Ltime | log2.Ldate | log2.LUTC)
 }
 
