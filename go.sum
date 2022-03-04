@@ -1,7 +1,5 @@
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/DataDrake/abi-wizard v1.0.8 h1:Ddf5RBYsdI25Jtqa7bKRITdR+91jogyD9Ju4au6wXEI=
-github.com/DataDrake/abi-wizard v1.0.8/go.mod h1:AdJ/+aTe+1qC/hYg1UGBX1b3uancDmv7kMTJp28f6bY=
 github.com/DataDrake/cli-ng/v2 v2.0.2 h1:7+25l25VmlERCE95glW6QKBUF13vxqAM2jasFiN02xQ=
 github.com/DataDrake/cli-ng/v2 v2.0.2/go.mod h1:bU9YaNNWWVq0eIdDsU3TCe9+7Jb398iBBoqee5EiKWQ=
 github.com/DataDrake/waterlog v1.0.5 h1:+c506dboTQh4MoHHwdVtNa9E8K/3qAM/lieke0mH/mE=
@@ -22,6 +20,8 @@ github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 h1:El6M4kTTCOh6aBiKaU
 github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510/go.mod h1:pupxD2MaaD3pAXIBCelhxNneeOaAeabZDe5s4K6zSpQ=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 h1:EGx4pi6eqNxGaHF6qqu48+N2wcFQ5qg5FXgOdqsJ5d8=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
+github.com/joebonrichie/abi-wizard v1.0.9-0.20220303153045-8effbfe2a9c6 h1:LeuV2ZeI0wZEvaoug5TNnMii9aPii7UjVUPODITsQyM=
+github.com/joebonrichie/abi-wizard v1.0.9-0.20220303153045-8effbfe2a9c6/go.mod h1:su1Nwpp5t4qcLP4V+KFU1khvw0w79Nk2tUTHXWMfIKI=
 github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7C0MuV77Wo=
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=

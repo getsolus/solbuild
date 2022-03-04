@@ -19,7 +19,6 @@ package builder
 import (
 	"errors"
 	"fmt"
-	"github.com/DataDrake/abi-wizard/abi"
 	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/disk"
 	"os"
@@ -434,44 +433,6 @@ func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overl
 		return fmt.Errorf("Failed to stop d-bus, reason: %s\n", err)
 	}
 	notif.SetActivePID(0)
-	return nil
-}
-
-// GenerateABIReport will take care of generating the abireport using abi-wizard
-func (p *Package) GenerateABIReport(notif PidNotifier, overlay *Overlay) error {
-	// Chroot into the overlay
-	chrootexit, err := Chroot(overlay.MountPoint)
-	if err != nil {
-		return fmt.Errorf("Failed to chroot into %s to generate an ABI report, reason: %s\n", overlay.MountPoint, err)
-	}
-
-	// The folder to run abi-wizard against
-	installroot := fmt.Sprintf("%s/YPKG/root/%s/install", BuildUserHome, p.Name)
-	// Where to save our abi_* files
-	wdir := p.GetWorkDirInternal()
-
-	// Generate the ABI report with abi-wizard
-	r := make(abi.Report)
-	if err := r.Add(installroot, installroot); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-	}
-	missing, err := r.Resolve()
-	if err != nil {
-		log.Fatalf("Failed to resolve symbols, reason: %s\n", err)
-	}
-	for _, lib := range missing {
-		fmt.Fprintf(os.Stderr, "Missing library: %s\n", lib)
-	}
-	if err = r.Save(wdir); err != nil {
-		log.Fatalf("Failed to save ABI reports, reason: %s\n", err)
-	}
-
-	// Return to our original root
-	if err := chrootexit(); err != nil {
-		log.Fatalf("Failed to exit the chroot after generating an ABI report, reason: %s\n", err)
-	}
-	// Change back to the previous pwd
-	notif.SetActivePID(0) // needed now?
 	return nil
 }
 

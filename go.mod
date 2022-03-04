@@ -4,13 +4,13 @@ go 1.15
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/DataDrake/abi-wizard v1.0.8
 	github.com/DataDrake/cli-ng/v2 v2.0.2
 	github.com/DataDrake/waterlog v1.0.5
 	github.com/andelf/go-curl v0.0.0-20200630032108-fd49ff24ed97
 	github.com/cheggaaa/pb/v3 v3.0.5
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/getsolus/libosdev v0.0.0-20181023041421-9ab0f4b463fd
+	github.com/joebonrichie/abi-wizard v1.0.9-0.20220303153045-8effbfe2a9c6
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/libgit2/git2go/v28 v28.8.6
 	github.com/mattn/go-runewidth v0.0.9 // indirect
