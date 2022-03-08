@@ -21,7 +21,7 @@ import (
 	"fmt"
 	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
-	git "github.com/libgit2/git2go/v28"
+	git "github.com/libgit2/git2go/v31"
 	"net/url"
 	"os"
 	"path/filepath"
