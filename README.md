@@ -46,7 +46,6 @@ Getting started
 
     git clone https://github.com/getsolus/solbuild.git
     cd solbuild
-    make ensure_modules
     make
     sudo make install
 
@@ -88,6 +87,7 @@ Requirements
 
  - golang (tested with 1.7.4)
  - `libgit2` (Also require `git` at runtime for submodules)
+   - Supported versions 1.0.0 to 1.3.0 (tested with 1.3.0)
  - `curl` command
 
 Your kernel must support the `overlayfs` filesystem.
