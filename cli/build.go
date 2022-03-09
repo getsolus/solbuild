@@ -106,7 +106,11 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 		}
 		os.Exit(1)
 	}
-	manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
+	// FIXME: Handle memory args properly.
+	if sFlags.Tmpfs == true {
+		// The general problem here is that this always resets the config values even if nil.
+		manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
+	}
 	if err := manager.Build(); err != nil {
 		log.Fatalln("Failed to build packages")
 	}
