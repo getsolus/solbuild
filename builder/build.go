@@ -41,9 +41,12 @@ func (p *Package) CreateDirs(o *Overlay) error {
 
 	// Fix up the ccache directories
 	if p.Type == PackageTypeXML {
-		// Ensure we have root owned ccache
+		// Ensure we have root owned ccache/sccache
 		if err := os.MkdirAll(LegacyCcacheDirectory, 00755); err != nil {
 			return fmt.Errorf("Failed to create ccache directory %+v, reason: %s\n", p, err)
+		}
+		if err := os.MkdirAll(LegacySccacheDirectory, 00755); err != nil {
+			return fmt.Errorf("Failed to create sccache directory %+v, reason: %s\n", p, err)
 		}
 	} else {
 		// Ensure we have root owned ccache/sccache
