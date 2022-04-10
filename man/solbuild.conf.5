@@ -1,6 +1,6 @@
 .\" generated with Ronn-NG/v0.9.1
 .\" http://github.com/apjanke/ronn-ng/tree/0.9.1
-.TH "SOLBUILD\.CONF" "5" "February 2022" ""
+.TH "SOLBUILD\.CONF" "5" "April 2022" ""
 .SH "NAME"
 \fBsolbuild\.conf\fR \- solbuild configuration
 .SH "NAME"
@@ -33,6 +33,10 @@ Instruct \fBsolbuild(1)\fR to use tmpfs mounts by default for all builds\. Note 
 \fBtmpfs_size\fR
 .IP
 Set the default tmpfs size used by \fBsolbuild(1)\fR when tmpfs builds are enabled\. An empty value, the default, will mean an unbounded size to the tmpfs\. This value should be a string value, with the same syntax that one would pass to \fBmount(8)\fR\.
+.IP "\[ci]" 4
+\fBoverlay_root_dir\fR
+.IP
+Set a custom root directory for all overlay contents used by \fBsolbuild(1)\fR to reside in\. This option, allows for the overlay content to be placed anywhere which is writable by the user, such as a secondary drive\. If this is not set the default path \fB/var/cache/solbuild\fR will be used as the custom root directory\.
 .IP
 See \fBsolbuild(1)\fR for more details on the \fB\-t\fR,\fB\-\-tmpfs\fR option behaviour\.
 .IP "" 0

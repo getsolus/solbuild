@@ -131,6 +131,14 @@ strict validation occurs against expected key types.</p>
  enabled. An empty value, the default, will mean an unbounded size to
  the tmpfs. This value should be a string value, with the same syntax
  that one would pass to <code>mount(8)</code>.</p>
+  </li>
+  <li>
+    <p><code>overlay_root_dir</code></p>
+
+    <p>Set a custom root directory for all overlay contents used by <code>solbuild(1)</code>
+ to reside in. This option, allows for the overlay content to be placed anywhere
+ which is writable by the user, such as a secondary drive. If this is not set
+ the default path <code>/var/cache/solbuild</code> will be used as the custom root directory.</p>
 
     <p>See <code>solbuild(1)</code> for more details on the <code>-t</code>,<code>--tmpfs</code> option behaviour.</p>
   </li>
@@ -167,7 +175,7 @@ enable_tmpfs = true
 
   <ol class='man-decor man-foot man foot'>
     <li class='tl'></li>
-    <li class='tc'>February 2022</li>
+    <li class='tc'>April 2022</li>
     <li class='tr'>solbuild.conf(5)</li>
   </ol>
 
