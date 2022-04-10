@@ -52,6 +52,13 @@ strict validation occurs against expected key types.
     the tmpfs. This value should be a string value, with the same syntax
     that one would pass to `mount(8)`.
 
+ * `overlay_root_dir`
+
+    Set a custom root directory for all overlay contents used by `solbuild(1)`
+    to reside in. This option, allows for the overlay content to be placed anywhere
+    which is writable by the user, such as a secondary drive. If this is not set
+    the default path `/var/cache/solbuild` will be used as the custom root directory.
+
     See `solbuild(1)` for more details on the `-t`,`--tmpfs` option behaviour.
 
 
