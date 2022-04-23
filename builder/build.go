@@ -112,7 +112,7 @@ func (p *Package) BindSources(o *Overlay) error {
 		targetPath = targetPathToCheck
 
 		// Find the target path in the chroot
-		log.Debugf("Exposing source to container %s\n", bindConfig.BindTarget)
+		log.Debugf("Exposing source to container %s\n", targetPath)
 
 		if st, err := os.Stat(bindConfig.BindSource); err == nil && st != nil {
 			if st.IsDir() {
@@ -129,6 +129,7 @@ func (p *Package) BindSources(o *Overlay) error {
 		}
 
 		// Bind mount local source into chroot
+
 		if err := mountMan.BindMount(bindConfig.BindSource, targetPath, "ro"); err != nil {
 			return fmt.Errorf("Failed to bind mount source %s, reason: %s\n", targetPath, err)
 		}
