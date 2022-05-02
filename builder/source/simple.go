@@ -48,9 +48,15 @@ func NewSimple(uri, validator string, legacy bool) (*SimpleSource, error) {
 	if err != nil {
 		return nil, err
 	}
+	fileName := filepath.Base(uriObj.Path)
+	if uriObj.Fragment != "" {
+		fileName = uriObj.Fragment
+		uriObj.Fragment = ""
+	}
+	
 	ret := &SimpleSource{
-		URI:       uri,
-		File:      filepath.Base(uriObj.Path),
+		URI:       uriObj.String(),
+		File:      fileName,
 		legacy:    legacy,
 		validator: validator,
 		url:       uriObj,
