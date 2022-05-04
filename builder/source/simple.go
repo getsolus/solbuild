@@ -49,6 +49,7 @@ func NewSimple(uri, validator string, legacy bool) (*SimpleSource, error) {
 		return nil, err
 	}
 	fileName := filepath.Base(uriObj.Path)
+	//support URI fragments for renaming sources
 	if uriObj.Fragment != "" {
 		fileName = uriObj.Fragment
 		uriObj.Fragment = ""
