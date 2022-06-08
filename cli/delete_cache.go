@@ -17,13 +17,15 @@
 package cli
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
 	"github.com/getsolus/solbuild/builder"
 	"github.com/getsolus/solbuild/builder/source"
-	"os"
 )
 
 func init() {
@@ -68,13 +70,13 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	}
 	if sFlags.All {
 		nukeDirs = append(nukeDirs, []string{
-			builder.CcacheDirectory,
-			builder.LegacyCcacheDirectory,
-			builder.SccacheDirectory,
-			builder.LegacySccacheDirectory,
 			builder.PackageCacheDirectory,
 			source.SourceDir,
 		}...)
+
+		for _, c := range builder.Caches {
+			nukeDirs = append(nukeDirs, filepath.Join(builder.CacheDirectory, c.Name, "legacy"), filepath.Join(builder.CacheDirectory, c.Name, "ypkg"))
+		}
 	}
 	if sFlags.Images {
 		nukeDirs = append(nukeDirs, []string{builder.ImagesDir}...)
