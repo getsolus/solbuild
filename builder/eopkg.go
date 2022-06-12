@@ -181,6 +181,7 @@ func (e *EopkgManager) Upgrade() error {
 	// Certain requirements may not be in system.base, but are required for
 	// proper containerized functionality.
 	newReqs := []string{
+		"abi-wizard",
 		"iproute2",
 		"sccache",
 	}
