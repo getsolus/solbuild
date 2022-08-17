@@ -18,7 +18,6 @@ package cli
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
@@ -72,11 +71,8 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 		nukeDirs = append(nukeDirs, []string{
 			builder.PackageCacheDirectory,
 			source.SourceDir,
+			builder.CacheDirectory,
 		}...)
-
-		for _, c := range builder.Caches {
-			nukeDirs = append(nukeDirs, filepath.Join(builder.CacheDirectory, c.Name, "legacy"), filepath.Join(builder.CacheDirectory, c.Name, "ypkg"))
-		}
 	}
 	if sFlags.Images {
 		nukeDirs = append(nukeDirs, []string{builder.ImagesDir}...)
