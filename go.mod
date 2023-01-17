@@ -11,7 +11,7 @@ require (
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/getsolus/libosdev v0.0.0-20181023041421-9ab0f4b463fd
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/libgit2/git2go/v31 v31.7.9
+	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/solus-project/libosdev v0.0.0-20171113084438-39032fc50772 // indirect
