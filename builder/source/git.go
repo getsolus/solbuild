@@ -21,7 +21,7 @@ import (
 	"fmt"
 	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
-	git "github.com/libgit2/git2go/v31"
+	git "github.com/libgit2/git2go/v33"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -80,9 +80,9 @@ func (g *GitSource) completed(r git.RemoteCompletion) git.ErrorCode {
 }
 
 // message will be called to emit standard git text to the terminal
-func (g *GitSource) message(str string) git.ErrorCode {
+func (g *GitSource) message(str string) error {
 	os.Stdout.Write([]byte(str))
-	return 0
+	return nil
 }
 
 // CreateCallbacks will create the default git callbacks
@@ -104,7 +104,7 @@ func (g *GitSource) Clone() error {
 
 	_, err := git.Clone(g.URI, g.ClonePath, &git.CloneOptions{
 		Bare:         false,
-		FetchOptions: fetchOpts,
+		FetchOptions: *fetchOpts,
 	})
 	return err
 }
