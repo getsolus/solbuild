@@ -24,6 +24,7 @@ import (
 	"github.com/getsolus/solbuild/builder"
 	"github.com/getsolus/solbuild/builder/source"
 	"os"
+	"path/filepath"
 )
 
 func init() {
@@ -43,6 +44,7 @@ var DeleteCache = cmd.Sub{
 type DeleteCacheFlags struct {
 	All    bool `short:"a" long:"all"    desc:"Additionally delete (s)ccache, packages and sources"`
 	Images bool `short:"i" long:"images" desc:"Additionally delete solbuild images"`
+	Sizes  bool `short:"s" long:"sizes"  desc:"Show disk usage of the caches"`
 }
 
 // DeleteCache carries out the "delete-cache" sub-command
@@ -62,7 +64,32 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	if err != nil {
 		log.Fatalf("Failed to create new Manager: %e\n", err)
 	}
-	// By default include /var/lib/solbuild
+
+	// If sizes is requested just print disk usage of caches and return
+	if sFlags.Sizes {
+		sizeDirs := []string{
+			manager.Config.OverlayRootDir,
+			builder.CcacheDirectory,
+			builder.LegacyCcacheDirectory,
+			builder.SccacheDirectory,
+			builder.LegacySccacheDirectory,
+			builder.PackageCacheDirectory,
+			source.SourceDir,
+		}
+		var totalSize float64
+		for _, p := range sizeDirs {
+			size, err := getDirSize(p)
+			totalSize += size
+			if err != nil {
+				log.Warnf("Couldn't get directory size, reason: %s\n", err)
+			}
+			log.Infof("Size of '%s' is '%.0f MiB'\n", p, size)
+		}
+		log.Infof("Total size: '%.0f MiB'\n", totalSize)
+		return
+	}
+
+	// By default include /var/cache/solbuild
 	nukeDirs := []string{
 		manager.Config.OverlayRootDir,
 	}
@@ -79,13 +106,48 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	if sFlags.Images {
 		nukeDirs = append(nukeDirs, []string{builder.ImagesDir}...)
 	}
+	var totalSize float64
 	for _, p := range nukeDirs {
 		if !builder.PathExists(p) {
 			continue
 		}
-		log.Infof("Removing cache directory '%s'\n", p)
+		size, err := getDirSize(p)
+		totalSize += size
+		if err != nil {
+			log.Warnf("Couldn't get directory size, reason: %s\n", err)
+		}
+		log.Infof("Removing cache directory '%s', of size '%.0f MiB\n", p, size)
 		if err := os.RemoveAll(p); err != nil {
 			log.Fatalf("Could not remove cache directory, reason: %s\n", err)
 		}
 	}
+	if totalSize > 0 {
+		log.Infof("Total restored size: '%.0f MiB'\n", totalSize)
+	}
+}
+
+// getDirSize returns the disk usage of a directory
+func getDirSize(path string) (float64, error) {
+	var totalSize int64
+
+	// Return nothing if dir doesn't exist
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		log.Debugf("Directory doesn't exist: %s\n", path);
+		return 0, nil;
+	}
+
+	// Walk the dir, get size, add to totalSize
+	err = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			totalSize += info.Size()
+		}
+		return err
+	})
+	// Return a floaty boi that can be pretty printed
+	sizeMiB := float64(totalSize) / 1000.0 / 1000.0
+	return sizeMiB, err
 }
