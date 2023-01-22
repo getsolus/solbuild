@@ -17,12 +17,14 @@
 package cli
 
 import (
+	"fmt"
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
 	"github.com/getsolus/solbuild/builder"
 	"github.com/getsolus/solbuild/builder/source"
+	"math"
 	"os"
 	"path/filepath"
 )
@@ -76,16 +78,16 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 			builder.PackageCacheDirectory,
 			source.SourceDir,
 		}
-		var totalSize float64
+		var totalSize int64
 		for _, p := range sizeDirs {
 			size, err := getDirSize(p)
 			totalSize += size
 			if err != nil {
 				log.Warnf("Couldn't get directory size, reason: %s\n", err)
 			}
-			log.Infof("Size of '%s' is '%.0f MiB'\n", p, size)
+			log.Infof("Size of '%s' is '%s'\n", p, humanReadableFormat(float64(size)))
 		}
-		log.Infof("Total size: '%.0f MiB'\n", totalSize)
+		log.Infof("Total size: '%s'\n", humanReadableFormat(float64(totalSize)))
 		return
 	}
 
@@ -106,7 +108,7 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	if sFlags.Images {
 		nukeDirs = append(nukeDirs, []string{builder.ImagesDir}...)
 	}
-	var totalSize float64
+	var totalSize int64
 	for _, p := range nukeDirs {
 		if !builder.PathExists(p) {
 			continue
@@ -116,25 +118,25 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 		if err != nil {
 			log.Warnf("Couldn't get directory size, reason: %s\n", err)
 		}
-		log.Infof("Removing cache directory '%s', of size '%.0f MiB\n", p, size)
+		log.Infof("Removing cache directory '%s', of size '%s\n", p, humanReadableFormat(float64(size)))
 		if err := os.RemoveAll(p); err != nil {
 			log.Fatalf("Could not remove cache directory, reason: %s\n", err)
 		}
 	}
 	if totalSize > 0 {
-		log.Infof("Total restored size: '%.0f MiB'\n", totalSize)
+		log.Infof("Total restored size: '%s'\n", humanReadableFormat(float64(totalSize)))
 	}
 }
 
 // getDirSize returns the disk usage of a directory
-func getDirSize(path string) (float64, error) {
+func getDirSize(path string) (int64, error) {
 	var totalSize int64
 
 	// Return nothing if dir doesn't exist
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		log.Debugf("Directory doesn't exist: %s\n", path);
-		return 0, nil;
+		log.Debugf("Directory doesn't exist: %s\n", path)
+		return 0, nil
 	}
 
 	// Walk the dir, get size, add to totalSize
@@ -147,7 +149,15 @@ func getDirSize(path string) (float64, error) {
 		}
 		return err
 	})
-	// Return a floaty boi that can be pretty printed
-	sizeMiB := float64(totalSize) / 1000.0 / 1000.0
-	return sizeMiB, err
+	return totalSize, err
+}
+
+// humanReadableFormat pretty prints a float64 input into a human friendly string in IEC format
+func humanReadableFormat(i float64) string {
+	if i <= 0 {
+		return fmt.Sprintf("0.0 B")
+	}
+	units := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"}
+	chosenUnit := math.Min(math.Floor(math.Log(i)/math.Log(1024)), float64(len(units)-1))
+	return fmt.Sprintf("%.1f %s", i/math.Pow(1024, chosenUnit), units[int64(chosenUnit)])
 }
