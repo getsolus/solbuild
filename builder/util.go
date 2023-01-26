@@ -251,6 +251,10 @@ func FileSha256sum(path string) (string, error) {
 // ValidMemSize will determine if a string is a valid memory size,
 // it must start with a number and end with a valid unit size
 func ValidMemSize(s string) bool {
+	if s == "" {
+		return false
+	}
+
 	// Size is numeric?
 	allButLast := string(s[0 : len(s)-1])
 	_, err := strconv.ParseFloat(allButLast, 64)
