@@ -107,38 +107,21 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 		os.Exit(1)
 	}
 
-	// Handle tmpfs and memory size options, if statement spaghetti
+	// Handle tmpfs and memory size options
 	if sFlags.Tmpfs == true {
 		if sFlags.Memory != "" {
-			if builder.ValidMemSize(sFlags.Memory) == true {
-				manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
-			} else {
-				log.Fatalln("tmpfs: invalid memory size specified")
-			}
-		}
-		// Fallback to config file
-		if sFlags.Memory == "" {
-			if manager.Config.TmpfsSize == "" {
-				log.Fatalln("tmpfs: A memory size is required via config or the -m flag")
-			} else {
-				log.Debugln("tmpfs: getting memory size from config file")
-				if builder.ValidMemSize(manager.Config.TmpfsSize) == true {
-					manager.SetTmpfs(sFlags.Tmpfs, manager.Config.TmpfsSize)
-				} else {
-					log.Fatalln("tmpfs: invalid memory size specified in config")
-				}
-			}
+			manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
+		} else if sFlags.Memory == "" && manager.Config.TmpfsSize != "" {
+			manager.SetTmpfs(sFlags.Tmpfs, manager.Config.TmpfsSize)
+		} else {
+			log.Fatalln("tmpfs: No memory size specified")
 		}
 	}
 	if sFlags.Memory != "" && sFlags.Tmpfs != true {
 		if manager.Config.EnableTmpfs != true {
 			log.Fatalln("tmpfs: Memory size specified but tmpfs was not enabled, pass -t to enable tmpfs")
 		} else {
-			if builder.ValidMemSize(sFlags.Memory) == true {
-				manager.SetTmpfs(manager.Config.EnableTmpfs, sFlags.Memory)
-			} else {
-				log.Fatalln("tmpfs: invalid memory size specified")
-			}
+			manager.SetTmpfs(manager.Config.EnableTmpfs, sFlags.Memory)
 		}
 	}
 
