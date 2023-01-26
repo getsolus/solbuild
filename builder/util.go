@@ -247,3 +247,26 @@ func FileSha256sum(path string) (string, error) {
 	h.Write(mfile.Data)
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
+
+// ValidMemSize will determine if a string is a valid memory size,
+// it must start with a number and end with a valid unit size
+func ValidMemSize(s string) bool {
+	// Size is numeric?
+	allButLast := string(s[0 : len(s)-1])
+	_, err := strconv.ParseFloat(allButLast, 64)
+	if err != nil {
+		log.Errorf("Invalid Memory Size: %s: %s is not numeric\n", s, allButLast)
+		return false
+	}
+
+	// Size ends with valid memory unit?
+	lastChar := string(s[len(s)-1:])
+	validLastChars := []string{"G", "T", "P", "E"}
+	for _, v := range validLastChars {
+		if v == lastChar {
+			return true
+		}
+	}
+	log.Errorf("Invalid Memory Size: %s doesn't end in a valid memory unit, e.g. G\n", s)
+	return false
+}

@@ -43,7 +43,7 @@ var Build = cmd.Sub{
 // BuildFlags are flags for the "build" sub-command
 type BuildFlags struct {
 	Tmpfs           bool   `short:"t" long:"tmpfs"              desc:"Enable building in a tmpfs"`
-	Memory          string `short:"m" long:"memory"             desc:"Set the tmpfs size to use"`
+	Memory          string `short:"m" long:"memory"             desc:"Set the tmpfs size to use, e.g. 8G"`
 	TransitManifest string `long:"transit-manifest"             desc:"Create transit manifest for the given target"`
 	ABIReport       bool   `short:"r" long:"disable-abi-report" desc:"Don't generate an ABI report of the completed build"`
 }
@@ -106,11 +106,42 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 		}
 		os.Exit(1)
 	}
-	// FIXME: Handle memory args properly.
+
+	// Handle tmpfs and memory size options, if statement spaghetti
 	if sFlags.Tmpfs == true {
-		// The general problem here is that this always resets the config values even if nil.
-		manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
+		if sFlags.Memory != "" {
+			if builder.ValidMemSize(sFlags.Memory) == true {
+				manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
+			} else {
+				log.Fatalln("tmpfs: invalid memory size specified")
+			}
+		}
+		// Fallback to config file
+		if sFlags.Memory == "" {
+			if manager.Config.TmpfsSize == "" {
+				log.Fatalln("tmpfs: A memory size is required via config or the -m flag")
+			} else {
+				log.Debugln("tmpfs: getting memory size from config file")
+				if builder.ValidMemSize(manager.Config.TmpfsSize) == true {
+					manager.SetTmpfs(sFlags.Tmpfs, manager.Config.TmpfsSize)
+				} else {
+					log.Fatalln("tmpfs: invalid memory size specified in config")
+				}
+			}
+		}
 	}
+	if sFlags.Memory != "" && sFlags.Tmpfs != true {
+		if manager.Config.EnableTmpfs != true {
+			log.Fatalln("tmpfs: Memory size specified but tmpfs was not enabled, pass -t to enable tmpfs")
+		} else {
+			if builder.ValidMemSize(sFlags.Memory) == true {
+				manager.SetTmpfs(manager.Config.EnableTmpfs, sFlags.Memory)
+			} else {
+				log.Fatalln("tmpfs: invalid memory size specified")
+			}
+		}
+	}
+
 	if err := manager.Build(); err != nil {
 		log.Fatalln("Failed to build packages")
 	}
