@@ -18,13 +18,14 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
 	"github.com/getsolus/solbuild/builder"
-	"os"
-	"strings"
 )
 
 func init() {
@@ -126,7 +127,7 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	}
 
 	if err := manager.Build(); err != nil {
-		log.Fatalln("Failed to build packages")
+		log.Fatalf("Failed to build packages: %s\n", err)
 	}
 	log.Infoln("Building succeeded")
 }

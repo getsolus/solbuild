@@ -20,12 +20,16 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	git "github.com/libgit2/git2go/v34"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"time"
+
+	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 const (
@@ -84,14 +88,14 @@ type PackageUpdate struct {
 
 // NewPackageUpdate will attempt to parse the given commit and provide a usable
 // entry for the PackageHistory
-func NewPackageUpdate(tag string, commit *git.Commit, objectID string) *PackageUpdate {
-	signature := commit.Author()
+func NewPackageUpdate(tag string, commit *object.Commit, objectID string) *PackageUpdate {
+	signature := commit.Author
 	update := &PackageUpdate{Tag: tag}
 
 	// We duplicate. cgo makes life difficult.
 	update.Author = signature.Name
 	update.AuthorEmail = signature.Email
-	update.Body = commit.Message()
+	update.Body = commit.Message
 	update.Time = signature.When
 	update.ObjectID = objectID
 
@@ -106,38 +110,44 @@ func NewPackageUpdate(tag string, commit *git.Commit, objectID string) *PackageU
 }
 
 // CatGitBlob will return the contents of the given entry
-func CatGitBlob(repo *git.Repository, entry *git.TreeEntry) ([]byte, error) {
-	obj, err := repo.Lookup(entry.Id)
+func CatGitBlob(repo *git.Repository, entry *object.TreeEntry) ([]byte, error) {
+	obj, err := repo.BlobObject(entry.Hash)
 	if err != nil {
 		return nil, err
 	}
-	blob, err := obj.AsBlob()
+
+	reader, err := obj.Reader()
 	if err != nil {
 		return nil, err
 	}
-	return blob.Contents(), nil
+
+	return io.ReadAll(reader)
 }
 
 // GetFileContents will attempt to read the entire object at path from
 // the given tag, within that repo.
-func GetFileContents(repo *git.Repository, tag, path string) ([]byte, error) {
-	oid, err := git.NewOid(tag)
+func GetFileContents(repo *git.Repository, name, path string) ([]byte, error) {
+	tag, err := repo.Tag(name)
 	if err != nil {
 		return nil, err
 	}
-	commit, err := repo.Lookup(oid)
+
+	obj, err := repo.TagObject(tag.Hash())
 	if err != nil {
 		return nil, err
 	}
-	treeObj, err := commit.Peel(git.ObjectTree)
+
+	commit, err := repo.CommitObject(obj.Target)
 	if err != nil {
 		return nil, err
 	}
-	tree, err := treeObj.AsTree()
+
+	tree, err := commit.Tree()
 	if err != nil {
 		return nil, err
 	}
-	entry, err := tree.EntryByPath(path)
+
+	entry, err := tree.FindEntry(path)
 	if err != nil {
 		return nil, err
 	}
@@ -155,13 +165,13 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	// Repodir
 	path := filepath.Dir(pkgfile)
 
-	repo, err := git.OpenRepository(path)
+	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
 	}
 	// Get all the tags
-	var tags []string
-	tags, err = repo.Tags.List()
+	var tagNames []string
+	tags, err := repo.Tags()
 	if err != nil {
 		return nil, err
 	}
@@ -169,44 +179,44 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	updates := make(map[string]*PackageUpdate)
 
 	// Iterate all of the tags
-	err = repo.Tags.Foreach(func(name string, id *git.Oid) error {
-		if name == "" || id == nil {
+	err = tags.ForEach(func(r *plumbing.Reference) error {
+		if r.Name() == "" || r.Hash().IsZero() {
 			return nil
 		}
 
-		var commit *git.Commit
+		name := r.Name().String()
+		var commit *object.Commit
 
-		obj, err := repo.Lookup(id)
-		if err != nil {
-			return err
-		}
-
-		switch obj.Type() {
+		switch r.Type() {
 		// Unannotated tag
-		case git.ObjectCommit:
-			commit, err = obj.AsCommit()
+		case plumbing.ReferenceType(plumbing.CommitObject):
+			commit, err = repo.CommitObject(r.Hash())
 			if err != nil {
 				return err
 			}
-			tags = append(tags, name)
+
+			tagNames = append(tagNames, name)
 		// Annotated tag with commit target
-		case git.ObjectTag:
-			tag, err := obj.AsTag()
+		case plumbing.ReferenceType(plumbing.TagObject):
+			tag, err := repo.TagObject(r.Hash())
 			if err != nil {
 				return err
 			}
-			commit, err = repo.LookupCommit(tag.TargetId())
+
+			commit, err = tag.Commit()
 			if err != nil {
 				return err
 			}
-			tags = append(tags, name)
+
+			tagNames = append(tagNames, name)
 		default:
-			return fmt.Errorf("Internal git error, found %s", obj.Type().String())
+			return fmt.Errorf("Internal git error, found %s", r.Type().String())
 		}
+
 		if commit == nil {
 			return nil
 		}
-		commitObj := NewPackageUpdate(name, commit, id.String())
+		commitObj := NewPackageUpdate(name, commit, r.Hash().String())
 		updates[name] = commitObj
 		return nil
 	})
@@ -215,10 +225,10 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 		return nil, err
 	}
 	// Sort the tags by -refname
-	sort.Sort(sort.Reverse(sort.StringSlice(tags)))
+	sort.Sort(sort.Reverse(sort.StringSlice(tagNames)))
 
 	ret := &PackageHistory{pkgfile: pkgfile}
-	ret.scanUpdates(repo, updates, tags)
+	ret.scanUpdates(repo, updates, tagNames)
 	updates = nil
 
 	if len(ret.Updates) < 1 {

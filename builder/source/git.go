@@ -17,25 +17,20 @@
 package source
 
 import (
-	"errors"
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/commands"
-	git "github.com/libgit2/git2go/v34"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/DataDrake/waterlog"
+	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 const (
 	// GitSourceDir is the base directory for all cached git sources
 	GitSourceDir = "/var/lib/solbuild/sources/git"
-)
-
-var (
-	// ErrGitNoContinue is returned when git processing cannot continue
-	ErrGitNoContinue = errors.New("Fatal errors in git fetch")
 )
 
 // A GitSource as referenced by `ypkg` build spec. A git source must have
@@ -70,118 +65,8 @@ func NewGit(uri, ref string) (*GitSource, error) {
 		ClonePath: clonePath,
 	}
 
+	log.Infof("ref: %s\n", g.Ref)
 	return g, nil
-}
-
-// completed is called when the fetch is done
-func (g *GitSource) completed(r git.RemoteCompletion) git.ErrorCode {
-	log.Debugf("Completed fetch of git source %s\n", g.BaseName)
-	return 0
-}
-
-// message will be called to emit standard git text to the terminal
-func (g *GitSource) message(str string) error {
-	os.Stdout.Write([]byte(str))
-	return nil
-}
-
-// CreateCallbacks will create the default git callbacks
-func (g *GitSource) CreateCallbacks() git.RemoteCallbacks {
-	return git.RemoteCallbacks{
-		SidebandProgressCallback: g.message,
-	}
-}
-
-// Clone will set do a bare mirror clone of the remote repo to the local
-// cache.
-func (g *GitSource) Clone() error {
-	// Attempt cloning
-	log.Debugf("Cloning git source %s\n", g.URI)
-
-	fetchOpts := &git.FetchOptions{
-		RemoteCallbacks: g.CreateCallbacks(),
-	}
-
-	_, err := git.Clone(g.URI, g.ClonePath, &git.CloneOptions{
-		Bare:         false,
-		FetchOptions: *fetchOpts,
-	})
-	return err
-}
-
-// HasTag will attempt to find the tag, if possible
-func (g *GitSource) HasTag(repo *git.Repository, tagName string) bool {
-	haveTag := false
-	repo.Tags.Foreach(func(name string, id *git.Oid) error {
-		if name == "refs/tags/"+tagName {
-			haveTag = true
-		}
-		return nil
-	})
-	return haveTag
-}
-
-// fetch will attempt
-func (g *GitSource) fetch(repo *git.Repository) error {
-	log.Infof("Git fetching existing clone %s\n", g.URI)
-	remote, err := repo.Remotes.Lookup("origin")
-	if err != nil {
-		log.Errorf("Failed to find git remote %s %s\n", g.URI, err)
-		return err
-	}
-
-	fetchOpts := &git.FetchOptions{
-		RemoteCallbacks: g.CreateCallbacks(),
-	}
-
-	return remote.Fetch([]string{}, fetchOpts, "")
-}
-
-// GetCommitID will attempt to find the oid of the selected ref type
-func (g *GitSource) GetCommitID(repo *git.Repository) string {
-	oid := ""
-	// Attempt to find the branch
-	branch, err := repo.LookupBranch(g.Ref, git.BranchAll)
-	if err == nil {
-		oid = branch.Target().String()
-		log.Debugf("Found git commit of branch %s %s\n", g.Ref, oid)
-		return oid
-	}
-
-	tagName := g.Ref
-	if !strings.HasPrefix(tagName, "refs/tags") {
-		tagName = "refs/tags/" + tagName
-	}
-
-	repo.Tags.Foreach(func(name string, id *git.Oid) error {
-		if name == tagName {
-			oid = id.String()
-			// Force break the foreach
-			return errors.New("")
-		}
-		return nil
-	})
-
-	// Tag set the oid
-	if oid != "" {
-		log.Debugf("Found git commit of tag %s %s\n", tagName, oid)
-		return oid
-	}
-
-	// Check the oid is valid
-	oid = g.Ref
-	obj, err := git.NewOid(oid)
-	if err != nil {
-		return ""
-	}
-
-	// Check if its a commit
-	_, err = repo.Lookup(obj)
-	if err != nil {
-		return ""
-	}
-	log.Debugf("Found git commit %s %s\n", tagName, oid)
-	return obj.String()
 }
 
 // GetHead will attempt to gain the OID for head
@@ -193,95 +78,215 @@ func (g *GitSource) GetHead(repo *git.Repository) (string, error) {
 	return head.Target().String(), nil
 }
 
-// resetOnto will attempt to reset the repo (hard) onto the given commit
-func (g *GitSource) resetOnto(repo *git.Repository, ref string) error {
-	// this stuff _really_ shouldn't happen but oh well.
-	oid, err := git.NewOid(ref)
-	if err != nil {
-		return err
-	}
-	commitFind, err := repo.Lookup(oid)
-	if err != nil {
-		return err
-	}
-
-	commitObj, err := commitFind.Peel(git.ObjectCommit)
-	if err != nil {
-		return err
-	}
-	commit, err := commitObj.AsCommit()
-	if err != nil {
-		return err
-	}
-
-	log.Debugf("Resetting git repository to commit %s\n", ref)
-
-	checkOpts := &git.CheckoutOpts{
-		Strategy: git.CheckoutForce | git.CheckoutRemoveUntracked | git.CheckoutRemoveIgnored}
-
-	if err := repo.ResetToCommit(commit, git.ResetHard, checkOpts); err != nil {
-		log.Errorf("Failed to reset git repository %s %s\n", ref, err)
-		return err
-	}
-
-	return nil
-}
-
 // submodules will handle setup of the git submodules after a
 // reset has taken place.
-func (g *GitSource) submodules() error {
-	// IDK What else to tell ya, git2go submodules is broken
-	cmd := []string{"submodule", "update", "--init", "--recursive"}
-	return commands.ExecStdoutArgsDir(g.ClonePath, "git", cmd)
+func (g *GitSource) submodules(work *git.Worktree) error {
+	submodules, err := work.Submodules()
+	if err != nil {
+		return err
+	}
+
+	if len(submodules) <= 0 {
+		return nil
+	}
+
+	opts := git.SubmoduleUpdateOptions{
+		Init:              true,
+		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+	}
+	return submodules.Update(&opts)
+}
+
+func clone(uri, path, ref string) (*git.Repository, error) {
+	refName := plumbing.NewRemoteReferenceName("origin", ref)
+
+	cloneOpts := git.CloneOptions{
+		URL:               uri,
+		ReferenceName:     refName,
+		SingleBranch:      true,
+		Depth:             1,
+		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		Progress:          os.Stdout,
+	}
+
+	return git.PlainClone(path, true, &cloneOpts)
 }
 
 // Fetch will attempt to download the git tree locally. If it already exists
 // then we'll make an attempt to update it.
 func (g *GitSource) Fetch() error {
-	hadRepo := true
-
-	// First things first, clone if necessary
+	// First things first, make sure we have a destination
 	if !PathExists(g.ClonePath) {
-		if err := g.Clone(); err != nil {
-			log.Errorf("Failed to clone remote repository %s %s\n", g.URI, err)
+		log.Debugf("making shallow clone of repo at '%s'\n", g.ClonePath)
+
+		_, err := clone(g.URI, g.ClonePath, g.Ref)
+		if err != nil {
 			return err
 		}
-		hadRepo = false
+
+		return nil
 	}
 
-	// Now open the repo and validate it
-	repo, err := git.OpenRepository(g.ClonePath)
+	// Repo already on disk, just open it
+	log.Debugf("source repo clone found on disk at '%s'\n", g.ClonePath)
+
+	repo, err := git.PlainOpen(g.ClonePath)
 	if err != nil {
 		return err
 	}
 
-	wantedCommit := g.GetCommitID(repo)
-	if wantedCommit == "" {
-		// Logic here being we just cloned it. Where is it?
-		if !hadRepo {
-			return fmt.Errorf("Cannot continue with git processing")
-		}
-		// So try to fetch it
-		if err := g.fetch(repo); err != nil {
+	// Get the ref we want
+	var hash plumbing.Hash
+	if len(g.Ref) != 40 {
+		log.Debugf("reference '%s' does not look like a hash; attempting to resolve\n", g.Ref)
+
+		h, err := repo.ResolveRevision(plumbing.Revision(g.Ref))
+		if err != nil {
 			return err
 		}
-		// Re-establish the wanted commit
-		wantedCommit = g.GetCommitID(repo)
+		hash = *h
+	} else {
+		hash = plumbing.NewHash(g.Ref)
 	}
 
-	// Can't proceed now. Just doesn't exist
-	if wantedCommit == "" {
-		return ErrGitNoContinue
-	}
+	log.Debugf("resolved reference: %s\n", hash.String())
 
-	// Attempt reset
-	if err := g.resetOnto(repo, wantedCommit); err != nil {
+	work, err := repo.Worktree()
+	if err != nil {
 		return err
 	}
 
-	// Check out submodules
-	return g.submodules()
+	checkoutOpts := git.CheckoutOptions{
+		Hash:  hash,
+		Force: true,
+	}
+
+	if err = work.Checkout(&checkoutOpts); err != nil {
+		return err
+	}
+
+	// Testing file perms
+	packDir := filepath.Join(g.ClonePath, ".git", "objects", "pack")
+	entries, err := os.ReadDir(packDir)
+	if err != nil {
+		return err
+	}
+	for _, de := range entries {
+		info, err := de.Info()
+		if err != nil {
+			log.Errorf("error reading pack file '%s': %s\n", de.Name(), err)
+			continue
+		}
+		log.Infof("pack file '%s' has mode '%s'\n", de.Name(), info.Mode().String())
+	}
+
+	return g.submodules(work)
 }
+
+// FetchTest will attempt to download the git tree locally. If it already exists
+// then we'll make an attempt to update it.
+// func (g *GitSource) FetchTest() error {
+// 	// First things first, make sure we have a destination
+// 	if !PathExists(g.ClonePath) {
+// 		log.Debugf("creating clone path at '%s'\n", g.ClonePath)
+
+// 		// Make sure our fetch dir exists
+// 		if err := os.MkdirAll(g.ClonePath, 0755); err != nil {
+// 			return err
+// 		}
+// 		// Init an empty repo; we'll checkout and fetch later
+// 		r, err := git.PlainInit(g.ClonePath, false)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		g.repo = r
+// 	} else {
+// 		// Repo already on disk, just open it
+// 		log.Debugf("source repo clone found on disk at '%s'\n", g.ClonePath)
+
+// 		r, err := git.PlainOpen(g.ClonePath)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		g.repo = r
+// 	}
+
+// 	// Get or create our origin remote to fetch
+// 	remote, err := g.repo.Remote("origin")
+// 	if err != nil && err != git.ErrRemoteNotFound {
+// 		return err
+// 	}
+// 	if remote == nil {
+// 		// Create a remote for origin
+// 		log.Debugln("origin remote not found; creating")
+
+// 		rconf := &config.RemoteConfig{
+// 			Name: "origin",
+// 			URLs: []string{g.URI},
+// 			/* Fetch: []config.RefSpec{config.RefSpec("+refs/heads/*:refs/remotes/origin/*")}, */
+// 		}
+
+// 		remote, err = g.repo.CreateRemote(rconf)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
+
+// 	// Fetch the remote origin
+// 	err = remote.Fetch(&git.FetchOptions{
+// 		RefSpecs: []config.RefSpec{config.RefSpec("+refs/heads/*:refs/remotes/origin/*")},
+// 		Force:    true,
+// 		Progress: os.Stdout,
+// 	})
+// 	if err != nil && err != git.NoErrAlreadyUpToDate {
+// 		return err
+// 	}
+
+// 	// Get the ref we want
+// 	ref := g.Ref
+// 	if len(ref) != 40 {
+// 		log.Debugf("reference '%s' does not look like a hash; attempting to resolve\n", ref)
+
+// 		hash, err := g.repo.ResolveRevision(plumbing.Revision(ref))
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 		ref = hash.String()
+// 	}
+
+// 	log.Debugf("resolved reference: %s\n", ref)
+
+// 	// Fetch at the ref we want
+// 	err = remote.Fetch(&git.FetchOptions{
+// 		RefSpecs: []config.RefSpec{config.RefSpec(ref + ":refs/heads/master")},
+// 		Depth:    1,
+// 		Force:    true,
+// 		Progress: os.Stdout,
+// 	})
+// 	if err != nil && err != git.NoErrAlreadyUpToDate {
+// 		return err
+// 	}
+
+// 	// Create a worktree
+// 	work, err := g.repo.Worktree()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	// Checkout our ref
+// 	opts := git.CheckoutOptions{
+// 		Hash:  plumbing.NewHash(g.Ref),
+// 		Force: true,
+// 	}
+
+// 	if err = work.Checkout(&opts); err != nil {
+// 		return err
+// 	}
+
+// 	// Check out submodules
+// 	return g.submodules(work)
+// }
 
 // IsFetched will check if we have the ref available, if not it will return
 // false so that Fetch() can do the hard work.
