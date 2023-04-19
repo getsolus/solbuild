@@ -41,7 +41,7 @@ const (
 	ImageCompressedSuffix = ".img.xz"
 
 	// ImageBaseURI is the storage area for base images
-	ImageBaseURI = "https://getsol.us/solbuild"
+	ImageBaseURI = "https://solbuild.getsol.us"
 
 	// ImageRootsDir is where updates are performed on base images
 	ImageRootsDir = "/var/lib/solbuild/roots"
