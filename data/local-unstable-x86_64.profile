@@ -30,4 +30,4 @@ autoindex = true
 
 # Re-add the Solus unstable repo
 [repo.Solus]
-uri = "https://cdn.getsol.us/unstable/eopkg-index.xml.xz"
+uri = "https://cdn.getsol.us/repo/unstable/eopkg-index.xml.xz"
