@@ -20,15 +20,18 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
-	log "github.com/DataDrake/waterlog"
-	curl "github.com/andelf/go-curl"
+	"github.com/cavaliergopher/grab/v3"
 	"github.com/cheggaaa/pb/v3"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
+
+	log "github.com/DataDrake/waterlog"
 )
+
+const progressBarTemplate string = `{{with string . "prefix"}}{{.}} {{end}}{{printf "%25s" (counters .) }} {{bar . }} {{printf "%7s" (percent .) }} {{printf "%14s" (speed . "%s/s" "??/s")}}{{with string . "suffix"}} {{.}}{{end}}`
 
 // A SimpleSource is a tarball or other source for a package
 type SimpleSource struct {
@@ -112,50 +115,40 @@ func (s *SimpleSource) IsFetched() bool {
 	return PathExists(s.GetPath(s.validator))
 }
 
-// download utilises CURL to do all downloads
+// download downloads simple files using go grab
 func (s *SimpleSource) download(destination string) error {
-	hnd := curl.EasyInit()
-	defer hnd.Cleanup()
 
-	hnd.Setopt(curl.OPT_URL, s.URI)
-	hnd.Setopt(curl.OPT_FOLLOWLOCATION, 1)
-
-	out, err := os.Create(destination)
+	req, err := grab.NewRequest(destination, s.URI)
 	if err != nil {
 		return err
 	}
 
-	pbar := pb.New64(0)
+	resp := grab.NewClient().Do(req)
+
+	// Setup our progress bar
+	pbar := pb.Start64(resp.Size())
 	pbar.Set(pb.Bytes, true)
-	pbar.Set("prefix", filepath.Base(destination))
-	pbar.SetMaxWidth(80)
+	pbar.SetTemplateString(progressBarTemplate)
+	defer pbar.Finish()
 
-	writer := func(data []byte, udata interface{}) bool {
-		if _, err := out.Write(data); err != nil {
-			return false
+	// Timer to integrate into pbar (30fps)
+	t := time.NewTicker(32 * time.Millisecond)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-t.C:
+			pbar.SetCurrent(resp.BytesComplete())
+		case <-resp.Done:
+			// Ensure progressbar completes to 100%
+			pbar.SetCurrent(resp.BytesComplete())
+			if err := resp.Err(); err != nil {
+				log.Errorf("Error downloading %s: %v\n", s.URI, err)
+				return err
+			}
+			return nil
 		}
-		return true
 	}
-	progress := func(total, now, utotal, unow float64, udata interface{}) bool {
-		pbar.SetTotal(int64(total))
-		pbar.SetCurrent(int64(now))
-
-		return true
-	}
-
-	hnd.Setopt(curl.OPT_WRITEFUNCTION, writer)
-	hnd.Setopt(curl.OPT_NOPROGRESS, false)
-	hnd.Setopt(curl.OPT_PROGRESSFUNCTION, progress)
-	// Enforce internal 300 second connect timeout in libcurl
-	hnd.Setopt(curl.OPT_CONNECTTIMEOUT, 0)
-	hnd.Setopt(curl.OPT_USERAGENT, fmt.Sprintf("solbuild 1.5.2.2"))
-
-	pbar.Start()
-	defer func() {
-		pbar.Finish()
-	}()
-
-	return hnd.Perform()
 }
 
 // Fetch will download the given source and cache it locally

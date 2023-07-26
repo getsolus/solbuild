@@ -88,7 +88,6 @@ Requirements
  - golang (tested with 1.7.4)
  - `libgit2` (Also require `git` at runtime for submodules)
    - Supported versions 1.5.0
- - `curl` command
 
 Your kernel must support the `overlayfs` filesystem.
 Git is required as `solbuild` supports the `git|` source type of ypkg files. Additionally, `solbuild` will try to generate a package changelog from the git history where the YPKG file is found. This is used within Solus to create a changelog dynamically from the git tags, and automatically marking security updates, etc.
