@@ -25,6 +25,8 @@ import (
 	"github.com/getsolus/solbuild/builder"
 	"os"
 	"strings"
+
+	login "github.com/coreos/go-systemd/v22/login1"
 )
 
 func init() {
@@ -124,6 +126,26 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 			manager.SetTmpfs(manager.Config.EnableTmpfs, sFlags.Memory)
 		}
 	}
+
+	// Set a inhibitor lock to prevent system from accidently going down
+	conn, err := login.New()
+	if err != nil {
+		log.Errorln("org.freedesktop.login1: Failed to initalize dbus connection")
+	}
+	connected := conn.Connected()
+	if connected != true {
+		log.Errorln("org.freedesktop.login1: Not connected to dbus system bus")
+	}
+
+	inhibitMsg := fmt.Sprintf("Build in Progress: %s-%s-%d. Please wait for the build to complete",
+		pkg.Name, pkg.Version, pkg.Release)
+
+	fd, err := conn.Inhibit("shutdown:idle:sleep", "solbuild", inhibitMsg, "block")
+	if err != nil {
+		log.Errorln("org.freedesktop.login1: Failed to send inhibitor lock")
+	}
+	// defer release the inhibitor lock
+	defer fd.Close()
 
 	if err := manager.Build(); err != nil {
 		log.Fatalln("Failed to build packages")

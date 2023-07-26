@@ -8,8 +8,10 @@ require (
 	github.com/DataDrake/waterlog v1.0.5
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/cheggaaa/pb/v3 v3.0.5
+	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/getsolus/libosdev v0.0.0-20181023041421-9ab0f4b463fd
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/libgit2/git2go/v34 v34.0.0
 	github.com/mattn/go-isatty v0.0.17 // indirect
