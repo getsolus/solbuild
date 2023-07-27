@@ -20,13 +20,14 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/cavaliergopher/grab/v3"
-	"github.com/cheggaaa/pb/v3"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/cavaliergopher/grab/v3"
+	"github.com/cheggaaa/pb/v3"
 
 	log "github.com/DataDrake/waterlog"
 )
@@ -121,6 +122,15 @@ func (s *SimpleSource) download(destination string) error {
 	req, err := grab.NewRequest(destination, s.URI)
 	if err != nil {
 		return err
+	}
+
+	// Ensure the checksum matches
+	if !s.legacy {
+		sum, err := hex.DecodeString(s.validator)
+		if err != nil {
+			return err
+		}
+		req.SetChecksum(sha256.New(), sum, false)
 	}
 
 	resp := grab.NewClient().Do(req)
