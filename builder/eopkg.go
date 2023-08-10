@@ -71,12 +71,13 @@ func NewEopkgManager(notif PidNotifier, root string) *EopkgManager {
 // function has to be reusable simply because performing an eopkg upgrade
 // or installing deps, prior to building, could clobber the files.
 func (e *EopkgManager) CopyAssets() error {
-	requiredAssets := map[string]string{
+	assets := map[string]string{
 		"/etc/resolv.conf":      filepath.Join(e.root, "etc/resolv.conf"),
 		"/etc/eopkg/eopkg.conf": filepath.Join(e.root, "etc/eopkg/eopkg.conf"),
+		"/etc/ccache/ccache.conf": filepath.Join(e.root, "etc/ccache/ccache.conf"),
 	}
 
-	for key, value := range requiredAssets {
+	for key, value := range assets {
 		if !PathExists(key) {
 			continue
 		}
