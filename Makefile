@@ -16,7 +16,8 @@ install:
 	install -m 00644 man/*.1 $(DESTDIR)/usr/share/man/man1/.
 	test -d $(DESTDIR)/usr/share/man/man5 || install -Ddm 00755 $(DESTDIR)/usr/share/man/man5
 	install -m 00644 man/*.5 $(DESTDIR)/usr/share/man/man5/.
-
+	test -d $(DESTDIR)/usr/share/bash-completion/completions/ || install -Ddm 00755 $(DESTDIR)/usr/share/bash-completion/completions/
+	install -m 00644 data/completions.bash $(DESTDIR)/usr/share/bash-completion/completions/solbuild
 .PHONY: check
 check:
 	go test ./...
