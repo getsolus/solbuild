@@ -43,7 +43,7 @@ var Update = cmd.Sub{
 
 // UpdateRun carries out the "update" sub-command
 func UpdateRun(r *cmd.Root, c *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
+	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}

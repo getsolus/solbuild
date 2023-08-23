@@ -55,8 +55,10 @@ type IndexArgs struct {
 
 // IndexRun carries out the "index" sub-command
 func IndexRun(r *cmd.Root, s *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
-	sFlags := s.Flags.(*IndexFlags)
+	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
+	sFlags := s.Flags.(*IndexFlags)  //nolint:forcetypeassert // guaranteed by callee.
+	args := s.Args.(*IndexArgs)      //nolint:forcetypeassert // guaranteed by callee.
+
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
@@ -83,7 +85,6 @@ func IndexRun(r *cmd.Root, s *cmd.Sub) {
 		os.Exit(1)
 	}
 	manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
-	args := s.Args.(*IndexArgs)
 	if err := manager.Index(args.Dir); err != nil {
 		log.Fatalln("Index failure")
 	}

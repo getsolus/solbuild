@@ -49,7 +49,9 @@ type ChrootArgs struct {
 
 // ChrootRun carries out the "chroot" sub-command
 func ChrootRun(r *cmd.Root, s *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
+	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
+	sArgs := s.Args.(*ChrootArgs)    //nolint:forcetypeassert // guaranteed by callee.
+
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
@@ -60,7 +62,7 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 
 	// Allow chrooting into an environment for a build recipe for a given file
 	// (Convert from []string to string to allow usage of cli-ng's zero (optional) property.)
-	pkgPath := strings.Join(s.Args.(*ChrootArgs).Path, "")
+	pkgPath := strings.Join(sArgs.Path, "")
 	if len(pkgPath) == 0 {
 		// Otherwise look for a suitable file to chroot into from the current directory
 		pkgPath = FindLikelyArg()

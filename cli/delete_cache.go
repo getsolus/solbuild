@@ -53,8 +53,9 @@ type DeleteCacheFlags struct {
 
 // DeleteCache carries out the "delete-cache" sub-command
 func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
-	sFlags := s.Flags.(*DeleteCacheFlags)
+	rFlags := r.Flags.(*GlobalFlags)      //nolint:forcetypeassert // guaranteed by callee.
+	sFlags := s.Flags.(*DeleteCacheFlags) //nolint:forcetypeassert // guaranteed by callee.
+
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}

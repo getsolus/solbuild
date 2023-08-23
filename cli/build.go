@@ -59,8 +59,10 @@ type BuildArgs struct {
 
 // BuildRun carries out the "build" sub-command
 func BuildRun(r *cmd.Root, s *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
-	sFlags := s.Flags.(*BuildFlags)
+	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
+	sFlags := s.Flags.(*BuildFlags)  //nolint:forcetypeassert // guaranteed by callee.
+	sArgs := s.Args.(*BuildArgs)     //nolint:forcetypeassert // guaranteed by callee.
+
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
@@ -77,7 +79,7 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 
 	// Allow loading a build recipe from an arbitrary location
 	// (Convert from []string to string to allow usage of cli-ng's zero (optional) property.)
-	pkgPath := strings.Join(s.Args.(*BuildArgs).Path, "")
+	pkgPath := strings.Join(sArgs.Path, "")
 	if len(pkgPath) == 0 {
 		// Otherwise look for a suitable file in the current directory
 		pkgPath = FindLikelyArg()

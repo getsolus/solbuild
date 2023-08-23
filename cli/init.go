@@ -53,7 +53,9 @@ type InitFlags struct {
 
 // InitRun carries out the "init" sub-command
 func InitRun(r *cmd.Root, s *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
+	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
+	sFlags := s.Flags.(*InitFlags)   //nolint:forcetypeassert // guaranteed by callee.
+
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
@@ -73,7 +75,6 @@ func InitRun(r *cmd.Root, s *cmd.Sub) {
 		log.Fatalln(err.Error())
 	}
 	doInit(manager)
-	sFlags := s.Flags.(*InitFlags)
 	if sFlags.AutoUpdate {
 		doUpdate(manager)
 	}
