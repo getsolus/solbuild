@@ -336,7 +336,7 @@ func (m *Manager) Build() error {
 	m.overlay.EnableTmpfs = m.Config.EnableTmpfs
 	m.overlay.TmpfsSize = m.Config.TmpfsSize
 	if ValidMemSize(m.overlay.TmpfsSize) != true && m.overlay.EnableTmpfs == true {
-		log.Fatalf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
+		log.Panicf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
 	}
 
 	if err := m.doLock(m.overlay.LockPath, "building"); err != nil {
@@ -419,7 +419,7 @@ func (m *Manager) Index(dir string) error {
 	m.overlay.EnableTmpfs = m.Config.EnableTmpfs
 	m.overlay.TmpfsSize = m.Config.TmpfsSize
 	if ValidMemSize(m.overlay.TmpfsSize) != true && m.overlay.EnableTmpfs == true {
-		log.Fatalf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
+		log.Panicf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
 	}
 
 	if err := m.doLock(m.overlay.LockPath, "indexing"); err != nil {

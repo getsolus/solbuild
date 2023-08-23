@@ -115,11 +115,12 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 
 	// Handle tmpfs and memory size options
 	if sFlags.Tmpfs == true {
-		if sFlags.Memory != "" {
+		switch {
+		case sFlags.Memory != "":
 			manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
-		} else if sFlags.Memory == "" && manager.Config.TmpfsSize != "" {
+		case sFlags.Memory == "" && manager.Config.TmpfsSize != "":
 			manager.SetTmpfs(sFlags.Tmpfs, manager.Config.TmpfsSize)
-		} else {
+		default:
 			log.Fatalln("tmpfs: No memory size specified")
 		}
 	}
@@ -152,7 +153,7 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	defer fd.Close()
 
 	if err := manager.Build(); err != nil {
-		log.Fatalln("Failed to build packages")
+		log.Panic("Failed to build packages")
 	}
 	log.Infoln("Building succeeded")
 }
