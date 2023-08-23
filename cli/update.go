@@ -33,7 +33,7 @@ func init() {
 	cmd.Register(&Update)
 }
 
-// Update updates a solbuild image with the latest available packages
+// Update updates a solbuild image with the latest available packages.
 var Update = cmd.Sub{
 	Name:  "update",
 	Alias: "up",
@@ -41,7 +41,7 @@ var Update = cmd.Sub{
 	Run:   UpdateRun,
 }
 
-// UpdateRun carries out the "update" sub-command
+// UpdateRun carries out the "update" sub-command.
 func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
 	if rFlags.Debug {

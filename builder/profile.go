@@ -45,10 +45,10 @@ type Profile struct {
 	Repos       map[string]*Repo `toml:"repo"`         // Allow defining custom repos
 }
 
-// ProfileSuffix is the fixed extension for solbuild profile files
+// ProfileSuffix is the fixed extension for solbuild profile files.
 var ProfileSuffix = ".profile"
 
-// NewProfile will attempt to load the named profile from the system paths
+// NewProfile will attempt to load the named profile from the system paths.
 func NewProfile(name string) (*Profile, error) {
 	for _, p := range ConfigPaths {
 		fp := filepath.Join(p, fmt.Sprintf("%s%s", name, ProfileSuffix))
@@ -60,7 +60,7 @@ func NewProfile(name string) (*Profile, error) {
 	return nil, ErrInvalidProfile
 }
 
-// GetAllProfiles will locate all available profiles for solbuild
+// GetAllProfiles will locate all available profiles for solbuild.
 func GetAllProfiles() (map[string]*Profile, error) {
 	ret := make(map[string]*Profile)
 
@@ -80,7 +80,7 @@ func GetAllProfiles() (map[string]*Profile, error) {
 	return ret, nil
 }
 
-// NewProfileFromPath will attempt to load a profile from the given file name
+// NewProfileFromPath will attempt to load a profile from the given file name.
 func NewProfileFromPath(path string) (*Profile, error) {
 	basename := filepath.Base(path)
 	if !strings.HasSuffix(basename, ProfileSuffix) {

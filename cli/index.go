@@ -33,7 +33,7 @@ func init() {
 	cmd.Register(&Index)
 }
 
-// Index generates index files for a local repository
+// Index generates index files for a local repository.
 var Index = cmd.Sub{
 	Name:  "index",
 	Short: "Create repo index in the given directory",
@@ -42,18 +42,18 @@ var Index = cmd.Sub{
 	Run:   IndexRun,
 }
 
-// IndexFlags are flags for the "index" sub-command
+// IndexFlags are flags for the "index" sub-command.
 type IndexFlags struct {
 	Tmpfs  bool   `short:"t" long:"tmpfs"  desc:"Enable building in a tmpfs"`
 	Memory string `short:"m" long:"memory" desc:"Set the tmpfs size to use"`
 }
 
-// IndexArgs are args for the "index" sub-command
+// IndexArgs are args for the "index" sub-command.
 type IndexArgs struct {
 	Dir string `desc:"Output directory the generated index files"`
 }
 
-// IndexRun carries out the "index" sub-command
+// IndexRun carries out the "index" sub-command.
 func IndexRun(r *cmd.Root, s *cmd.Sub) {
 	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
 	sFlags := s.Flags.(*IndexFlags)  //nolint:forcetypeassert // guaranteed by callee.

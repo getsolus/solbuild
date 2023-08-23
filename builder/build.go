@@ -26,7 +26,7 @@ import (
 	"github.com/getsolus/libosdev/disk"
 )
 
-// CreateDirs creates any directories we may need later on
+// CreateDirs creates any directories we may need later on.
 func (p *Package) CreateDirs(o *Overlay) error {
 	dirs := []string{
 		p.GetWorkDir(o),
@@ -69,7 +69,7 @@ func (p *Package) CreateDirs(o *Overlay) error {
 }
 
 // FetchSources will attempt to fetch the sources from the network
-// if necessary
+// if necessary.
 func (p *Package) FetchSources(o *Overlay) error {
 	for _, source := range p.Sources {
 		// Already fetched, skip it
@@ -127,7 +127,7 @@ func (p *Package) BindSources(o *Overlay) error {
 	return nil
 }
 
-// BindCcache will make the ccache directory available to the build
+// BindCcache will make the ccache directory available to the build.
 func (p *Package) BindCcache(o *Overlay) error {
 	mountMan := disk.GetMountManager()
 	ccacheDir := p.GetCcacheDir(o)
@@ -149,7 +149,7 @@ func (p *Package) BindCcache(o *Overlay) error {
 	return nil
 }
 
-// BindSccache will make the sccache directory available to the build
+// BindSccache will make the sccache directory available to the build.
 func (p *Package) BindSccache(o *Overlay) error {
 	mountMan := disk.GetMountManager()
 	sccacheDir := p.GetSccacheDir(o)
@@ -177,7 +177,7 @@ func (p *Package) GetWorkDir(o *Overlay) string {
 	return filepath.Join(o.MountPoint, p.GetWorkDirInternal()[1:])
 }
 
-// GetWorkDirInternal returns the internal chroot path for the work directory
+// GetWorkDirInternal returns the internal chroot path for the work directory.
 func (p *Package) GetWorkDirInternal() string {
 	if p.Type == PackageTypeXML {
 		return "/WORK"
@@ -185,7 +185,7 @@ func (p *Package) GetWorkDirInternal() string {
 	return filepath.Join(BuildUserHome, "work")
 }
 
-// GetSourceDir will return the externally visible work directory
+// GetSourceDir will return the externally visible work directory.
 func (p *Package) GetSourceDir(o *Overlay) string {
 	return filepath.Join(o.MountPoint, p.GetSourceDirInternal()[1:])
 }
@@ -199,13 +199,13 @@ func (p *Package) GetSourceDirInternal() string {
 	return filepath.Join(BuildUserHome, "YPKG", "sources")
 }
 
-// GetCcacheDir will return the externally visible ccache directory
+// GetCcacheDir will return the externally visible ccache directory.
 func (p *Package) GetCcacheDir(o *Overlay) string {
 	return filepath.Join(o.MountPoint, p.GetCcacheDirInternal()[1:])
 }
 
 // GetCcacheDirInternal will return the chroot-internal ccache directory
-// for the given build type
+// for the given build type.
 func (p *Package) GetCcacheDirInternal() string {
 	if p.Type == PackageTypeXML {
 		return "/root/.ccache"
@@ -213,13 +213,13 @@ func (p *Package) GetCcacheDirInternal() string {
 	return filepath.Join(BuildUserHome, ".ccache")
 }
 
-// GetSccacheDir will return the externally visible sccache directory
+// GetSccacheDir will return the externally visible sccache directory.
 func (p *Package) GetSccacheDir(o *Overlay) string {
 	return filepath.Join(o.MountPoint, p.GetSccacheDirInternal()[1:])
 }
 
 // GetSccacheDirInternal will return the chroot-internal sccache
-// directory for the given build type
+// directory for the given build type.
 func (p *Package) GetSccacheDirInternal() string {
 	if p.Type == PackageTypeXML {
 		return "/root/.cache/sccache"
@@ -227,7 +227,7 @@ func (p *Package) GetSccacheDirInternal() string {
 	return filepath.Join(BuildUserHome, ".cache", "sccache")
 }
 
-// CopyAssets will copy all of the required assets into the builder root
+// CopyAssets will copy all of the required assets into the builder root.
 func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 	baseDir := filepath.Dir(p.Path)
 
@@ -317,7 +317,7 @@ func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager,
 }
 
 // BuildYpkg will take care of the ypkg specific build process and is called only
-// by Build()
+// by Build().
 func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager, overlay *Overlay, h *PackageHistory) error {
 	if err := p.PrepYpkg(notif, usr, pman, overlay, h); err != nil {
 		return err
@@ -394,7 +394,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 }
 
 // BuildXML will take care of building the legacy pspec.xml format, and is called only
-// by Build()
+// by Build().
 func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overlay) error {
 	// Just straight up build it with eopkg
 	log.Warnln("Full sandboxing is not possible with legacy format")
@@ -440,7 +440,7 @@ func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overl
 	return nil
 }
 
-// GenerateABIReport will take care of generating the abireport using abi-wizard
+// GenerateABIReport will take care of generating the abireport using abi-wizard.
 func (p *Package) GenerateABIReport(notif PidNotifier, overlay *Overlay) error {
 	wdir := p.GetWorkDirInternal()
 	cmd := fmt.Sprintf("cd %s; abi-wizard %s/YPKG/root/%s/install", wdir, BuildUserHome, p.Name)
@@ -519,7 +519,7 @@ func (p *Package) CollectAssets(overlay *Overlay, usr *UserInfo, manifestTarget 
 	return nil
 }
 
-// Build will attempt to build the package in the overlayfs system
+// Build will attempt to build the package in the overlayfs system.
 func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Profile, pman *EopkgManager, overlay *Overlay, manifestTarget string) error {
 	log.Debugf("Building package %s %s %d %s %s\n", p.Name, p.Version, p.Release, p.Type, overlay.Back.Name)
 

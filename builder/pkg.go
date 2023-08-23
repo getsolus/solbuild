@@ -29,17 +29,17 @@ import (
 	"github.com/getsolus/solbuild/builder/source"
 )
 
-// PackageType is simply the type of package we're building, i.e. xml / pspec
+// PackageType is simply the type of package we're building, i.e. xml / pspec.
 type PackageType string
 
 const (
 	// PackageTypeXML is the legacy package format, to be removed with sol introduction.
 	PackageTypeXML PackageType = "legacy"
 
-	// PackageTypeYpkg is the native build format of Solus, the package.yml format
+	// PackageTypeYpkg is the native build format of Solus, the package.yml format.
 	PackageTypeYpkg PackageType = "ypkg"
 
-	// PackageTypeIndex is a faux type to enable indexing
+	// PackageTypeIndex is a faux type to enable indexing.
 	PackageTypeIndex PackageType = "index"
 )
 
@@ -53,7 +53,7 @@ var IndexPackage = Package{
 	Path:    "",
 }
 
-// Package is the main item we deal with, avoiding the internals
+// Package is the main item we deal with, avoiding the internals.
 type Package struct {
 	Name       string          // Name of the package
 	Version    string          // Version of this package
@@ -64,7 +64,7 @@ type Package struct {
 	CanNetwork bool            // Only applicable to ypkg builds
 }
 
-// YmlPackage is a parsed ypkg build file
+// YmlPackage is a parsed ypkg build file.
 type YmlPackage struct {
 	Name       string
 	Version    string
@@ -73,7 +73,7 @@ type YmlPackage struct {
 	Source     []map[string]string
 }
 
-// XMLUpdate represents an update in the package history
+// XMLUpdate represents an update in the package history.
 type XMLUpdate struct {
 	Release int `xml:"release,attr"`
 	Date    string
@@ -83,21 +83,21 @@ type XMLUpdate struct {
 	Email   string
 }
 
-// XMLArchive is an <Archive> line in Source section
+// XMLArchive is an <Archive> line in Source section.
 type XMLArchive struct {
 	Type    string `xml:"type,attr"`
 	SHA1Sum string `xml:"sha1sum,attr"`
 	URI     string `xml:",chardata"`
 }
 
-// XMLSource is the actual source info for each pspec.xml
+// XMLSource is the actual source info for each pspec.xml.
 type XMLSource struct {
 	Homepage string
 	Name     string
 	Archive  []XMLArchive
 }
 
-// XMLPackage contains all of the pspec.xml metadata
+// XMLPackage contains all of the pspec.xml metadata.
 type XMLPackage struct {
 	Name    string
 	Source  XMLSource
@@ -113,7 +113,7 @@ func NewPackage(path string) (*Package, error) {
 	return NewYmlPackage(path)
 }
 
-// NewXMLPackage will attempt to parse the pspec.xml file @ path
+// NewXMLPackage will attempt to parse the pspec.xml file @ path.
 func NewXMLPackage(path string) (*Package, error) {
 	var by []byte
 	var err error
@@ -167,7 +167,7 @@ func NewXMLPackage(path string) (*Package, error) {
 	return ret, nil
 }
 
-// NewYmlPackage will attempt to parse the ypkg package.yml file @ path
+// NewYmlPackage will attempt to parse the ypkg package.yml file @ path.
 func NewYmlPackage(path string) (*Package, error) {
 	var by []byte
 	var err error
@@ -191,7 +191,7 @@ func NewYmlPackage(path string) (*Package, error) {
 	return ret, nil
 }
 
-// NewYmlPackageFromBytes will attempt to parse the ypkg package.yml in memory
+// NewYmlPackageFromBytes will attempt to parse the ypkg package.yml in memory.
 func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 	var err error
 

@@ -45,7 +45,7 @@ type EopkgRepo struct {
 }
 
 // EopkgManager is our own very shorted version of libosdev EopkgManager, to
-// enable extremely simple operations
+// enable extremely simple operations.
 type EopkgManager struct {
 	dbusActive  bool
 	root        string
@@ -56,7 +56,7 @@ type EopkgManager struct {
 	notif PidNotifier
 }
 
-// NewEopkgManager will return a new eopkg manager
+// NewEopkgManager will return a new eopkg manager.
 func NewEopkgManager(notif PidNotifier, root string) *EopkgManager {
 	return &EopkgManager{
 		dbusActive:  false,
@@ -97,7 +97,7 @@ func (e *EopkgManager) CopyAssets() error {
 	return nil
 }
 
-// Init will do some basic preparation of the chroot
+// Init will do some basic preparation of the chroot.
 func (e *EopkgManager) Init() error {
 	// Ensure dbus pid is gone
 	if PathExists(e.dbusPid) {
@@ -124,7 +124,7 @@ func (e *EopkgManager) Init() error {
 	return disk.GetMountManager().BindMount(e.cacheSource, e.cacheTarget)
 }
 
-// StartDBUS will bring up dbus within the chroot
+// StartDBUS will bring up dbus within the chroot.
 func (e *EopkgManager) StartDBUS() error {
 	if e.dbusActive {
 		return nil
@@ -145,7 +145,7 @@ func (e *EopkgManager) StartDBUS() error {
 	return nil
 }
 
-// StopDBUS will tear down dbus
+// StopDBUS will tear down dbus.
 func (e *EopkgManager) StopDBUS() error {
 	// No sense killing dbus twice
 	if !e.dbusActive {
@@ -172,13 +172,13 @@ func (e *EopkgManager) StopDBUS() error {
 	return commands.ExecStdoutArgs("kill", []string{"-9", pid})
 }
 
-// Cleanup will take care of any work we've already done before
+// Cleanup will take care of any work we've already done before.
 func (e *EopkgManager) Cleanup() {
 	e.StopDBUS()
 	disk.GetMountManager().Unmount(e.cacheTarget)
 }
 
-// Upgrade will perform an eopkg upgrade inside the chroot
+// Upgrade will perform an eopkg upgrade inside the chroot.
 func (e *EopkgManager) Upgrade() error {
 	// Certain requirements may not be in system.base, but are required for
 	// proper containerized functionality.
@@ -195,7 +195,7 @@ func (e *EopkgManager) Upgrade() error {
 	return err
 }
 
-// InstallComponent will install the named component inside the chroot
+// InstallComponent will install the named component inside the chroot.
 func (e *EopkgManager) InstallComponent(comp string) error {
 	err := ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg install -c %v -y", comp)))
 	e.notif.SetActivePID(0)
@@ -249,7 +249,7 @@ func EnsureEopkgLayout(root string) error {
 	return nil
 }
 
-// Read the given plaintext URI file to find the target
+// Read the given plaintext URI file to find the target.
 func readURIFile(path string) (string, error) {
 	fi, err := os.Open(path)
 	if err != nil {
@@ -263,7 +263,7 @@ func readURIFile(path string) (string, error) {
 	return string(contents), nil
 }
 
-// GetRepos will attempt to discover all the repos on the target filesystem
+// GetRepos will attempt to discover all the repos on the target filesystem.
 func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 	globPat := filepath.Join(e.root, "var", "lib", "eopkg", "index", "*", "uri")
 	var repoFiles []string
@@ -293,13 +293,13 @@ func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 	return repos, nil
 }
 
-// AddRepo will attempt to add a repo to the filesystem
+// AddRepo will attempt to add a repo to the filesystem.
 func (e *EopkgManager) AddRepo(id, source string) error {
 	e.notif.SetActivePID(0)
 	return ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg add-repo '%s' '%s'", id, source)))
 }
 
-// RemoveRepo will attempt to remove a named repo from the filesystem
+// RemoveRepo will attempt to remove a named repo from the filesystem.
 func (e *EopkgManager) RemoveRepo(id string) error {
 	e.notif.SetActivePID(0)
 	return ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg remove-repo '%s'", id)))

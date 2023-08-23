@@ -23,7 +23,7 @@ import (
 	log "github.com/DataDrake/waterlog"
 )
 
-// ConfigureNamespace will unshare() context, entering a new namespace
+// ConfigureNamespace will unshare() context, entering a new namespace.
 func ConfigureNamespace() error {
 	log.Debugln("Configuring container namespace")
 	if err := syscall.Unshare(syscall.CLONE_NEWNS | syscall.CLONE_NEWIPC); err != nil {
@@ -32,7 +32,7 @@ func ConfigureNamespace() error {
 	return nil
 }
 
-// DropNetworking will unshare() the context networking capabilities
+// DropNetworking will unshare() the context networking capabilities.
 func DropNetworking() error {
 	log.Debugln("Dropping container networking")
 	if err := syscall.Unshare(syscall.CLONE_NEWNET | syscall.CLONE_NEWUTS); err != nil {

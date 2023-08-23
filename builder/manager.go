@@ -32,25 +32,25 @@ import (
 
 var (
 	// ErrManagerInitialised is returned when the library user attempts to set
-	// a core part of the Manager after it's already been initialised
+	// a core part of the Manager after it's already been initialised.
 	ErrManagerInitialised = errors.New("The manager has already been initialised")
 
-	// ErrNoPackage is returned when we've got no package
+	// ErrNoPackage is returned when we've got no package.
 	ErrNoPackage = errors.New("You must first set a package to build it")
 
 	// ErrNotImplemented is returned as a placeholder when developing functionality.
 	ErrNotImplemented = errors.New("Function not yet implemented")
 
-	// ErrProfileNotInstalled is returned when a profile is not yet installed
+	// ErrProfileNotInstalled is returned when a profile is not yet installed.
 	ErrProfileNotInstalled = errors.New("Profile is not installed")
 
-	// ErrInvalidProfile is returned when there is an invalid profile
+	// ErrInvalidProfile is returned when there is an invalid profile.
 	ErrInvalidProfile = errors.New("Invalid profile")
 
-	// ErrInvalidImage is returned when the backing image is unknown
+	// ErrInvalidImage is returned when the backing image is unknown.
 	ErrInvalidImage = errors.New("Invalid image")
 
-	// ErrInterrupted is returned when the build is interrupted
+	// ErrInterrupted is returned when the build is interrupted.
 	ErrInterrupted = errors.New("The operation was cancelled by the user")
 )
 
@@ -82,7 +82,7 @@ type Manager struct {
 	activePID int // Active PID
 }
 
-// NewManager will return a newly initialised manager instance
+// NewManager will return a newly initialised manager instance.
 func NewManager() (*Manager, error) {
 	// First things first, setup the namespace
 	if err := ConfigureNamespace(); err != nil {
@@ -108,7 +108,7 @@ func NewManager() (*Manager, error) {
 	return man, nil
 }
 
-// SetActivePID will set the active task PID
+// SetActivePID will set the active task PID.
 func (m *Manager) SetActivePID(pid int) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -116,7 +116,7 @@ func (m *Manager) SetActivePID(pid int) {
 }
 
 // SetManifestTarget will set the manifest target to be used
-// An empty target (default) means no manifest
+// An empty target (default) means no manifest.
 func (m *Manager) SetManifestTarget(target string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -156,7 +156,7 @@ func (m *Manager) SetProfile(profile string) error {
 	return nil
 }
 
-// GetProfile will return the profile associated with this builder
+// GetProfile will return the profile associated with this builder.
 func (m *Manager) GetProfile() *Profile {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -197,7 +197,7 @@ func (m *Manager) SetPackage(pkg *Package) error {
 }
 
 // IsCancelled will determine if the build has been cancelled, this will result
-// in a lot of locking between all operations
+// in a lot of locking between all operations.
 func (m *Manager) IsCancelled() bool {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -278,7 +278,7 @@ func (m *Manager) Cleanup() {
 	}
 }
 
-// doLock will handle the relevant locking operation for the given path
+// doLock will handle the relevant locking operation for the given path.
 func (m *Manager) doLock(path, opType string) error {
 	// Handle file locking
 	lock, err := NewLockFile(path)
@@ -346,7 +346,7 @@ func (m *Manager) Build() error {
 	return m.pkg.Build(m, m.history, m.GetProfile(), m.pkgManager, m.overlay, m.manifestTarget)
 }
 
-// Chroot will enter the build environment to allow users to introspect it
+// Chroot will enter the build environment to allow users to introspect it.
 func (m *Manager) Chroot() error {
 	if m.IsCancelled() {
 		return ErrInterrupted
@@ -370,7 +370,7 @@ func (m *Manager) Chroot() error {
 	return m.pkg.Chroot(m, m.pkgManager, m.overlay)
 }
 
-// Update will attempt to update the base image
+// Update will attempt to update the base image.
 func (m *Manager) Update() error {
 	if m.IsCancelled() {
 		return ErrInterrupted
@@ -398,7 +398,7 @@ func (m *Manager) Update() error {
 	return m.image.Update(m, m.pkgManager)
 }
 
-// Index will attempt to index the given directory for eopkgs
+// Index will attempt to index the given directory for eopkgs.
 func (m *Manager) Index(dir string) error {
 	if m.IsCancelled() {
 		return ErrInterrupted
@@ -429,7 +429,7 @@ func (m *Manager) Index(dir string) error {
 	return m.pkg.Index(m, dir, m.overlay)
 }
 
-// SetTmpfs sets the manager tmpfs option
+// SetTmpfs sets the manager tmpfs option.
 func (m *Manager) SetTmpfs(enable bool, size string) {
 	if m.IsCancelled() {
 		return

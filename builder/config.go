@@ -25,7 +25,7 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-// Config defines the global defaults for solbuild
+// Config defines the global defaults for solbuild.
 type Config struct {
 	DefaultProfile string `toml:"default_profile"`  // Name of the default profile to use
 	EnableTmpfs    bool   `toml:"enable_tmpfs"`     // Whether to enable tmpfs builds or
@@ -34,13 +34,13 @@ type Config struct {
 }
 
 var (
-	// ConfigPaths is a set of locations for valid solbuild configuration files
+	// ConfigPaths is a set of locations for valid solbuild configuration files.
 	ConfigPaths = []string{
 		"/etc/solbuild",
 		"/usr/share/solbuild",
 	}
 
-	// ConfigSuffix is the suffix a file must have to be glob loaded by solbuild
+	// ConfigSuffix is the suffix a file must have to be glob loaded by solbuild.
 	ConfigSuffix = ".conf"
 )
 

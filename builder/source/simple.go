@@ -33,7 +33,7 @@ import (
 
 const progressBarTemplate string = `{{with string . "prefix"}}{{.}} {{end}}{{printf "%25s" (counters .) }} {{bar . }} {{printf "%7s" (percent .) }} {{printf "%14s" (speed . "%s/s" "??/s")}}{{with string . "suffix"}} {{.}}{{end}}`
 
-// A SimpleSource is a tarball or other source for a package
+// A SimpleSource is a tarball or other source for a package.
 type SimpleSource struct {
 	URI  string
 	File string // Basename of the file
@@ -44,7 +44,7 @@ type SimpleSource struct {
 	url *url.URL
 }
 
-// NewSimple will create a new source instance
+// NewSimple will create a new source instance.
 func NewSimple(uri, validator string, legacy bool) (*SimpleSource, error) {
 	// Ensure the URI is actually valid.
 	uriObj, err := url.Parse(uri)
@@ -81,12 +81,12 @@ func (s *SimpleSource) GetBindConfiguration(rootfs string) BindConfiguration {
 	}
 }
 
-// GetPath gets the path on the filesystem of the source
+// GetPath gets the path on the filesystem of the source.
 func (s *SimpleSource) GetPath(hash string) string {
 	return filepath.Join(SourceDir, hash, s.File)
 }
 
-// GetSHA1Sum will return the sha1sum for the given path
+// GetSHA1Sum will return the sha1sum for the given path.
 func (s *SimpleSource) GetSHA1Sum(path string) (string, error) {
 	inp, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -98,7 +98,7 @@ func (s *SimpleSource) GetSHA1Sum(path string) (string, error) {
 	return hex.EncodeToString(sum), nil
 }
 
-// GetSHA256Sum will return the sha1sum for the given path
+// GetSHA256Sum will return the sha1sum for the given path.
 func (s *SimpleSource) GetSHA256Sum(path string) (string, error) {
 	inp, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -110,12 +110,12 @@ func (s *SimpleSource) GetSHA256Sum(path string) (string, error) {
 	return hex.EncodeToString(sum), nil
 }
 
-// IsFetched will determine if the source is already present
+// IsFetched will determine if the source is already present.
 func (s *SimpleSource) IsFetched() bool {
 	return PathExists(s.GetPath(s.validator))
 }
 
-// download downloads simple files using go grab
+// download downloads simple files using go grab.
 func (s *SimpleSource) download(destination string) error {
 	req, err := grab.NewRequest(destination, s.URI)
 	if err != nil {
@@ -159,7 +159,7 @@ func (s *SimpleSource) download(destination string) error {
 	}
 }
 
-// Fetch will download the given source and cache it locally
+// Fetch will download the given source and cache it locally.
 func (s *SimpleSource) Fetch() error {
 	// Now go and download it
 	log.Debugf("Downloading source %s\n", s.URI)

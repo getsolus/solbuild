@@ -32,7 +32,7 @@ type MmapFile struct {
 	m    bool
 }
 
-// MapFile will attempt to mmap() the input file
+// MapFile will attempt to mmap() the input file.
 func MapFile(path string) (*MmapFile, error) {
 	var err error
 	ret := &MmapFile{}
@@ -55,7 +55,7 @@ func MapFile(path string) (*MmapFile, error) {
 	return ret, nil
 }
 
-// Close will close the previously mmapped filed
+// Close will close the previously mmapped filed.
 func (m *MmapFile) Close() error {
 	var err error
 	if m.f == nil {

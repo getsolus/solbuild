@@ -34,14 +34,14 @@ import (
 	"github.com/getsolus/libosdev/disk"
 )
 
-// ChrootEnvironment is the env used by ChrootExec calls
+// ChrootEnvironment is the env used by ChrootExec calls.
 var ChrootEnvironment []string
 
 func init() {
 	ChrootEnvironment = nil
 }
 
-// PidNotifier provides a simple way to set the PID on a blocking process
+// PidNotifier provides a simple way to set the PID on a blocking process.
 type PidNotifier interface {
 	SetActivePID(int)
 }
@@ -67,7 +67,7 @@ func (p *Package) ActivateRoot(overlay *Overlay) error {
 	return overlay.MountVFS()
 }
 
-// DeactivateRoot will tear down the previously activated root
+// DeactivateRoot will tear down the previously activated root.
 func (p *Package) DeactivateRoot(overlay *Overlay) {
 	MurderDeathKill(overlay.MountPoint)
 	mountMan := disk.GetMountManager()
@@ -135,7 +135,7 @@ func TouchFile(path string) error {
 }
 
 // SaneEnvironment will generate a clean environment for the chroot'd
-// processes to use
+// processes to use.
 func SaneEnvironment(username, home string) []string {
 	environment := []string{
 		"PATH=/usr/bin:/usr/sbin:/bin/:/sbin",
@@ -175,7 +175,7 @@ func SaneEnvironment(username, home string) []string {
 }
 
 // ChrootExec is a simple wrapper to return a correctly set up chroot command,
-// so that we can store the PID, for long running tasks
+// so that we can store the PID, for long running tasks.
 func ChrootExec(notif PidNotifier, dir, command string) error {
 	args := []string{dir, "/bin/sh", "-c", command}
 	c := exec.Command("chroot", args...)
@@ -193,7 +193,7 @@ func ChrootExec(notif PidNotifier, dir, command string) error {
 }
 
 // ChrootExecStdin is almost identical to ChrootExec, except it permits a stdin
-// to be associated with the command
+// to be associated with the command.
 func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 	args := []string{dir, "/bin/sh", "-c", command}
 	c := exec.Command("chroot", args...)
@@ -211,7 +211,7 @@ func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 
 // AddBuildUser will attempt to add the solbuild user & group if they've not
 // previously been added
-// Note this should be changed when Solus goes fully stateless for /etc/passwd
+// Note this should be changed when Solus goes fully stateless for /etc/passwd.
 func AddBuildUser(rootfs string) error {
 	pwd, err := NewPasswd(filepath.Join(rootfs, "etc"))
 	if err != nil {
@@ -234,7 +234,7 @@ func AddBuildUser(rootfs string) error {
 	return nil
 }
 
-// FileSha256sum is a quick wrapper to grab the sha256sum for the given file
+// FileSha256sum is a quick wrapper to grab the sha256sum for the given file.
 func FileSha256sum(path string) (string, error) {
 	mfile, err := MapFile(path)
 	if err != nil {
@@ -248,7 +248,7 @@ func FileSha256sum(path string) (string, error) {
 }
 
 // ValidMemSize will determine if a string is a valid memory size,
-// it must start with a number and end with a valid unit size
+// it must start with a number and end with a valid unit size.
 func ValidMemSize(s string) bool {
 	if s == "" {
 		return false

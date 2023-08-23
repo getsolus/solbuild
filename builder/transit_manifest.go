@@ -27,11 +27,11 @@ import (
 )
 
 const (
-	// TransitManifestSuffix is the extension that a valid transit manifest must have
+	// TransitManifestSuffix is the extension that a valid transit manifest must have.
 	TransitManifestSuffix = ".tram"
 )
 
-// ErrIllegalUpload is returned when someone is a spanner and tries uploading an unsupported file
+// ErrIllegalUpload is returned when someone is a spanner and tries uploading an unsupported file.
 var ErrIllegalUpload = errors.New("The manifest file is NOT an eopkg")
 
 // A TransitManifestHeader is required in all .tram uploads to ensure that both
@@ -78,7 +78,7 @@ func NewTransitManifest(target string) *TransitManifest {
 	}
 }
 
-// AddFile will attempt to add a file to the payload for this package
+// AddFile will attempt to add a file to the payload for this package.
 func (t *TransitManifest) AddFile(path string) error {
 	if !strings.HasSuffix(path, ".eopkg") {
 		return ErrIllegalUpload
@@ -95,7 +95,7 @@ func (t *TransitManifest) AddFile(path string) error {
 	return nil
 }
 
-// Write will dump the manifest to the given file path
+// Write will dump the manifest to the given file path.
 func (t *TransitManifest) Write(path string) error {
 	blob := bytes.Buffer{}
 	tmenc := toml.NewEncoder(&blob)

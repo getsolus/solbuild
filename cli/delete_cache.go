@@ -35,7 +35,7 @@ func init() {
 	cmd.Register(&DeleteCache)
 }
 
-// DeleteCache cleans up the solbuild caches to free up disk space
+// DeleteCache cleans up the solbuild caches to free up disk space.
 var DeleteCache = cmd.Sub{
 	Name:  "delete-cache",
 	Alias: "dc",
@@ -44,14 +44,14 @@ var DeleteCache = cmd.Sub{
 	Run:   DeleteCacheRun,
 }
 
-// DeleteCacheFlags are the flags for the "delete-cache" sub-command
+// DeleteCacheFlags are the flags for the "delete-cache" sub-command.
 type DeleteCacheFlags struct {
 	All    bool `short:"a" long:"all"    desc:"Additionally delete (s)ccache, packages and sources"`
 	Images bool `short:"i" long:"images" desc:"Additionally delete solbuild images"`
 	Sizes  bool `short:"s" long:"sizes"  desc:"Show disk usage of the caches"`
 }
 
-// DeleteCache carries out the "delete-cache" sub-command
+// DeleteCacheRun carries out the "delete-cache" sub-command.
 func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	rFlags := r.Flags.(*GlobalFlags)      //nolint:forcetypeassert // guaranteed by callee.
 	sFlags := s.Flags.(*DeleteCacheFlags) //nolint:forcetypeassert // guaranteed by callee.
@@ -131,7 +131,7 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	}
 }
 
-// getDirSize returns the disk usage of a directory
+// getDirSize returns the disk usage of a directory.
 func getDirSize(path string) (int64, error) {
 	var totalSize int64
 
@@ -155,7 +155,7 @@ func getDirSize(path string) (int64, error) {
 	return totalSize, err
 }
 
-// humanReadableFormat pretty prints a float64 input into a human friendly string in IEC format
+// humanReadableFormat pretty prints a float64 input into a human friendly string in IEC format.
 func humanReadableFormat(i float64) string {
 	if i <= 0 {
 		return fmt.Sprintf("0.0 B")

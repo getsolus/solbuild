@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	// SolbuildVersion is the current public version of solbuild
+	// SolbuildVersion is the current public version of solbuild.
 	SolbuildVersion = "1.5.3.0"
 )
 
@@ -31,14 +31,14 @@ func init() {
 	cmd.Register(&Version)
 }
 
-// Version prints out the version of this executable
+// Version prints out the version of this executable.
 var Version = cmd.Sub{
 	Name:  "version",
 	Short: "Print the solbuild version and exit",
 	Run:   VersionRun,
 }
 
-// VersionRun carries out the "version" sub-command
+// VersionRun carries out the "version" sub-command.
 //
 //nolint:forbidigo // the point of this function is to print the version
 func VersionRun(_ *cmd.Root, _ *cmd.Sub) {

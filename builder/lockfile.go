@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	// ErrDeadLockFile is returned when an dead lockfile was encountered
+	// ErrDeadLockFile is returned when an dead lockfile was encountered.
 	ErrDeadLockFile = errors.New("Dead lockfile")
 
 	// ErrOwnedLockFile is returned when the lockfile is already owned by
@@ -34,7 +34,7 @@ var (
 	ErrOwnedLockFile = errors.New("File is locked")
 )
 
-// A LockFile encapsulates locking functionality
+// A LockFile encapsulates locking functionality.
 type LockFile struct {
 	path      string        // Path of the lockfile
 	owningPID int           // Process ID of the lockfile owner
@@ -44,7 +44,7 @@ type LockFile struct {
 	owner     bool          // Whether we're the owner..
 }
 
-// NewLockFile will return a new lockfile for the given path
+// NewLockFile will return a new lockfile for the given path.
 func NewLockFile(path string) (*LockFile, error) {
 	lock := &LockFile{
 		path:      path,
@@ -74,12 +74,12 @@ func NewLockFile(path string) (*LockFile, error) {
 	return lock, nil
 }
 
-// GetOwnerPID will return the owner PID, if it exists
+// GetOwnerPID will return the owner PID, if it exists.
 func (l *LockFile) GetOwnerPID() int {
 	return l.owningPID
 }
 
-// GetOwnerProcess will return the executable name if possible
+// GetOwnerProcess will return the executable name if possible.
 func (l *LockFile) GetOwnerProcess() string {
 	fp := fmt.Sprintf("/proc/%d/exe", l.owningPID)
 	str, err := filepath.EvalSymlinks(fp)
@@ -89,7 +89,7 @@ func (l *LockFile) GetOwnerProcess() string {
 	return str
 }
 
-// Lock will attempt to lock the file, or return an error if this fails
+// Lock will attempt to lock the file, or return an error if this fails.
 func (l *LockFile) Lock() error {
 	pid, err := l.readPID()
 
@@ -127,7 +127,7 @@ func (l *LockFile) Lock() error {
 	return l.writePID()
 }
 
-// Unlock will attempt to unlock the file, or return an error if this fails
+// Unlock will attempt to unlock the file, or return an error if this fails.
 func (l *LockFile) Unlock() error {
 	if l.fd == nil || !l.owner {
 		return errors.New("cannot unlock that which we don't own")
@@ -136,7 +136,7 @@ func (l *LockFile) Unlock() error {
 	return syscall.Flock(int(l.fd.Fd()), syscall.LOCK_UN)
 }
 
-// readPID is a simple utility to extract the PID from a file
+// readPID is a simple utility to extract the PID from a file.
 func (l *LockFile) readPID() (int, error) {
 	l.conlock.RLock()
 	defer l.conlock.RUnlock()
@@ -161,7 +161,7 @@ func (l *LockFile) readPID() (int, error) {
 	return pid, nil
 }
 
-// writePID will store our PID in the lockfile
+// writePID will store our PID in the lockfile.
 func (l *LockFile) writePID() error {
 	if l.fd == nil {
 		panic(errors.New("cannot write PID for no file"))
@@ -174,7 +174,7 @@ func (l *LockFile) writePID() error {
 	return l.fd.Sync()
 }
 
-// Clean will dispose of the lock file and hopefully the lockfile itself
+// Clean will dispose of the lock file and hopefully the lockfile itself.
 func (l *LockFile) Clean() error {
 	l.conlock.Lock()
 	defer l.conlock.Unlock()

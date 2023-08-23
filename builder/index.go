@@ -27,14 +27,14 @@ import (
 )
 
 var (
-	// ErrCannotContinue is a stock error return
+	// ErrCannotContinue is a stock error return.
 	ErrCannotContinue = errors.New("Index cannot continue")
 
-	// IndexBindTarget is where we always mount the repo
+	// IndexBindTarget is where we always mount the repo.
 	IndexBindTarget = "/hostRepo/Index"
 )
 
-// Index will attempt to index the given directory
+// Index will attempt to index the given directory.
 func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 	log.Debugf("Beginning indexer: profile='%s'\n", overlay.Back.Name)
 

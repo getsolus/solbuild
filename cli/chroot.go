@@ -34,7 +34,7 @@ func init() {
 	cmd.Register(&Chroot)
 }
 
-// Chroot opens an interactive shell inside the chroot environment
+// Chroot opens an interactive shell inside the chroot environment.
 var Chroot = cmd.Sub{
 	Name:  "chroot",
 	Short: "Interactively chroot into the package's build environment",
@@ -42,12 +42,12 @@ var Chroot = cmd.Sub{
 	Run:   ChrootRun,
 }
 
-// ChrootArgs are arguments for the "chroot" sub-command
+// ChrootArgs are arguments for the "chroot" sub-command.
 type ChrootArgs struct {
 	Path []string `zero:"yes" desc:"Chroot into the environment for a [package.yml|pspec.xml] receipe."`
 }
 
-// ChrootRun carries out the "chroot" sub-command
+// ChrootRun carries out the "chroot" sub-command.
 func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
 	sArgs := s.Args.(*ChrootArgs)    //nolint:forcetypeassert // guaranteed by callee.

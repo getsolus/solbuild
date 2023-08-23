@@ -26,11 +26,11 @@ import (
 )
 
 const (
-	// BindRepoDir is where we make repos available from the host side
+	// BindRepoDir is where we make repos available from the host side.
 	BindRepoDir = "/hostRepos"
 )
 
-// addLocalRepo will try to add the repo and bind mount it into the target
+// addLocalRepo will try to add the repo and bind mount it into the target.
 func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgManager, repo *Repo) error {
 	// Ensure the source exists too. Sorta helpful like that.
 	if !PathExists(repo.URI) {
@@ -88,7 +88,7 @@ func (p *Package) removeRepos(pkgManager *EopkgManager, repos []string) error {
 	return nil
 }
 
-// addRepos will add the specified filtered set of repos to the rootfs
+// addRepos will add the specified filtered set of repos to the rootfs.
 func (p *Package) addRepos(notif PidNotifier, o *Overlay, pkgManager *EopkgManager, repos []*Repo) error {
 	if len(repos) < 1 {
 		return nil

@@ -38,7 +38,7 @@ func init() {
 	cmd.Register(&cmd.Help)
 }
 
-// Init downloads a solbuid image and initializes the profile
+// Init downloads a solbuid image and initializes the profile.
 var Init = cmd.Sub{
 	Name:  "init",
 	Short: "Initialise a solbuild profile",
@@ -46,12 +46,12 @@ var Init = cmd.Sub{
 	Run:   InitRun,
 }
 
-// InitFlags are flags for the "init" sub-command
+// InitFlags are flags for the "init" sub-command.
 type InitFlags struct {
 	AutoUpdate bool `short:"u" long:"update" desc:"Automatically update the new image"`
 }
 
-// InitRun carries out the "init" sub-command
+// InitRun carries out the "init" sub-command.
 func InitRun(r *cmd.Root, s *cmd.Sub) {
 	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
 	sFlags := s.Flags.(*InitFlags)   //nolint:forcetypeassert // guaranteed by callee.
@@ -148,7 +148,7 @@ func downloadImage(bk *builder.BackingImage) (err error) {
 	return nil
 }
 
-// doUpdate will perform an update to the image after the initial init stage
+// doUpdate will perform an update to the image after the initial init stage.
 func doUpdate(manager *builder.Manager) {
 	if err := manager.Update(); err != nil {
 		log.Fatalf("Update failed, reason: '%s'\n", err)

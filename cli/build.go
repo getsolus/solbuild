@@ -35,7 +35,7 @@ func init() {
 	cmd.Register(&Build)
 }
 
-// Build package(s) in a chroot and output the archives
+// Build package(s) in a chroot and output the archives.
 var Build = cmd.Sub{
 	Name:  "build",
 	Short: "Build the given package(s) in a chroot environment",
@@ -44,7 +44,7 @@ var Build = cmd.Sub{
 	Run:   BuildRun,
 }
 
-// BuildFlags are flags for the "build" sub-command
+// BuildFlags are flags for the "build" sub-command.
 type BuildFlags struct {
 	Tmpfs           bool   `short:"t" long:"tmpfs"              desc:"Enable building in a tmpfs"`
 	Memory          string `short:"m" long:"memory"             desc:"Set the tmpfs size to use, e.g. 8G"`
@@ -52,12 +52,12 @@ type BuildFlags struct {
 	ABIReport       bool   `short:"r" long:"disable-abi-report" desc:"Don't generate an ABI report of the completed build"`
 }
 
-// BuildArgs are arguments for the "build" sub-command
+// BuildArgs are arguments for the "build" sub-command.
 type BuildArgs struct {
 	Path []string `zero:"yes" desc:"Location of [package.yml|pspec.xml] file to build."`
 }
 
-// BuildRun carries out the "build" sub-command
+// BuildRun carries out the "build" sub-command.
 func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
 	sFlags := s.Flags.(*BuildFlags)  //nolint:forcetypeassert // guaranteed by callee.

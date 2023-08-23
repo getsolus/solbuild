@@ -35,7 +35,7 @@ const (
 	MaxChangelogEntries = 10
 
 	// UpdateDateFormat is the time format we emit in the history.xml, i.e.
-	// 2016-09-24
+	// 2016-09-24.
 	UpdateDateFormat = "2006-01-02"
 )
 
@@ -69,7 +69,7 @@ type PackageHistory struct {
 }
 
 // A PackageUpdate is a point in history in the git changes, which is parsed
-// from a git.Commit
+// from a git.Commit.
 type PackageUpdate struct {
 	Tag         string    // The associated git tag
 	Author      string    // The author name of the change
@@ -82,7 +82,7 @@ type PackageUpdate struct {
 }
 
 // NewPackageUpdate will attempt to parse the given commit and provide a usable
-// entry for the PackageHistory
+// entry for the PackageHistory.
 func NewPackageUpdate(tag string, commit *git.Commit, objectID string) *PackageUpdate {
 	signature := commit.Author()
 	update := &PackageUpdate{Tag: tag}
@@ -104,7 +104,7 @@ func NewPackageUpdate(tag string, commit *git.Commit, objectID string) *PackageU
 	return update
 }
 
-// CatGitBlob will return the contents of the given entry
+// CatGitBlob will return the contents of the given entry.
 func CatGitBlob(repo *git.Repository, entry *git.TreeEntry) ([]byte, error) {
 	obj, err := repo.Lookup(entry.Id)
 	if err != nil {
@@ -228,7 +228,7 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	return ret, nil
 }
 
-// SortUpdatesByRelease is a simple wrapper to allowing sorting history
+// SortUpdatesByRelease is a simple wrapper to allowing sorting history.
 type SortUpdatesByRelease []*PackageUpdate
 
 func (a SortUpdatesByRelease) Len() int {
@@ -277,12 +277,12 @@ func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*P
 	}
 }
 
-// YPKG provides ypkg-gen-history history.xml compatibility
+// YPKG provides ypkg-gen-history history.xml compatibility.
 type YPKG struct {
 	History []*YPKGUpdate `xml:">Update"`
 }
 
-// YPKGUpdate represents an update in the package history
+// YPKGUpdate represents an update in the package history.
 type YPKGUpdate struct {
 	Release int    `xml:"release,attr"`
 	Type    string `xml:"type,attr,omitempty"`
@@ -341,7 +341,7 @@ func (p *PackageHistory) WriteXML(path string) error {
 // change, and not from simple bumps. The idea here is to only increment the
 // timestamp if we've actually upgraded to a major version, and in general
 // attempt to reduce the noise, and thus, produce better delta packages
-// between minor package alterations
+// between minor package alterations.
 func (p *PackageHistory) GetLastVersionTimestamp() int64 {
 	lastVersion := p.Updates[0].Package.Version
 	lastTime := p.Updates[0].Time

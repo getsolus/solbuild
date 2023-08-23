@@ -78,7 +78,7 @@ func NewOverlay(config *Config, profile *Profile, back *BackingImage, pkg *Packa
 	}
 }
 
-// EnsureDirs is a helper to make sure we have all directories in place
+// EnsureDirs is a helper to make sure we have all directories in place.
 func (o *Overlay) EnsureDirs() error {
 	paths := []string{
 		o.BaseDir,
@@ -171,7 +171,7 @@ func (o *Overlay) Mount() error {
 	return EnsureEopkgLayout(o.MountPoint)
 }
 
-// Unmount will tear down the overlay mount again
+// Unmount will tear down the overlay mount again.
 func (o *Overlay) Unmount() error {
 	mountMan := disk.GetMountManager()
 
@@ -215,7 +215,7 @@ func (o *Overlay) Unmount() error {
 	return nil
 }
 
-// MountVFS will bring up virtual filesystems within the chroot
+// MountVFS will bring up virtual filesystems within the chroot.
 func (o *Overlay) MountVFS() error {
 	mountMan := disk.GetMountManager()
 
@@ -273,7 +273,7 @@ func (o *Overlay) MountVFS() error {
 }
 
 // ConfigureNetworking will add a loopback interface to the container so
-// that localhost networking will still work
+// that localhost networking will still work.
 func (o *Overlay) ConfigureNetworking() error {
 	ipCommand := "/sbin/ip link set lo up"
 	log.Debugln("Configuring container networking")

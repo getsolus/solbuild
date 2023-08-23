@@ -25,7 +25,7 @@ import (
 	"strings"
 )
 
-// A User is an /etc/passwd defined user
+// A User is an /etc/passwd defined user.
 type User struct {
 	Name  string // User Name
 	UID   int    // User ID
@@ -35,21 +35,21 @@ type User struct {
 	Shell string // User shell program
 }
 
-// A Group is an /etc/group defined user
+// A Group is an /etc/group defined user.
 type Group struct {
 	Name    string   // Group Name
 	ID      int      // Group ID
 	Members []string // Names of users in group
 }
 
-// Passwd is a simple helper to parse passwd files from a chroot
+// Passwd is a simple helper to parse passwd files from a chroot.
 type Passwd struct {
 	Users  map[string]*User
 	Groups map[string]*Group
 }
 
 // NewPasswd will parse the given path and return a friendly representation
-// of those files
+// of those files.
 func NewPasswd(path string) (*Passwd, error) {
 	passwdPath := filepath.Join(path, "passwd")
 	groupPath := filepath.Join(path, "group")
@@ -66,7 +66,7 @@ func NewPasswd(path string) (*Passwd, error) {
 	return ret, nil
 }
 
-// ParseUsers will attempt to parse a *NIX style passwd file
+// ParseUsers will attempt to parse a *NIX style passwd file.
 func ParseUsers(passwd string) (map[string]*User, error) {
 	fi, err := os.Open(passwd)
 	if err != nil {
@@ -109,7 +109,7 @@ func ParseUsers(passwd string) (map[string]*User, error) {
 	return ret, nil
 }
 
-// ParseGroups will attempt to parse a *NIX style group file
+// ParseGroups will attempt to parse a *NIX style group file.
 func ParseGroups(grps string) (map[string]*Group, error) {
 	fi, err := os.Open(grps)
 	if err != nil {

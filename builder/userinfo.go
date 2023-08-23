@@ -39,14 +39,14 @@ type UserInfo struct {
 }
 
 const (
-	// FallbackUserName is what we fallback to if everything else fails
+	// FallbackUserName is what we fallback to if everything else fails.
 	FallbackUserName = "Automated Package Build"
 
-	// FallbackUserEmail is what we fallback to if everything else fails
+	// FallbackUserEmail is what we fallback to if everything else fails.
 	FallbackUserEmail = "no.email.set.in.config"
 )
 
-// SetFromSudo will attempt to set our details from sudo user environment
+// SetFromSudo will attempt to set our details from sudo user environment.
 func (u *UserInfo) SetFromSudo() bool {
 	sudoUID := os.Getenv("SUDO_UID")
 	sudoGID := os.Getenv("SUDO_GID")
@@ -91,7 +91,7 @@ func (u *UserInfo) SetFromSudo() bool {
 	return true
 }
 
-// SetFromCurrent will set the UserInfo details from the current user
+// SetFromCurrent will set the UserInfo details from the current user.
 func (u *UserInfo) SetFromCurrent() {
 	u.UID = os.Getuid()
 	u.GID = os.Getgid()
@@ -108,7 +108,7 @@ func (u *UserInfo) SetFromCurrent() {
 	}
 }
 
-// SetFromPackager will set the username/email fields from one of our packager files
+// SetFromPackager will set the username/email fields from one of our packager files.
 func (u *UserInfo) SetFromPackager() bool {
 	candidatePaths := []string{
 		filepath.Join(u.HomeDir, ".config", "solus", "packager"),
@@ -152,7 +152,7 @@ func (u *UserInfo) SetFromPackager() bool {
 	return false
 }
 
-// SetFromGit will set the username/email fields from the git config file
+// SetFromGit will set the username/email fields from the git config file.
 func (u *UserInfo) SetFromGit() bool {
 	gitConfPath := filepath.Join(u.HomeDir, ".gitconfig")
 	if !PathExists(gitConfPath) {
@@ -223,7 +223,7 @@ func GetUserInfo() *UserInfo {
 	return uinfo
 }
 
-// WritePackager will attempt to write the packager file to given path
+// WritePackager will attempt to write the packager file to given path.
 func (u *UserInfo) WritePackager(path string) error {
 	fi, err := os.Create(path)
 	if err != nil {
