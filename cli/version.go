@@ -39,6 +39,8 @@ var Version = cmd.Sub{
 }
 
 // VersionRun carries out the "version" sub-command
+//
+//nolint:forbidigo // the point of this function is to print the version
 func VersionRun(_ *cmd.Root, _ *cmd.Sub) {
 	fmt.Printf("solbuild version %v\n\nCopyright © 2016-2021 Solus Project\n", SolbuildVersion)
 	fmt.Println("Licensed under the Apache License, Version 2.0")
