@@ -18,7 +18,7 @@ package builder
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,7 +99,7 @@ func NewProfileFromPath(path string) (*Profile, error) {
 	profile := &Profile{Name: profileName}
 
 	// Read the config file
-	if b, err = ioutil.ReadAll(fi); err != nil {
+	if b, err = io.ReadAll(fi); err != nil {
 		return nil, err
 	}
 

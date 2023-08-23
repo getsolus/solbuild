@@ -18,7 +18,6 @@ package builder
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -41,8 +40,8 @@ func CopyAll(source, destdir string) error {
 	}
 
 	if st.Mode().IsDir() {
-		var files []os.FileInfo
-		if files, err = ioutil.ReadDir(source); err != nil {
+		var files []os.DirEntry
+		if files, err = os.ReadDir(source); err != nil {
 			return err
 		}
 		for _, f := range files {

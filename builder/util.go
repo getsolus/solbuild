@@ -20,7 +20,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -85,9 +84,9 @@ func MurderDeathKill(root string) error {
 		return err
 	}
 
-	var files []os.FileInfo
+	var files []os.DirEntry
 
-	if files, err = ioutil.ReadDir("/proc"); err != nil {
+	if files, err = os.ReadDir("/proc"); err != nil {
 		return err
 	}
 

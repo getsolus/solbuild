@@ -19,7 +19,7 @@ package builder
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -104,5 +104,5 @@ func (t *TransitManifest) Write(path string) error {
 	if err := tmenc.Encode(t); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path, blob.Bytes(), 0o0644)
+	return os.WriteFile(path, blob.Bytes(), 0o0644)
 }

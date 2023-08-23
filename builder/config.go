@@ -18,7 +18,7 @@ package builder
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -74,7 +74,7 @@ func NewConfig() (*Config, error) {
 			// We don't defer the close because of the amount of files we could
 			// potentially glob & open, we don't want to take the piss with open
 			// file descriptors.
-			if b, err = ioutil.ReadAll(fi); err != nil {
+			if b, err = io.ReadAll(fi); err != nil {
 				fi.Close()
 				return nil, err
 			}

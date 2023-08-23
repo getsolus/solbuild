@@ -215,7 +215,7 @@ func (g *GitSource) resetOnto(repo *git.Repository, ref string) error {
 
 	log.Debugf("Resetting git repository to commit %s\n", ref)
 
-	checkOpts := &git.CheckoutOpts{
+	checkOpts := &git.CheckoutOptions{
 		Strategy: git.CheckoutForce | git.CheckoutRemoveUntracked | git.CheckoutRemoveIgnored,
 	}
 

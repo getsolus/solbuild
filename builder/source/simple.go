@@ -20,7 +20,6 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -88,7 +87,7 @@ func (s *SimpleSource) GetPath(hash string) string {
 
 // GetSHA1Sum will return the sha1sum for the given path.
 func (s *SimpleSource) GetSHA1Sum(path string) (string, error) {
-	inp, err := ioutil.ReadFile(path)
+	inp, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
@@ -100,7 +99,7 @@ func (s *SimpleSource) GetSHA1Sum(path string) (string, error) {
 
 // GetSHA256Sum will return the sha1sum for the given path.
 func (s *SimpleSource) GetSHA256Sum(path string) (string, error) {
-	inp, err := ioutil.ReadFile(path)
+	inp, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}

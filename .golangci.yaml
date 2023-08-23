@@ -17,7 +17,6 @@ linters:
     - nestif
     - noctx
     - revive
-    - staticcheck
     - stylecheck
     - tagalign
     - testpackage

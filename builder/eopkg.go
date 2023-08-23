@@ -18,7 +18,7 @@ package builder
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -164,7 +164,7 @@ func (e *EopkgManager) StopDBUS() error {
 		e.dbusActive = false
 	}()
 
-	if b, err = ioutil.ReadAll(f); err != nil {
+	if b, err = io.ReadAll(f); err != nil {
 		return err
 	}
 
@@ -256,7 +256,7 @@ func readURIFile(path string) (string, error) {
 		return "", err
 	}
 	defer fi.Close()
-	contents, err := ioutil.ReadAll(fi)
+	contents, err := io.ReadAll(fi)
 	if err != nil {
 		return "", err
 	}

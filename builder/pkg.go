@@ -20,7 +20,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -125,7 +125,7 @@ func NewXMLPackage(path string) (*Package, error) {
 	}
 	defer fi.Close()
 
-	by, err = ioutil.ReadAll(fi)
+	by, err = io.ReadAll(fi)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func NewYmlPackage(path string) (*Package, error) {
 	}
 	defer fi.Close()
 
-	by, err = ioutil.ReadAll(fi)
+	by, err = io.ReadAll(fi)
 	if err != nil {
 		return nil, err
 	}
