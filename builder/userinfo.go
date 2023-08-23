@@ -48,10 +48,10 @@ const (
 
 // SetFromSudo will attempt to set our details from sudo user environment.
 func (u *UserInfo) SetFromSudo() bool {
+	var uid, gid int
+
 	sudoUID := os.Getenv("SUDO_UID")
 	sudoGID := os.Getenv("SUDO_GID")
-	uid := -1
-	gid := -1
 	var err error
 
 	if sudoGID == "" {
