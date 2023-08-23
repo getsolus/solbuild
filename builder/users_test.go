@@ -14,19 +14,21 @@
 // limitations under the License.
 //
 
-package builder
+package builder_test
 
 import (
 	"strings"
 	"testing"
+
+	"github.com/getsolus/solbuild/builder"
 )
 
 func TestPasswd(t *testing.T) {
-	if _, err := NewPasswd("./@W'el@@"); err == nil {
+	if _, err := builder.NewPasswd("./@W'el@@"); err == nil {
 		t.Fatalf("Should not be able to parse non existent file")
 	}
 
-	pwd, err := NewPasswd("testdata")
+	pwd, err := builder.NewPasswd("testdata")
 	if err != nil {
 		t.Fatalf("Unable to parse known good passwd data: %v", err)
 	}

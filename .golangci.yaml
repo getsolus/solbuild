@@ -18,7 +18,6 @@ linters:
     - noctx
     - revive
     - stylecheck
-    - testpackage
     - wrapcheck
     # Disabled permanently
     - exhaustruct     # structs may be uninitialized

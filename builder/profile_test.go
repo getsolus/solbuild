@@ -14,10 +14,12 @@
 // limitations under the License.
 //
 
-package builder
+package builder_test
 
 import (
 	"testing"
+
+	"github.com/getsolus/solbuild/builder"
 )
 
 const (
@@ -25,11 +27,11 @@ const (
 )
 
 func TestLoadProfile(t *testing.T) {
-	if _, err := NewProfileFromPath("@'werlq;krqr8u3283"); err == nil {
+	if _, err := builder.NewProfileFromPath("@'werlq;krqr8u3283"); err == nil {
 		t.Fatal("Loaded a file that doesn't exist!")
 	}
 
-	profile, err := NewProfileFromPath(ProfileTestFile)
+	profile, err := builder.NewProfileFromPath(ProfileTestFile)
 	if err != nil {
 		t.Fatalf("Failed to load configuration from valid path: %v", err)
 	}
