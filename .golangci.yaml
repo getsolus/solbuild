@@ -6,7 +6,6 @@ linters:
     # We can enable these one at a time.
     - cyclop
     - errcheck
-    - exhaustive
     - funlen
     - gochecknoglobals
     - gochecknoinits
@@ -59,6 +58,9 @@ issues:
 linters-settings:
   varnamelen:
     min-name-length: 1
+
+  exhaustive:
+    default-signifies-exhaustive: true
 
   gci:
     sections:
