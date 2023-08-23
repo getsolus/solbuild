@@ -18,12 +18,13 @@ package builder
 
 import (
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"gopkg.in/ini.v1"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
+
+	log "github.com/DataDrake/waterlog"
+	"gopkg.in/ini.v1"
 )
 
 // UserInfo is required for ypkg builds, to set the .config/solus/package internally

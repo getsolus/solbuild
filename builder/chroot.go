@@ -18,9 +18,10 @@ package builder
 
 import (
 	"fmt"
+	"os"
+
 	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
-	"os"
 )
 
 // Chroot will attempt to spawn a chroot in the overlayfs system

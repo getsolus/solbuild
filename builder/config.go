@@ -18,10 +18,11 @@ package builder
 
 import (
 	"fmt"
-	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/BurntSushi/toml"
 )
 
 // Config defines the global defaults for solbuild

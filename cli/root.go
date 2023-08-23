@@ -17,8 +17,9 @@
 package cli
 
 import (
-	"github.com/DataDrake/cli-ng/v2/cmd"
 	"os"
+
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 func init() {

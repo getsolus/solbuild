@@ -19,10 +19,11 @@ package builder
 import (
 	"errors"
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/disk"
 	"os"
 	"path/filepath"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 )
 
 var (

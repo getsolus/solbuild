@@ -18,15 +18,16 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
-	"github.com/getsolus/solbuild/builder"
-	"os"
-	"strings"
-
 	login "github.com/coreos/go-systemd/v22/login1"
+
+	"github.com/getsolus/solbuild/builder"
 )
 
 func init() {

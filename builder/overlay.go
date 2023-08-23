@@ -18,11 +18,12 @@ package builder
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
 	"github.com/getsolus/libosdev/disk"
-	"os"
-	"path/filepath"
 )
 
 // An Overlay is formed from a backing image & Package combination.

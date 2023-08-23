@@ -18,16 +18,18 @@ package cli
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/getsolus/libosdev/commands"
+
 	"github.com/getsolus/solbuild/builder"
-	"io"
-	"net/http"
-	"os"
 )
 
 func init() {

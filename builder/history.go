@@ -20,12 +20,13 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	git "github.com/libgit2/git2go/v34"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"time"
+
+	git "github.com/libgit2/git2go/v34"
 )
 
 const (

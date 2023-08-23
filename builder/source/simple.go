@@ -26,10 +26,9 @@ import (
 	"path/filepath"
 	"time"
 
+	log "github.com/DataDrake/waterlog"
 	"github.com/cavaliergopher/grab/v3"
 	"github.com/cheggaaa/pb/v3"
-
-	log "github.com/DataDrake/waterlog"
 )
 
 const progressBarTemplate string = `{{with string . "prefix"}}{{.}} {{end}}{{printf "%25s" (counters .) }} {{bar . }} {{printf "%7s" (percent .) }} {{printf "%14s" (speed . "%s/s" "??/s")}}{{with string . "suffix"}} {{.}}{{end}}`

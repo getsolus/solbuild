@@ -19,10 +19,11 @@ package builder
 import (
 	"bytes"
 	"errors"
-	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+
+	"github.com/BurntSushi/toml"
 )
 
 const (

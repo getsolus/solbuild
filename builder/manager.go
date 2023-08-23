@@ -18,8 +18,6 @@ package builder
 
 import (
 	"errors"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/disk"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -27,6 +25,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 )
 
 var (

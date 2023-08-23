@@ -18,11 +18,12 @@ package builder
 
 import (
 	"fmt"
-	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/BurntSushi/toml"
 )
 
 // A Repo is a definition of a repository to add to the eopkg root during

@@ -12,7 +12,6 @@ linters:
     - forbidigo
     - forcetypeassert
     - funlen
-    - gci
     - gochecknoglobals
     - gochecknoinits
     - gocritic

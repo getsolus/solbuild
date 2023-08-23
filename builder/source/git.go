@@ -19,13 +19,14 @@ package source
 import (
 	"errors"
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/commands"
-	git "github.com/libgit2/git2go/v34"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/commands"
+	git "github.com/libgit2/git2go/v34"
 )
 
 const (

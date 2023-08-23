@@ -18,11 +18,12 @@ package builder
 
 import (
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/disk"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 )
 
 // CopyAll will copy the source asset into the given destdir.

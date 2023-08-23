@@ -20,9 +20,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/commands"
-	"github.com/getsolus/libosdev/disk"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -31,6 +28,10 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/commands"
+	"github.com/getsolus/libosdev/disk"
 )
 
 var (

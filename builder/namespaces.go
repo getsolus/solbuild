@@ -18,8 +18,9 @@ package builder
 
 import (
 	"fmt"
-	log "github.com/DataDrake/waterlog"
 	"syscall"
+
+	log "github.com/DataDrake/waterlog"
 )
 
 // ConfigureNamespace will unshare() context, entering a new namespace

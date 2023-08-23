@@ -17,12 +17,14 @@
 package main
 
 import (
+	log2 "log"
+
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
+
 	_ "github.com/getsolus/solbuild/builder"
 	"github.com/getsolus/solbuild/cli"
-	log2 "log"
 )
 
 func init() {

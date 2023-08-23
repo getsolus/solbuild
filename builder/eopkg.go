@@ -18,13 +18,14 @@ package builder
 
 import (
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/commands"
-	"github.com/getsolus/libosdev/disk"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/commands"
+	"github.com/getsolus/libosdev/disk"
 )
 
 // eopkgCommand utility wraps all eopkg calls to autodisable colours
@@ -72,8 +73,8 @@ func NewEopkgManager(notif PidNotifier, root string) *EopkgManager {
 // or installing deps, prior to building, could clobber the files.
 func (e *EopkgManager) CopyAssets() error {
 	assets := map[string]string{
-		"/etc/resolv.conf":      filepath.Join(e.root, "etc/resolv.conf"),
-		"/etc/eopkg/eopkg.conf": filepath.Join(e.root, "etc/eopkg/eopkg.conf"),
+		"/etc/resolv.conf":        filepath.Join(e.root, "etc/resolv.conf"),
+		"/etc/eopkg/eopkg.conf":   filepath.Join(e.root, "etc/eopkg/eopkg.conf"),
 		"/etc/ccache/ccache.conf": filepath.Join(e.root, "etc/ccache/ccache.conf"),
 	}
 
