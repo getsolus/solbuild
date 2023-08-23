@@ -17,6 +17,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -76,7 +77,7 @@ func IndexRun(r *cmd.Root, s *cmd.Sub) {
 	}
 	// Set the package
 	if err := manager.SetPackage(&builder.IndexPackage); err != nil {
-		if err == builder.ErrProfileNotInstalled {
+		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
 		os.Exit(1)

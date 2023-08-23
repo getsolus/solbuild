@@ -17,6 +17,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -59,13 +60,13 @@ func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 	}
 	// Safety first..
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
-		if err == builder.ErrProfileNotInstalled {
+		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
 		os.Exit(1)
 	}
 	if err := manager.Update(); err != nil {
-		if err == builder.ErrProfileNotInstalled {
+		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
 		os.Exit(1)

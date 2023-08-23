@@ -289,7 +289,7 @@ func (m *Manager) doLock(path, opType string) error {
 	m.lockfile = lock
 
 	if err = m.lockfile.Lock(); err != nil {
-		if err == ErrOwnedLockFile {
+		if errors.Is(err, ErrOwnedLockFile) {
 			log.Errorf("Failed to lock root - another process (%s,%d) is using it, reason: %s\n", m.lockfile.GetOwnerProcess(), m.lockfile.GetOwnerPID(), err)
 		} else {
 			log.Errorf("Failed to lock root pid='%d' %s\n", m.lockfile.GetOwnerPID(), err)

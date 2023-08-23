@@ -57,13 +57,13 @@ func CopyAll(source, destdir string) error {
 		if !PathExists(destdir) {
 			log.Debugf("Creating target directory: %s\n", destdir)
 			if err = os.MkdirAll(destdir, 0o0755); err != nil {
-				return fmt.Errorf("Failed to create target directory: %s, reason: %s\n", destdir, err)
+				return fmt.Errorf("Failed to create target directory: %s, reason: %w\n", destdir, err)
 			}
 		}
 		tgt := filepath.Join(destdir, filepath.Base(source))
 		log.Debugf("Copying source asset %s to %s\n", source, tgt)
 		if err = disk.CopyFile(source, tgt); err != nil {
-			return fmt.Errorf("Failed to copy source asset to target: source='%s' target='%s', reason: %s\n", source, tgt, err)
+			return fmt.Errorf("Failed to copy source asset to target: source='%s' target='%s', reason: %w\n", source, tgt, err)
 		}
 	}
 	return nil

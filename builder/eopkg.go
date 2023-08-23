@@ -86,12 +86,12 @@ func (e *EopkgManager) CopyAssets() error {
 		if !PathExists(dirName) {
 			log.Debugf("Creating required directory: %s\n", dirName)
 			if err := os.MkdirAll(dirName, 0o0755); err != nil {
-				return fmt.Errorf("Failed to create required asset directory %s, reason %s\n", dirName, err)
+				return fmt.Errorf("Failed to create required asset directory %s, reason %w\n", dirName, err)
 			}
 		}
 		log.Debugf("Copying host asset %s\n", key)
 		if err := disk.CopyFile(key, value); err != nil {
-			return fmt.Errorf("Failed to copy host asset %s, reason: %s\n", key, err)
+			return fmt.Errorf("Failed to copy host asset %s, reason: %w\n", key, err)
 		}
 	}
 	return nil
@@ -114,7 +114,7 @@ func (e *EopkgManager) Init() error {
 	if !PathExists(e.cacheSource) {
 		log.Debugf("Creating system-wide package cache: %s\n", e.cacheSource)
 		if err := os.MkdirAll(e.cacheSource, 0o0755); err != nil {
-			return fmt.Errorf("Failed to create package cache %s, reason: %s\n", e.cacheSource, err)
+			return fmt.Errorf("Failed to create package cache %s, reason: %w\n", e.cacheSource, err)
 		}
 	}
 
@@ -217,12 +217,12 @@ func EnsureEopkgLayout(root string) error {
 	runPath := filepath.Join(root, "run")
 	if PathExists(runPath) {
 		if err := os.RemoveAll(runPath); err != nil {
-			return fmt.Errorf("Failed to clean stale /run, reason: %s\n", err)
+			return fmt.Errorf("Failed to clean stale /run, reason: %w\n", err)
 		}
 	}
 
 	if err := os.MkdirAll(runPath, 0o0755); err != nil {
-		return fmt.Errorf("Failed to clean stale /run, reason: %s\n", err)
+		return fmt.Errorf("Failed to clean stale /run, reason: %w\n", err)
 	}
 
 	// Construct the required directories in the tree

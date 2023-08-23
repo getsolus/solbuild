@@ -107,7 +107,7 @@ func MurderDeathKill(root string) error {
 		var pid int
 
 		if pid, err = strconv.Atoi(spid); err != nil {
-			return fmt.Errorf("POSIX Weeps - broken pid identifier %s, reason: %s\n", spid, err)
+			return fmt.Errorf("POSIX Weeps - broken pid identifier %s, reason: %w\n", spid, err)
 		}
 
 		log.Debugf("Killing child process in chroot %d\n", pid)
@@ -215,7 +215,7 @@ func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 func AddBuildUser(rootfs string) error {
 	pwd, err := NewPasswd(filepath.Join(rootfs, "etc"))
 	if err != nil {
-		return fmt.Errorf("Unable to discover chroot users, reason: %s\n", err)
+		return fmt.Errorf("Unable to discover chroot users, reason: %w\n", err)
 	}
 	// User already exists
 	if _, ok := pwd.Users[BuildUser]; ok {
@@ -225,11 +225,11 @@ func AddBuildUser(rootfs string) error {
 
 	// Add the build group
 	if err := commands.AddGroup(rootfs, BuildUser, BuildUserGID); err != nil {
-		return fmt.Errorf("Failed to add build group to system, reason: %s\n", err)
+		return fmt.Errorf("Failed to add build group to system, reason: %w\n", err)
 	}
 
 	if err := commands.AddUser(rootfs, BuildUser, BuildUserGecos, BuildUserHome, BuildUserShell, BuildUserID, BuildUserGID); err != nil {
-		return fmt.Errorf("Failed to add build user to system, reason: %s\n", err)
+		return fmt.Errorf("Failed to add build user to system, reason: %w\n", err)
 	}
 	return nil
 }

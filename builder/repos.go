@@ -82,7 +82,7 @@ func (p *Package) removeRepos(pkgManager *EopkgManager, repos []string) error {
 	for _, id := range repos {
 		log.Debugf("Removing repository %s\n", id)
 		if err := pkgManager.RemoveRepo(id); err != nil {
-			return fmt.Errorf("Failed to remove repository %s, reason: %s\n", id, err)
+			return fmt.Errorf("Failed to remove repository %s, reason: %w\n", id, err)
 		}
 	}
 	return nil
@@ -98,13 +98,13 @@ func (p *Package) addRepos(notif PidNotifier, o *Overlay, pkgManager *EopkgManag
 			log.Debugf("Adding local repo to system %s %s\n", repo.Name, repo.URI)
 
 			if err := p.addLocalRepo(notif, o, pkgManager, repo); err != nil {
-				return fmt.Errorf("Failed to add local repo to system %s, reason: %s\n", repo.Name, err)
+				return fmt.Errorf("Failed to add local repo to system %s, reason: %w\n", repo.Name, err)
 			}
 			continue
 		}
 		log.Debugf("Adding repo to system %s %s\n", repo.Name, repo.URI)
 		if err := pkgManager.AddRepo(repo.Name, repo.URI); err != nil {
-			return fmt.Errorf("Failed to add repo to system %s, reason: %s\n", repo.Name, err)
+			return fmt.Errorf("Failed to add repo to system %s, reason: %w\n", repo.Name, err)
 		}
 	}
 	return nil

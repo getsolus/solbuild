@@ -6,7 +6,6 @@ linters:
     # We can enable these one at a time.
     - cyclop
     - errcheck
-    - errorlint
     - exhaustive
     - forbidigo
     - forcetypeassert

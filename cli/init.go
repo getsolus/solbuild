@@ -17,6 +17,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -111,7 +112,7 @@ func doInit(manager *builder.Manager) {
 func downloadImage(bk *builder.BackingImage) (err error) {
 	file, err := os.Create(bk.ImagePathXZ)
 	if err != nil {
-		return fmt.Errorf("failed to create file '%s', reason: '%s'", bk.ImagePathXZ, err)
+		return fmt.Errorf("failed to create file '%s', reason: '%w'", bk.ImagePathXZ, err)
 	}
 	defer func() {
 		if err != nil {
@@ -121,7 +122,7 @@ func downloadImage(bk *builder.BackingImage) (err error) {
 	defer file.Close()
 	resp, err := http.Get(bk.ImageURI)
 	if err != nil {
-		return fmt.Errorf("failed to fetch image '%s', reason: '%s'", bk.ImageURI, err)
+		return fmt.Errorf("failed to fetch image '%s', reason: '%w'", bk.ImageURI, err)
 	}
 	defer resp.Body.Close()
 	bar := pb.New64(resp.ContentLength).Set(pb.Bytes, true)
@@ -133,13 +134,13 @@ func downloadImage(bk *builder.BackingImage) (err error) {
 	buf := make([]byte, 32*1024)
 	for !done {
 		bytesRead, err := reader.Read(buf)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			done = true
 		} else if err != nil {
-			return fmt.Errorf("failed to fetch image '%s', reason: '%s'", bk.ImageURI, err)
+			return fmt.Errorf("failed to fetch image '%s', reason: '%w'", bk.ImageURI, err)
 		}
 		if _, err = file.Write(buf[:bytesRead]); err != nil {
-			return fmt.Errorf("failed to write image '%s', reason: '%s'", bk.ImagePathXZ, err)
+			return fmt.Errorf("failed to write image '%s', reason: '%w'", bk.ImagePathXZ, err)
 		}
 		bytesRemaining -= int64(bytesRead)
 	}

@@ -36,7 +36,7 @@ func (p *Package) CreateDirs(o *Overlay) error {
 	}
 	for _, p := range dirs {
 		if err := os.MkdirAll(p, 0o0755); err != nil {
-			return fmt.Errorf("Failed to create required directory %s. Reason: %s\n", p, err)
+			return fmt.Errorf("Failed to create required directory %s. Reason: %w\n", p, err)
 		}
 	}
 
@@ -44,24 +44,24 @@ func (p *Package) CreateDirs(o *Overlay) error {
 	if p.Type == PackageTypeXML {
 		// Ensure we have root owned ccache/sccache
 		if err := os.MkdirAll(LegacyCcacheDirectory, 0o0755); err != nil {
-			return fmt.Errorf("Failed to create ccache directory %+v, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to create ccache directory %+v, reason: %w\n", p, err)
 		}
 		if err := os.MkdirAll(LegacySccacheDirectory, 0o0755); err != nil {
-			return fmt.Errorf("Failed to create sccache directory %+v, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to create sccache directory %+v, reason: %w\n", p, err)
 		}
 	} else {
 		// Ensure we have root owned ccache/sccache
 		if err := os.MkdirAll(CcacheDirectory, 0o0755); err != nil {
-			return fmt.Errorf("Failed to create ccache directory %+v, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to create ccache directory %+v, reason: %w\n", p, err)
 		}
 		if err := os.Chown(CcacheDirectory, BuildUserID, BuildUserGID); err != nil {
-			return fmt.Errorf("Failed to chown ccache directory %+v, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to chown ccache directory %+v, reason: %w\n", p, err)
 		}
 		if err := os.MkdirAll(SccacheDirectory, 0o0755); err != nil {
-			return fmt.Errorf("Failed to create sccache directory %+v, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to create sccache directory %+v, reason: %w\n", p, err)
 		}
 		if err := os.Chown(SccacheDirectory, BuildUserID, BuildUserGID); err != nil {
-			return fmt.Errorf("Failed to chown sccache directory %+v, reason: %s\n", p, err)
+			return fmt.Errorf("Failed to chown sccache directory %+v, reason: %w\n", p, err)
 		}
 	}
 
@@ -77,7 +77,7 @@ func (p *Package) FetchSources(o *Overlay) error {
 			continue
 		}
 		if err := source.Fetch(); err != nil {
-			return fmt.Errorf("Failed to fetch source %s, reason: %s\n", source.GetIdentifier(), err)
+			return fmt.Errorf("Failed to fetch source %s, reason: %w\n", source.GetIdentifier(), err)
 		}
 	}
 	return nil
@@ -95,7 +95,7 @@ func (p *Package) BindSources(o *Overlay) error {
 		// Ensure sources tree exists
 		if !PathExists(sourceDir) {
 			if err := os.MkdirAll(sourceDir, 0o0755); err != nil {
-				return fmt.Errorf("Failed to create source directory %s, reason: %s\n", sourceDir, err)
+				return fmt.Errorf("Failed to create source directory %s, reason: %w\n", sourceDir, err)
 			}
 		}
 
@@ -118,7 +118,7 @@ func (p *Package) BindSources(o *Overlay) error {
 
 		// Bind mount local source into chroot
 		if err := mountMan.BindMount(bindConfig.BindSource, bindConfig.BindTarget, "ro"); err != nil {
-			return fmt.Errorf("Failed to bind mount source %s, reason: %s\n", bindConfig.BindTarget, err)
+			return fmt.Errorf("Failed to bind mount source %s, reason: %w\n", bindConfig.BindTarget, err)
 		}
 
 		// Account for these to help cleanups
@@ -143,7 +143,7 @@ func (p *Package) BindCcache(o *Overlay) error {
 
 	// Bind mount local ccache into chroot
 	if err := mountMan.BindMount(ccacheSource, ccacheDir); err != nil {
-		return fmt.Errorf("Failed to bind mount ccache %s, reason: %s\n", ccacheDir, err)
+		return fmt.Errorf("Failed to bind mount ccache %s, reason: %w\n", ccacheDir, err)
 	}
 	o.ExtraMounts = append(o.ExtraMounts, ccacheDir)
 	return nil
@@ -165,7 +165,7 @@ func (p *Package) BindSccache(o *Overlay) error {
 
 	// Bind mount local sccache into chroot
 	if err := mountMan.BindMount(sccacheSource, sccacheDir); err != nil {
-		return fmt.Errorf("Failed to bind mount sccache %s, reason: %s\n", sccacheDir, err)
+		return fmt.Errorf("Failed to bind mount sccache %s, reason: %w\n", sccacheDir, err)
 	}
 	o.ExtraMounts = append(o.ExtraMounts, sccacheDir)
 	return nil
@@ -278,12 +278,12 @@ func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager,
 
 	if !PathExists(fpd) {
 		if err := os.MkdirAll(fpd, 0o0755); err != nil {
-			return fmt.Errorf("Failed to create packager directory %s, reason: %s\n", fpd, err)
+			return fmt.Errorf("Failed to create packager directory %s, reason: %w\n", fpd, err)
 		}
 	}
 
 	if err := usr.WritePackager(fp); err != nil {
-		return fmt.Errorf("Failed to write packager file %s, reason: %s\n", fp, err)
+		return fmt.Errorf("Failed to write packager file %s, reason: %w\n", fp, err)
 	}
 
 	wdir := p.GetWorkDirInternal()
@@ -297,20 +297,20 @@ func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager,
 	log.Debugf("Installing build dependencies %s\n", ymlFile)
 
 	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
-		return fmt.Errorf("Failed to install build dependencies %s, reason: %s\n", ymlFile, err)
+		return fmt.Errorf("Failed to install build dependencies %s, reason: %w\n", ymlFile, err)
 	}
 	notif.SetActivePID(0)
 
 	// Cleanup now
 	log.Debugln("Stopping D-BUS")
 	if err := pman.StopDBUS(); err != nil {
-		return fmt.Errorf("Failed to stop d-bus, reason: %s\n", err)
+		return fmt.Errorf("Failed to stop d-bus, reason: %w\n", err)
 	}
 
 	// Chwn the directory before bringing up sources
 	cmd = fmt.Sprintf("chown -R %s:%s %s", BuildUser, BuildUser, BuildUserHome)
 	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
-		return fmt.Errorf("Failed to set home directory permissions, reason: %s\n", err)
+		return fmt.Errorf("Failed to set home directory permissions, reason: %w\n", err)
 	}
 	notif.SetActivePID(0)
 	return nil
@@ -339,7 +339,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 
 	// Bring up sources
 	if err := p.BindSources(overlay); err != nil {
-		return fmt.Errorf("Failed to set home directory permissions, reason: %s\n", err)
+		return fmt.Errorf("Failed to set home directory permissions, reason: %w\n", err)
 	}
 
 	// Reaffirm the layout
@@ -377,7 +377,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 
 	log.Infoln("Now starting build of package")
 	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
-		return fmt.Errorf("Failed to start build of package, reason: %s\n", err)
+		return fmt.Errorf("Failed to start build of package, reason: %w\n", err)
 	}
 
 	// Generate ABI Report
@@ -434,7 +434,7 @@ func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overl
 	// Now we can stop dbus..
 	log.Debugln("Stopping D-BUS")
 	if err := pman.StopDBUS(); err != nil {
-		return fmt.Errorf("Failed to stop d-bus, reason: %s\n", err)
+		return fmt.Errorf("Failed to stop d-bus, reason: %w\n", err)
 	}
 	notif.SetActivePID(0)
 	return nil
@@ -469,7 +469,7 @@ func (p *Package) CollectAssets(overlay *Overlay, usr *UserInfo, manifestTarget 
 		tram := NewTransitManifest(manifestTarget)
 		for _, p := range collections {
 			if err := tram.AddFile(p); err != nil {
-				return fmt.Errorf("Failed to collect eopkg asset for transit manifest %s, reason: %s\n", p, err)
+				return fmt.Errorf("Failed to collect eopkg asset for transit manifest %s, reason: %w\n", p, err)
 			}
 		}
 
@@ -501,13 +501,13 @@ func (p *Package) CollectAssets(overlay *Overlay, usr *UserInfo, manifestTarget 
 	for _, p := range collections {
 		tgt, err := filepath.Abs(filepath.Join(".", filepath.Base(p)))
 		if err != nil {
-			return fmt.Errorf("Unable to find working directory, reason: %s\n", err)
+			return fmt.Errorf("Unable to find working directory, reason: %w\n", err)
 		}
 
 		log.Debugf("Collecting build artifact %s\n", filepath.Base(p))
 
 		if err := disk.CopyFile(p, tgt); err != nil {
-			return fmt.Errorf("Unable to collect build file, reason: %s\n", err)
+			return fmt.Errorf("Unable to collect build file, reason: %w\n", err)
 		}
 
 		log.Debugf("Setting file ownership for current user UID='%d' GID='%d' %s\n", usr.UID, usr.GID, filepath.Base(p))
@@ -545,7 +545,7 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 
 	// Ensure source assets are in place
 	if err := p.CopyAssets(history, overlay); err != nil {
-		return fmt.Errorf("Failed to copy required source assets, reason: %s\n", err)
+		return fmt.Errorf("Failed to copy required source assets, reason: %w\n", err)
 	}
 
 	log.Debugln("Validating sources")
@@ -561,22 +561,22 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 	// Bring up dbus to do Things
 	log.Debugln("Starting D-BUS")
 	if err := pman.StartDBUS(); err != nil {
-		return fmt.Errorf("Failed to start d-bus, reason: %s\n", err)
+		return fmt.Errorf("Failed to start d-bus, reason: %w\n", err)
 	}
 
 	// Get the repos in place before asserting anything
 	if err := p.ConfigureRepos(notif, overlay, pman, profile); err != nil {
-		return fmt.Errorf("Configuring repositories failed, reason: %s\n", err)
+		return fmt.Errorf("Configuring repositories failed, reason: %w\n", err)
 	}
 
 	log.Debugln("Upgrading system base")
 	if err := pman.Upgrade(); err != nil {
-		return fmt.Errorf("Failed to upgrade rootfs, reason: %s\n", err)
+		return fmt.Errorf("Failed to upgrade rootfs, reason: %w\n", err)
 	}
 
 	log.Debugln("Asserting system.devel component installation")
 	if err := pman.InstallComponent("system.devel"); err != nil {
-		return fmt.Errorf("Failed to assert system.devel, reason: %s\n", err)
+		return fmt.Errorf("Failed to assert system.devel, reason: %w\n", err)
 	}
 
 	// Ensure all directories are in place

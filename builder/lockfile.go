@@ -94,7 +94,7 @@ func (l *LockFile) Lock() error {
 	pid, err := l.readPID()
 
 	// Bail now.
-	if err != ErrDeadLockFile && err != ErrOwnedLockFile && err != nil {
+	if !errors.Is(err, ErrDeadLockFile) && !errors.Is(err, ErrOwnedLockFile) && err != nil {
 		return err
 	}
 
