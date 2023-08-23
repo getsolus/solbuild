@@ -506,7 +506,7 @@ func (p *Package) CollectAssets(overlay *Overlay, usr *UserInfo, manifestTarget 
 
 		log.Debugf("Collecting build artifact %s\n", filepath.Base(p))
 
-		if err := disk.CopyFile(p, tgt); err != nil {
+		if err = disk.CopyFile(p, tgt); err != nil {
 			return fmt.Errorf("Unable to collect build file, reason: %w\n", err)
 		}
 

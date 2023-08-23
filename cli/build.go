@@ -106,7 +106,7 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	}
 	manager.SetManifestTarget(sFlags.TransitManifest)
 	// Set the package
-	if err := manager.SetPackage(pkg); err != nil {
+	if err = manager.SetPackage(pkg); err != nil {
 		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}

@@ -175,28 +175,28 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 
 		var commit *git.Commit
 
-		obj, err := repo.Lookup(id)
-		if err != nil {
-			return err
+		obj, rErr := repo.Lookup(id)
+		if rErr != nil {
+			return rErr
 		}
 
 		switch obj.Type() {
 		// Unannotated tag
 		case git.ObjectCommit:
-			commit, err = obj.AsCommit()
-			if err != nil {
-				return err
+			commit, rErr = obj.AsCommit()
+			if rErr != nil {
+				return rErr
 			}
 			tags = append(tags, name)
 		// Annotated tag with commit target
 		case git.ObjectTag:
-			tag, err := obj.AsTag()
-			if err != nil {
-				return err
+			tag, tErr := obj.AsTag()
+			if tErr != nil {
+				return tErr
 			}
-			commit, err = repo.LookupCommit(tag.TargetId())
-			if err != nil {
-				return err
+			commit, tErr = repo.LookupCommit(tag.TargetId())
+			if tErr != nil {
+				return tErr
 			}
 			tags = append(tags, name)
 		default:

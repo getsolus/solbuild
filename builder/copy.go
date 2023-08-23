@@ -49,7 +49,7 @@ func CopyAll(source, destdir string) error {
 		for _, f := range files {
 			spath := filepath.Join(source, f.Name())
 			dpath := filepath.Join(destdir, filepath.Base(source))
-			if err := CopyAll(spath, dpath); err != nil {
+			if err = CopyAll(spath, dpath); err != nil {
 				return err
 			}
 		}
