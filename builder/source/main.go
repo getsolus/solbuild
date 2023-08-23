@@ -75,7 +75,7 @@ type Source interface {
 // for legacy packages (i.e. sha1sum vs sha256sum).
 //
 // In all cases, New will fallback to the SimpleSource implementation.
-func New(uri, validator string, legacy bool) (Source, error) {
+func New(uri, validator string, legacy bool) (Source, error) { //nolint:ireturn // can return multiple implementations
 	if legacy {
 		return NewSimple(uri, validator, legacy)
 	}
