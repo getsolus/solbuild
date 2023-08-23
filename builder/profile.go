@@ -55,8 +55,10 @@ func NewProfile(name string) (*Profile, error) {
 		if !PathExists(fp) {
 			continue
 		}
+
 		return NewProfileFromPath(fp)
 	}
+
 	return nil, ErrInvalidProfile
 }
 
@@ -77,6 +79,7 @@ func GetAllProfiles() (map[string]*Profile, error) {
 			}
 		}
 	}
+
 	return ret, nil
 }
 
@@ -96,6 +99,7 @@ func NewProfileFromPath(path string) (*Profile, error) {
 	profileName := basename[:len(basename)-len(ProfileSuffix)]
 
 	var b []byte
+
 	profile := &Profile{Name: profileName}
 
 	// Read the config file

@@ -75,10 +75,12 @@ func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 	overlay.ExtraMounts = append(overlay.ExtraMounts, target)
 
 	log.Debugln("Now indexing")
+
 	command := fmt.Sprintf("cd %s; %s", IndexBindTarget, eopkgCommand("eopkg index --skip-signing ."))
 	if err := ChrootExec(notif, overlay.MountPoint, command); err != nil {
 		log.Errorf("Indexing failed: dir='%s', reason: %s\n", dir, err)
 		return err
 	}
+
 	return nil
 }

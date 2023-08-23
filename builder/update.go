@@ -34,22 +34,26 @@ func (b *BackingImage) updatePackages(_ PidNotifier, pkgManager *EopkgManager) e
 
 	// Bring up dbus to do Things
 	log.Debugln("Starting D-BUS")
+
 	if err := pkgManager.StartDBUS(); err != nil {
 		return fmt.Errorf("Failed to start d-bus, reason: %w\n", err)
 	}
 
 	log.Debugln("Upgrading builder image")
+
 	if err := pkgManager.Upgrade(); err != nil {
 		return fmt.Errorf("Failed to perform upgrade, reason: %w\n", err)
 	}
 
 	log.Debugln("Asserting system.devel component")
+
 	if err := pkgManager.InstallComponent("system.devel"); err != nil {
 		return fmt.Errorf("Failed to install system.devel, reason: %w\n", err)
 	}
 
 	// Cleanup now
 	log.Debugln("Stopping D-BUS")
+
 	if err := pkgManager.StopDBUS(); err != nil {
 		return fmt.Errorf("Failed to stop d-bus, reason: %w\n", err)
 	}
@@ -61,12 +65,14 @@ func (b *BackingImage) updatePackages(_ PidNotifier, pkgManager *EopkgManager) e
 // internally.
 func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error {
 	mountMan := disk.GetMountManager()
+
 	log.Debugf("Updating backing image %s\n", b.Name)
 
 	if !PathExists(b.RootDir) {
 		if err := os.MkdirAll(b.RootDir, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create required directories, reason: %w\n", err)
 		}
+
 		log.Debugf("Created root directory %s\n", b.Name)
 	}
 
@@ -85,6 +91,7 @@ func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error
 
 	// Bring up proc
 	log.Debugln("Mounting vfs /proc")
+
 	if err := mountMan.Mount("proc", procPoint, "proc", "nosuid", "noexec"); err != nil {
 		return fmt.Errorf("Failed to mount /proc, reason: %w\n", err)
 	}

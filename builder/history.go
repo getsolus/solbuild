@@ -110,10 +110,12 @@ func CatGitBlob(repo *git.Repository, entry *git.TreeEntry) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	blob, err := obj.AsBlob()
 	if err != nil {
 		return nil, err
 	}
+
 	return blob.Contents(), nil
 }
 
@@ -124,18 +126,22 @@ func GetFileContents(repo *git.Repository, tag, path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	commit, err := repo.Lookup(oid)
 	if err != nil {
 		return nil, err
 	}
+
 	treeObj, err := commit.Peel(git.ObjectTree)
 	if err != nil {
 		return nil, err
 	}
+
 	tree, err := treeObj.AsTree()
 	if err != nil {
 		return nil, err
 	}
+
 	entry, err := tree.EntryByPath(path)
 	if err != nil {
 		return nil, err
@@ -160,6 +166,7 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	}
 	// Get all the tags
 	var tags []string
+
 	tags, err = repo.Tags.List()
 	if err != nil {
 		return nil, err
@@ -187,6 +194,7 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 			if rErr != nil {
 				return rErr
 			}
+
 			tags = append(tags, name)
 		// Annotated tag with commit target
 		case git.ObjectTag:
@@ -194,19 +202,24 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 			if tErr != nil {
 				return tErr
 			}
+
 			commit, tErr = repo.LookupCommit(tag.TargetId())
 			if tErr != nil {
 				return tErr
 			}
+
 			tags = append(tags, name)
 		default:
 			return fmt.Errorf("Internal git error, found %s", obj.Type().String())
 		}
+
 		if commit == nil {
 			return nil
 		}
+
 		commitObj := NewPackageUpdate(name, commit, id.String())
 		updates[name] = commitObj
+
 		return nil
 	})
 	// Foreach went bork
@@ -257,6 +270,7 @@ func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*P
 		if update == nil {
 			continue
 		}
+
 		b, err := GetFileContents(repo, update.ObjectID, fname)
 		if err != nil {
 			continue
@@ -267,10 +281,13 @@ func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*P
 		if pkg, err = NewYmlPackageFromBytes(b); err != nil {
 			continue
 		}
+
 		update.Package = pkg
 		updateSet = append(updateSet, update)
 	}
+
 	sort.Sort(sort.Reverse(SortUpdatesByRelease(updateSet)))
+
 	if len(updateSet) >= MaxChangelogEntries {
 		p.Updates = updateSet[:MaxChangelogEntries]
 	} else {
@@ -318,13 +335,16 @@ func (p *PackageHistory) WriteXML(path string) error {
 		}
 		yUpdate.Comment.Value = update.Body
 		yUpdate.Name.Value = update.Author
+
 		if update.IsSecurity {
 			yUpdate.Type = "security"
 		}
+
 		ypkgUpdates = append(ypkgUpdates, yUpdate)
 	}
 
 	ypkg := &YPKG{History: ypkgUpdates}
+
 	bytes, err := xml.MarshalIndent(ypkg, "", "    ")
 	if err != nil {
 		return err
@@ -332,6 +352,7 @@ func (p *PackageHistory) WriteXML(path string) error {
 
 	// Dump it to the file
 	_, err = fi.Write(bytes)
+
 	return err
 }
 
@@ -358,6 +379,7 @@ func (p *PackageHistory) GetLastVersionTimestamp() int64 {
 		if newVersion != lastVersion {
 			break
 		}
+
 		lastVersion = p.Updates[i].Package.Version
 		lastTime = p.Updates[i].Time
 	}

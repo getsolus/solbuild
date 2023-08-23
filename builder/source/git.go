@@ -99,24 +99,29 @@ func (g *GitSource) Clone() error {
 		Bare:         false,
 		FetchOptions: *fetchOpts,
 	})
+
 	return err
 }
 
 // HasTag will attempt to find the tag, if possible.
 func (g *GitSource) HasTag(repo *git.Repository, tagName string) bool {
 	haveTag := false
+
 	repo.Tags.Foreach(func(name string, id *git.Oid) error {
 		if name == "refs/tags/"+tagName {
 			haveTag = true
 		}
+
 		return nil
 	})
+
 	return haveTag
 }
 
 // fetch will attempt.
 func (g *GitSource) fetch(repo *git.Repository) error {
 	log.Infof("Git fetching existing clone %s\n", g.URI)
+
 	remote, err := repo.Remotes.Lookup("origin")
 	if err != nil {
 		log.Errorf("Failed to find git remote %s %s\n", g.URI, err)
@@ -138,6 +143,7 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 	if err == nil {
 		oid = branch.Target().String()
 		log.Debugf("Found git commit of branch %s %s\n", g.Ref, oid)
+
 		return oid
 	}
 
@@ -152,6 +158,7 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 			// Force break the foreach
 			return errors.New("")
 		}
+
 		return nil
 	})
 
@@ -163,6 +170,7 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 
 	// Check the oid is valid
 	oid = g.Ref
+
 	obj, err := git.NewOid(oid)
 	if err != nil {
 		return ""
@@ -173,7 +181,9 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 	if err != nil {
 		return ""
 	}
+
 	log.Debugf("Found git commit %s %s\n", tagName, oid)
+
 	return obj.String()
 }
 
@@ -183,6 +193,7 @@ func (g *GitSource) GetHead(repo *git.Repository) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return head.Target().String(), nil
 }
 
@@ -193,6 +204,7 @@ func (g *GitSource) resetOnto(repo *git.Repository, ref string) error {
 	if err != nil {
 		return err
 	}
+
 	commitFind, err := repo.Lookup(oid)
 	if err != nil {
 		return err
@@ -202,6 +214,7 @@ func (g *GitSource) resetOnto(repo *git.Repository, ref string) error {
 	if err != nil {
 		return err
 	}
+
 	commit, err := commitObj.AsCommit()
 	if err != nil {
 		return err
@@ -240,6 +253,7 @@ func (g *GitSource) Fetch() error {
 			log.Errorf("Failed to clone remote repository %s %s\n", g.URI, err)
 			return err
 		}
+
 		hadRepo = false
 	}
 

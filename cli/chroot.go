@@ -55,8 +55,10 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
+
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
+
 		builder.DisableColors = true
 	}
 
@@ -67,6 +69,7 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 		// Otherwise look for a suitable file to chroot into from the current directory
 		pkgPath = FindLikelyArg()
 	}
+
 	if len(pkgPath) == 0 {
 		log.Fatalln("No package.yml or pspec.xml found in current directory and no file provided.")
 	}
@@ -84,6 +87,7 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		os.Exit(1)
 	}
+
 	pkg, err := builder.NewPackage(pkgPath)
 	if err != nil {
 		log.Fatalf("Failed to load package: %s\n", err)
@@ -93,10 +97,13 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
+
 		os.Exit(1)
 	}
+
 	if err := manager.Chroot(); err != nil {
 		log.Fatalln("Chroot failure")
 	}
+
 	log.Infoln("Chroot complete")
 }

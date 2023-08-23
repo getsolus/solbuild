@@ -60,6 +60,7 @@ func NewOverlay(config *Config, profile *Profile, back *BackingImage, pkg *Packa
 	dirname := pkg.Name
 	// i.e. /var/cache/solbuild/unstable-x86_64/nano
 	basedir := filepath.Join(config.OverlayRootDir, profile.Name, dirname)
+
 	return &Overlay{
 		Back:           back,
 		Package:        pkg,
@@ -92,11 +93,14 @@ func (o *Overlay) EnsureDirs() error {
 		if PathExists(p) {
 			continue
 		}
+
 		log.Debugf("Creating overlay storage directory: %s\n", p)
+
 		if err := os.MkdirAll(p, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create overlay storage directory: dir='%s', reason: %w\n", p, err)
 		}
 	}
+
 	return nil
 }
 
@@ -106,10 +110,13 @@ func (o *Overlay) CleanExisting() error {
 	if !PathExists(o.BaseDir) {
 		return nil
 	}
+
 	log.Debugf("Removing stale workspace: %s\n", o.BaseDir)
+
 	if err := os.RemoveAll(o.BaseDir); err != nil {
 		return fmt.Errorf("Failed to remove stale workspace: dir='%s', reason: %w\n", o.BaseDir, err)
 	}
+
 	return nil
 }
 
@@ -126,12 +133,14 @@ func (o *Overlay) Mount() error {
 			log.Errorf("Failed to create tmpfs directory: dir='%s', reason: %s\n", o.BaseDir, err)
 			return nil
 		}
+
 		log.Debugf("Mounting root tmpfs: point='%s' size='%s'\n", o.BaseDir, o.TmpfsSize)
 
 		var tmpfsOptions []string
 		if o.TmpfsSize != "" {
 			tmpfsOptions = append(tmpfsOptions, fmt.Sprintf("size=%s", o.TmpfsSize))
 		}
+
 		tmpfsOptions = append(tmpfsOptions, []string{
 			"rw",
 			"relatime",
@@ -148,9 +157,11 @@ func (o *Overlay) Mount() error {
 
 	// First up, mount the backing image
 	log.Debugf("Mounting backing image: point='%s'\n", o.Back.ImagePath)
+
 	if err := mountMan.Mount(o.Back.ImagePath, o.ImgDir, "auto", "ro", "loop"); err != nil {
 		return fmt.Errorf("Failed to mount backing image: point='%s', reason: %w\n", o.Back.ImagePath, err)
 	}
+
 	o.mountedImg = true
 
 	// Now mount the overlayfs
@@ -165,6 +176,7 @@ func (o *Overlay) Mount() error {
 	if err != nil {
 		log.Fatalf("Failed to mount overlayfs: point='%s', reason: %s\n", o.MountPoint, err)
 	}
+
 	o.mountedOverlay = true
 
 	// Must be done here before we do any more overlayfs work
@@ -178,6 +190,7 @@ func (o *Overlay) Unmount() error {
 	for _, m := range o.ExtraMounts {
 		mountMan.Unmount(m)
 	}
+
 	o.ExtraMounts = nil
 
 	vfsPoints := []string{
@@ -191,6 +204,7 @@ func (o *Overlay) Unmount() error {
 		for _, p := range vfsPoints {
 			mountMan.Unmount(p)
 		}
+
 		o.mountedVFS = false
 	}
 
@@ -198,20 +212,26 @@ func (o *Overlay) Unmount() error {
 		if err := mountMan.Unmount(o.ImgDir); err != nil {
 			return err
 		}
+
 		o.mountedImg = false
 	}
+
 	if o.mountedOverlay {
 		if err := mountMan.Unmount(o.MountPoint); err != nil {
 			return err
 		}
+
 		o.mountedOverlay = false
 	}
+
 	if o.mountedTmpfs {
 		if err := mountMan.Unmount(o.UpperDir); err != nil {
 			return err
 		}
+
 		o.mountedTmpfs = false
 	}
+
 	return nil
 }
 
@@ -241,34 +261,41 @@ func (o *Overlay) MountVFS() error {
 
 	// Bring up dev
 	log.Debugln("Mounting vfs /dev")
+
 	if err := mountMan.Mount("devtmpfs", vfsPoints[0], "devtmpfs", "nosuid", "mode=755"); err != nil {
 		return fmt.Errorf("Failed to mount /dev, reason: %w\n", err)
 	}
+
 	o.mountedVFS = true
 
 	// Bring up dev/pts
 	log.Debugln("Mounting vfs /dev/pts")
+
 	if err := mountMan.Mount("devpts", vfsPoints[1], "devpts", "gid=5", "mode=620", "nosuid", "noexec"); err != nil {
 		return fmt.Errorf("Failed to mount /dev/pts, reason: %w\n", err)
 	}
 
 	// Bring up proc
 	log.Debugln("Mounting vfs /proc")
+
 	if err := mountMan.Mount("proc", vfsPoints[2], "proc", "nosuid", "noexec"); err != nil {
 		return fmt.Errorf("Failed to mount /proc, reason: %w\n", err)
 	}
 
 	// Bring up sys
 	log.Debugln("Mounting vfs /sys")
+
 	if err := mountMan.Mount("sysfs", vfsPoints[3], "sysfs"); err != nil {
 		return fmt.Errorf("Failed to mount /sys, reason: %w\n", err)
 	}
 
 	// Bring up shm
 	log.Debugln("Mounting vfs /dev/shm")
+
 	if err := mountMan.Mount("tmpfs-shm", vfsPoints[4], "tmpfs"); err != nil {
 		return fmt.Errorf("Failed to mount /dev/shm, reason: %w\n", err)
 	}
+
 	return nil
 }
 
@@ -276,9 +303,12 @@ func (o *Overlay) MountVFS() error {
 // that localhost networking will still work.
 func (o *Overlay) ConfigureNetworking() error {
 	ipCommand := "/sbin/ip link set lo up"
+
 	log.Debugln("Configuring container networking")
+
 	if err := commands.ChrootExec(o.MountPoint, ipCommand); err != nil {
 		return fmt.Errorf("Failed to configure networking, reason: %w\n", err)
 	}
+
 	return nil
 }

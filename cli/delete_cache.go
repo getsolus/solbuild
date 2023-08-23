@@ -59,12 +59,15 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
+
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
 	}
+
 	if os.Geteuid() != 0 {
 		log.Fatalln("You must be root to delete caches")
 	}
+
 	manager, err := builder.NewManager()
 	if err != nil {
 		log.Fatalf("Failed to create new Manager: %e\n", err)
@@ -81,16 +84,22 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 			builder.PackageCacheDirectory,
 			source.SourceDir,
 		}
+
 		var totalSize int64
+
 		for _, p := range sizeDirs {
 			size, err := getDirSize(p)
 			totalSize += size
+
 			if err != nil {
 				log.Warnf("Couldn't get directory size, reason: %s\n", err)
 			}
+
 			log.Infof("Size of '%s' is '%s'\n", p, humanReadableFormat(float64(size)))
 		}
+
 		log.Infof("Total size: '%s'\n", humanReadableFormat(float64(totalSize)))
+
 		return
 	}
 
@@ -108,24 +117,32 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 			source.SourceDir,
 		}...)
 	}
+
 	if sFlags.Images {
 		nukeDirs = append(nukeDirs, []string{builder.ImagesDir}...)
 	}
+
 	var totalSize int64
+
 	for _, p := range nukeDirs {
 		if !builder.PathExists(p) {
 			continue
 		}
+
 		size, err := getDirSize(p)
 		totalSize += size
+
 		if err != nil {
 			log.Warnf("Couldn't get directory size, reason: %s\n", err)
 		}
+
 		log.Infof("Removing cache directory '%s', of size '%s\n", p, humanReadableFormat(float64(size)))
+
 		if err := os.RemoveAll(p); err != nil {
 			log.Fatalf("Could not remove cache directory, reason: %s\n", err)
 		}
 	}
+
 	if totalSize > 0 {
 		log.Infof("Total restored size: '%s'\n", humanReadableFormat(float64(totalSize)))
 	}
@@ -147,11 +164,14 @@ func getDirSize(path string) (int64, error) {
 		if err != nil {
 			return err
 		}
+
 		if !info.IsDir() {
 			totalSize += info.Size()
 		}
+
 		return err
 	})
+
 	return totalSize, err
 }
 
@@ -160,7 +180,9 @@ func humanReadableFormat(i float64) string {
 	if i <= 0 {
 		return "0.0 B"
 	}
+
 	units := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"}
 	chosenUnit := math.Min(math.Floor(math.Log(i)/math.Log(1024)), float64(len(units)-1))
+
 	return fmt.Sprintf("%.1f %s", i/math.Pow(1024, chosenUnit), units[int64(chosenUnit)])
 }

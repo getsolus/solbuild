@@ -110,13 +110,16 @@ func NewPackage(path string) (*Package, error) {
 	if strings.HasSuffix(path, ".xml") {
 		return NewXMLPackage(path)
 	}
+
 	return NewYmlPackage(path)
 }
 
 // NewXMLPackage will attempt to parse the pspec.xml file @ path.
 func NewXMLPackage(path string) (*Package, error) {
 	var by []byte
+
 	var err error
+
 	var fi *os.File
 
 	fi, err = os.Open(path)
@@ -129,10 +132,12 @@ func NewXMLPackage(path string) (*Package, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	xpkg := &XMLPackage{}
 	if err = xml.Unmarshal(by, xpkg); err != nil {
 		return nil, err
 	}
+
 	if len(xpkg.History) < 1 {
 		return nil, errors.New("xml: Malformed pspec file")
 	}
@@ -152,25 +157,31 @@ func NewXMLPackage(path string) (*Package, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		ret.Sources = append(ret.Sources, source)
 	}
 
 	if ret.Name == "" {
 		return nil, errors.New("xml: Missing name in package")
 	}
+
 	if ret.Version == "" {
 		return nil, errors.New("xml: Missing version in package")
 	}
+
 	if ret.Release < 0 {
 		return nil, fmt.Errorf("xml: Invalid release in package: %d", ret.Release)
 	}
+
 	return ret, nil
 }
 
 // NewYmlPackage will attempt to parse the ypkg package.yml file @ path.
 func NewYmlPackage(path string) (*Package, error) {
 	var by []byte
+
 	var err error
+
 	var fi *os.File
 
 	fi, err = os.Open(path)
@@ -183,11 +194,14 @@ func NewYmlPackage(path string) (*Package, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	ret, err := NewYmlPackageFromBytes(by)
 	if err != nil {
 		return nil, err
 	}
+
 	ret.Path = path
+
 	return ret, nil
 }
 
@@ -214,6 +228,7 @@ func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 			if err != nil {
 				return nil, err
 			}
+
 			ret.Sources = append(ret.Sources, source)
 		}
 	}
@@ -221,11 +236,14 @@ func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 	if ret.Name == "" {
 		return nil, errors.New("ypkg: Missing name in package")
 	}
+
 	if ret.Version == "" {
 		return nil, errors.New("ypkg: Missing version in package")
 	}
+
 	if ret.Release < 0 {
 		return nil, fmt.Errorf("ypkg: Invalid release in package: %d", ret.Release)
 	}
+
 	return ret, nil
 }

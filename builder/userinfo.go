@@ -52,6 +52,7 @@ func (u *UserInfo) SetFromSudo() bool {
 
 	sudoUID := os.Getenv("SUDO_UID")
 	sudoGID := os.Getenv("SUDO_GID")
+
 	var err error
 
 	if sudoGID == "" {
@@ -121,6 +122,7 @@ func (u *UserInfo) SetFromPackager() bool {
 		if !PathExists(p) {
 			continue
 		}
+
 		cfg, err := ini.Load(p)
 		if err != nil {
 			log.Errorf("Error loading INI file %s %s\n", p, err)
@@ -138,14 +140,18 @@ func (u *UserInfo) SetFromPackager() bool {
 			log.Errorf("Packager file has missing Name %s %s\n", p, err)
 			continue
 		}
+
 		email, err := section.GetKey("Email")
 		if err != nil {
 			log.Errorf("Packager file has missing Email %s %s\n", p, err)
 			continue
 		}
+
 		u.Name = uname.String()
 		u.Email = email.String()
+
 		log.Debugln("Setting packager details from packager INI file")
+
 		return true
 	}
 
@@ -176,13 +182,16 @@ func (u *UserInfo) SetFromGit() bool {
 		log.Errorf("gitconfig file has missing name %s %s\n", gitConfPath, err)
 		return false
 	}
+
 	email, err := section.GetKey("email")
 	if err != nil {
 		log.Errorf("gitconfig file has missing email %s %s\n", gitConfPath, err)
 		return false
 	}
+
 	u.Name = uname.String()
 	u.Email = email.String()
+
 	log.Debugln("Setting packager details from git config")
 
 	return true
@@ -212,6 +221,7 @@ func GetUserInfo() *UserInfo {
 	if uinfo.Name == "" {
 		uinfo.Name = FallbackUserName
 	}
+
 	if uinfo.Email == "" {
 		if ho, err := os.Hostname(); err != nil {
 			uinfo.Email = fmt.Sprintf("%s@%s", uinfo.Username, ho)
@@ -229,10 +239,13 @@ func (u *UserInfo) WritePackager(path string) error {
 	if err != nil {
 		return err
 	}
+
 	defer fi.Close()
+
 	contents := fmt.Sprintf("[Packager]\nName=%s\nEmail=%s\n", u.Name, u.Email)
 	if _, err := fi.WriteString(contents); err != nil {
 		return err
 	}
+
 	return nil
 }

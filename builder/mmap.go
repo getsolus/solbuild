@@ -35,37 +35,48 @@ type MmapFile struct {
 // MapFile will attempt to mmap() the input file.
 func MapFile(path string) (*MmapFile, error) {
 	var err error
+
 	ret := &MmapFile{}
+
 	ret.f, err = os.Open(path)
 	if err != nil {
 		return nil, err
 	}
+
 	st, err := ret.f.Stat()
 	if err != nil {
 		ret.f.Close()
 		return nil, err
 	}
+
 	ret.len = st.Size()
 	ret.Data, err = syscall.Mmap(int(ret.f.Fd()), 0, int(ret.len), syscall.PROT_READ, syscall.MAP_PRIVATE)
+
 	if err != nil {
 		ret.f.Close()
 		return nil, err
 	}
+
 	ret.m = true
+
 	return ret, nil
 }
 
 // Close will close the previously mmapped filed.
 func (m *MmapFile) Close() error {
 	var err error
+
 	if m.f == nil {
 		return nil
 	}
+
 	if m.m {
 		err = syscall.Munmap(m.Data)
 		m.m = false
 	}
+
 	m.f.Close()
 	m.f = nil
+
 	return err
 }

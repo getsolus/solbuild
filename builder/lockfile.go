@@ -82,10 +82,12 @@ func (l *LockFile) GetOwnerPID() int {
 // GetOwnerProcess will return the executable name if possible.
 func (l *LockFile) GetOwnerProcess() string {
 	fp := fmt.Sprintf("/proc/%d/exe", l.owningPID)
+
 	str, err := filepath.EvalSymlinks(fp)
 	if err != nil {
 		return "unknown process"
 	}
+
 	return str
 }
 
@@ -146,8 +148,11 @@ func (l *LockFile) readPID() (int, error) {
 	if err != nil {
 		return -1, err
 	}
+
 	defer fi.Close()
+
 	var pid int
+
 	var n int
 
 	// This is ok, we can just nuke it..
@@ -158,6 +163,7 @@ func (l *LockFile) readPID() (int, error) {
 	if n != 1 {
 		return -1, ErrDeadLockFile
 	}
+
 	return pid, nil
 }
 
@@ -166,11 +172,14 @@ func (l *LockFile) writePID() error {
 	if l.fd == nil {
 		panic(errors.New("cannot write PID for no file"))
 	}
+
 	l.conlock.Lock()
 	defer l.conlock.Unlock()
+
 	if _, err := fmt.Fprintf(l.fd, "%d", l.ourPID); err != nil {
 		return err
 	}
+
 	return l.fd.Sync()
 }
 
@@ -178,13 +187,16 @@ func (l *LockFile) writePID() error {
 func (l *LockFile) Clean() error {
 	l.conlock.Lock()
 	defer l.conlock.Unlock()
+
 	if l.fd == nil || !l.owner {
 		return nil
 	}
 
 	l.fd.Close()
+
 	if l.owner {
 		return os.Remove(l.path)
 	}
+
 	return nil
 }

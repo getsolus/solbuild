@@ -50,6 +50,7 @@ func NewSimple(uri, validator string, legacy bool) (*SimpleSource, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	fileName := filepath.Base(uriObj.Path)
 	// support URI fragments for renaming sources
 	if uriObj.Fragment != "" {
@@ -64,6 +65,7 @@ func NewSimple(uri, validator string, legacy bool) (*SimpleSource, error) {
 		validator: validator,
 		url:       uriObj,
 	}
+
 	return ret, nil
 }
 
@@ -91,9 +93,11 @@ func (s *SimpleSource) GetSHA1Sum(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	hash := sha1.New()
 	hash.Write(inp)
 	sum := hash.Sum(nil)
+
 	return hex.EncodeToString(sum), nil
 }
 
@@ -103,9 +107,11 @@ func (s *SimpleSource) GetSHA256Sum(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	hash := sha256.New()
 	hash.Write(inp)
 	sum := hash.Sum(nil)
+
 	return hex.EncodeToString(sum), nil
 }
 
@@ -127,6 +133,7 @@ func (s *SimpleSource) download(destination string) error {
 		if err != nil {
 			return err
 		}
+
 		req.SetChecksum(sha256.New(), sum, false)
 	}
 
@@ -136,6 +143,7 @@ func (s *SimpleSource) download(destination string) error {
 	pbar := pb.Start64(resp.Size())
 	pbar.Set(pb.Bytes, true)
 	pbar.SetTemplateString(progressBarTemplate)
+
 	defer pbar.Finish()
 
 	// Timer to integrate into pbar (30fps)
@@ -149,10 +157,12 @@ func (s *SimpleSource) download(destination string) error {
 		case <-resp.Done:
 			// Ensure progressbar completes to 100%
 			pbar.SetCurrent(resp.BytesComplete())
+
 			if err := resp.Err(); err != nil {
 				log.Errorf("Error downloading %s: %v\n", s.URI, err)
 				return err
 			}
+
 			return nil
 		}
 	}
@@ -201,10 +211,12 @@ func (s *SimpleSource) Fetch() error {
 		if err != nil {
 			return err
 		}
+
 		tgtLink := filepath.Join(SourceDir, sha)
 		if err := os.Symlink(hash, tgtLink); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

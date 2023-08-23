@@ -55,5 +55,6 @@ func FindLikelyArg() string {
 			}
 		}
 	}
+
 	return ""
 }

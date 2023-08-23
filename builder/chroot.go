@@ -34,6 +34,7 @@ func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay
 	} else {
 		env = SaneEnvironment(BuildUser, BuildUserHome)
 	}
+
 	ChrootEnvironment = env
 
 	if err := p.ActivateRoot(overlay); err != nil {
@@ -68,7 +69,9 @@ func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay
 
 	loginCommand := fmt.Sprintf("/bin/su - %s -s %s", user, BuildUserShell)
 	err := ChrootExecStdin(notif, overlay.MountPoint, loginCommand)
+
 	commands.SetStdin(nil)
 	notif.SetActivePID(0)
+
 	return err
 }

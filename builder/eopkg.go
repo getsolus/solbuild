@@ -34,6 +34,7 @@ func eopkgCommand(c string) string {
 	if !DisableColors {
 		return c
 	}
+
 	return fmt.Sprintf("%s -N", c)
 }
 
@@ -82,18 +83,23 @@ func (e *EopkgManager) CopyAssets() error {
 		if !PathExists(key) {
 			continue
 		}
+
 		dirName := filepath.Dir(value)
 		if !PathExists(dirName) {
 			log.Debugf("Creating required directory: %s\n", dirName)
+
 			if err := os.MkdirAll(dirName, 0o0755); err != nil {
 				return fmt.Errorf("Failed to create required asset directory %s, reason %w\n", dirName, err)
 			}
 		}
+
 		log.Debugf("Copying host asset %s\n", key)
+
 		if err := disk.CopyFile(key, value); err != nil {
 			return fmt.Errorf("Failed to copy host asset %s, reason: %w\n", key, err)
 		}
 	}
+
 	return nil
 }
 
@@ -113,6 +119,7 @@ func (e *EopkgManager) Init() error {
 	// Ensure system wide cache exists
 	if !PathExists(e.cacheSource) {
 		log.Debugf("Creating system-wide package cache: %s\n", e.cacheSource)
+
 		if err := os.MkdirAll(e.cacheSource, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create package cache %s, reason: %w\n", e.cacheSource, err)
 		}
@@ -121,6 +128,7 @@ func (e *EopkgManager) Init() error {
 	if err := os.MkdirAll(e.cacheTarget, 0o0755); err != nil {
 		return err
 	}
+
 	return disk.GetMountManager().BindMount(e.cacheSource, e.cacheTarget)
 }
 
@@ -129,19 +137,25 @@ func (e *EopkgManager) StartDBUS() error {
 	if e.dbusActive {
 		return nil
 	}
+
 	dbusDir := filepath.Join(e.root, "run", "dbus")
 	if err := os.MkdirAll(dbusDir, 0o0755); err != nil {
 		return err
 	}
+
 	if err := ChrootExec(e.notif, e.root, "dbus-uuidgen --ensure"); err != nil {
 		return err
 	}
+
 	e.notif.SetActivePID(0)
+
 	if err := ChrootExec(e.notif, e.root, "dbus-daemon --system"); err != nil {
 		return err
 	}
+
 	e.notif.SetActivePID(0)
 	e.dbusActive = true
+
 	return nil
 }
 
@@ -151,13 +165,17 @@ func (e *EopkgManager) StopDBUS() error {
 	if !e.dbusActive {
 		return nil
 	}
+
 	var b []byte
+
 	var err error
+
 	var f *os.File
 
 	if f, err = os.Open(e.dbusPid); err != nil {
 		return err
 	}
+
 	defer func() {
 		f.Close()
 		os.Remove(e.dbusPid)
@@ -169,6 +187,7 @@ func (e *EopkgManager) StopDBUS() error {
 	}
 
 	pid := strings.Split(string(b), "\n")[0]
+
 	return commands.ExecStdoutArgs("kill", []string{"-9", pid})
 }
 
@@ -187,11 +206,14 @@ func (e *EopkgManager) Upgrade() error {
 		"iproute2",
 		"sccache",
 	}
+
 	if err := ChrootExec(e.notif, e.root, eopkgCommand("eopkg upgrade -y")); err != nil {
 		return err
 	}
+
 	e.notif.SetActivePID(0)
 	err := ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg install -y %s", strings.Join(newReqs, " "))))
+
 	return err
 }
 
@@ -199,6 +221,7 @@ func (e *EopkgManager) Upgrade() error {
 func (e *EopkgManager) InstallComponent(comp string) error {
 	err := ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg install -c %v -y", comp)))
 	e.notif.SetActivePID(0)
+
 	return err
 }
 
@@ -239,6 +262,7 @@ func EnsureEopkgLayout(root string) error {
 			return err
 		}
 	}
+
 	runTgt := filepath.Join(root, "var", "run")
 	if !PathExists(runTgt) {
 		if err := os.Symlink("../run", filepath.Join(root, "var", "run")); err != nil {
@@ -255,17 +279,21 @@ func readURIFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	defer fi.Close()
+
 	contents, err := io.ReadAll(fi)
 	if err != nil {
 		return "", err
 	}
+
 	return string(contents), nil
 }
 
 // GetRepos will attempt to discover all the repos on the target filesystem.
 func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 	globPat := filepath.Join(e.root, "var", "lib", "eopkg", "index", "*", "uri")
+
 	var repoFiles []string
 
 	log.Debugln("Discovering repos in rootfs")
@@ -284,12 +312,14 @@ func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 			log.Errorf("Unable to read repository file %s, reason: %s\n", repo, err)
 			return nil, err
 		}
+
 		repoName := filepath.Base(filepath.Dir(repo))
 		repos = append(repos, &EopkgRepo{
 			ID:  repoName,
 			URI: uri,
 		})
 	}
+
 	return repos, nil
 }
 

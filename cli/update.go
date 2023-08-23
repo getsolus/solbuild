@@ -47,9 +47,11 @@ func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
+
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
 	}
+
 	if os.Geteuid() != 0 {
 		log.Fatalln("You must be root to run init profiles")
 	}
@@ -63,12 +65,15 @@ func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
+
 		os.Exit(1)
 	}
+
 	if err := manager.Update(); err != nil {
 		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
+
 		os.Exit(1)
 	}
 }

@@ -83,6 +83,7 @@ func New(uri, validator string, legacy bool) (Source, error) { //nolint:ireturn 
 	if strings.HasPrefix(uri, "git|") {
 		return NewGit(uri[len("git|"):], validator)
 	}
+
 	return NewSimple(uri, validator, legacy)
 }
 
@@ -91,5 +92,6 @@ func PathExists(path string) bool {
 	if st, err := os.Stat(path); err == nil && st != nil {
 		return true
 	}
+
 	return false
 }

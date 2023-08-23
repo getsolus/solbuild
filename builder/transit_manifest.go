@@ -83,6 +83,7 @@ func (t *TransitManifest) AddFile(path string) error {
 	if !strings.HasSuffix(path, ".eopkg") {
 		return ErrIllegalUpload
 	}
+
 	hash, err := FileSha256sum(path)
 	if err != nil {
 		return err
@@ -92,6 +93,7 @@ func (t *TransitManifest) AddFile(path string) error {
 		Path:   filepath.Base(path),
 		Sha256: hash,
 	})
+
 	return nil
 }
 
@@ -104,5 +106,6 @@ func (t *TransitManifest) Write(path string) error {
 	if err := tmenc.Encode(t); err != nil {
 		return err
 	}
+
 	return os.WriteFile(path, blob.Bytes(), 0o0644)
 }

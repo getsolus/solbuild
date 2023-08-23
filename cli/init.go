@@ -59,9 +59,11 @@ func InitRun(r *cmd.Root, s *cmd.Sub) {
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
+
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
 	}
+
 	if os.Geteuid() != 0 {
 		log.Fatalln("You must be root to run init profiles")
 	}
@@ -74,7 +76,9 @@ func InitRun(r *cmd.Root, s *cmd.Sub) {
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		log.Fatalln(err.Error())
 	}
+
 	doInit(manager)
+
 	if sFlags.AutoUpdate {
 		doUpdate(manager)
 	}
@@ -83,16 +87,19 @@ func InitRun(r *cmd.Root, s *cmd.Sub) {
 func doInit(manager *builder.Manager) {
 	prof := manager.GetProfile()
 	bk := builder.NewBackingImage(prof.Image)
+
 	if bk.IsInstalled() {
 		log.Warnf("'%s' has already been initialised\n", prof.Name)
 		return
 	}
+
 	imgDir := builder.ImagesDir
 	// Ensure directories exist
 	if !builder.PathExists(imgDir) {
 		if err := os.MkdirAll(imgDir, 0o0755); err != nil {
 			log.Fatalf("Failed to create images directory '%s', reason: %s", imgDir, err)
 		}
+
 		log.Debugf("Created images directory '%s'\n", imgDir)
 	}
 	// Now ensure we actually have said image
@@ -103,9 +110,11 @@ func doInit(manager *builder.Manager) {
 	}
 	// Decompress the image
 	log.Debugf("Decompressing backing image, source: '%s' target: '%s'\n", bk.ImagePathXZ, bk.ImagePath)
+
 	if err := commands.ExecStdoutArgsDir(builder.ImagesDir, "unxz", []string{bk.ImagePathXZ}); err != nil {
 		log.Fatalf("Failed to decompress image '%s', reason: %s\n", bk.ImagePathXZ, err)
 	}
+
 	log.Infoln("Profile successfully initialised")
 }
 
@@ -115,24 +124,30 @@ func downloadImage(bk *builder.BackingImage) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to create file '%s', reason: '%w'", bk.ImagePathXZ, err)
 	}
+
 	defer func() {
 		if err != nil {
 			os.Remove(bk.ImagePathXZ)
 		}
 	}()
 	defer file.Close()
+
 	resp, err := http.Get(bk.ImageURI)
 	if err != nil {
 		return fmt.Errorf("failed to fetch image '%s', reason: '%w'", bk.ImageURI, err)
 	}
+
 	defer resp.Body.Close()
 	bar := pb.New64(resp.ContentLength).Set(pb.Bytes, true)
 	reader := bar.NewProxyReader(resp.Body)
 	bar.Start()
+
 	defer bar.Finish()
+
 	bytesRemaining := resp.ContentLength
 	done := false
 	buf := make([]byte, 32*1024)
+
 	for !done {
 		bytesRead, err := reader.Read(buf)
 		if errors.Is(err, io.EOF) {
@@ -140,11 +155,14 @@ func downloadImage(bk *builder.BackingImage) (err error) {
 		} else if err != nil {
 			return fmt.Errorf("failed to fetch image '%s', reason: '%w'", bk.ImageURI, err)
 		}
+
 		if _, err = file.Write(buf[:bytesRead]); err != nil {
 			return fmt.Errorf("failed to write image '%s', reason: '%w'", bk.ImagePathXZ, err)
 		}
+
 		bytesRemaining -= int64(bytesRead)
 	}
+
 	return nil
 }
 

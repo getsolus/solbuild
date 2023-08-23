@@ -95,6 +95,7 @@ func PathExists(path string) bool {
 	if st, err := os.Stat(path); err == nil && st != nil {
 		return true
 	}
+
 	return false
 }
 
@@ -105,6 +106,7 @@ func IsValidImage(profile string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -112,6 +114,7 @@ func IsValidImage(profile string) bool {
 func EmitImageError(image string) {
 	fmt.Fprintf(os.Stderr, "Error: '%v' is not a known image\n", image)
 	fmt.Fprintf(os.Stderr, "Valid images include:\n\n")
+
 	for _, p := range ValidImages {
 		fmt.Fprintf(os.Stderr, " * %v\n", p)
 	}
@@ -127,6 +130,7 @@ func EmitProfileError(p string) {
 		fmt.Fprintf(os.Stderr, "Error loading profiles: %v\n", err)
 		return
 	}
+
 	if len(profiles) < 1 {
 		fmt.Fprintf(os.Stderr, "Fatal: No profiles installed. Reinstall solbuild\n")
 		return

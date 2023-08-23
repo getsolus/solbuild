@@ -71,11 +71,13 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
+
 		builder.DisableColors = true
 	}
 
 	if sFlags.ABIReport {
 		log.Debugln("Not attempting generation of an ABI report")
+
 		builder.DisableABIReport = true
 	}
 
@@ -86,6 +88,7 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 		// Otherwise look for a suitable file in the current directory
 		pkgPath = FindLikelyArg()
 	}
+
 	if len(pkgPath) == 0 {
 		log.Fatalln("No package.yml or pspec.xml file in current directory and no file provided.")
 	}
@@ -102,16 +105,19 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		os.Exit(1)
 	}
+
 	pkg, err := builder.NewPackage(pkgPath)
 	if err != nil {
 		log.Fatalf("Failed to load package: %s\n", err)
 	}
+
 	manager.SetManifestTarget(sFlags.TransitManifest)
 	// Set the package
 	if err = manager.SetPackage(pkg); err != nil {
 		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
+
 		os.Exit(1)
 	}
 
@@ -126,6 +132,7 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 			log.Fatalln("tmpfs: No memory size specified")
 		}
 	}
+
 	if sFlags.Memory != "" && !sFlags.Tmpfs {
 		if !manager.Config.EnableTmpfs {
 			log.Fatalln("tmpfs: Memory size specified but tmpfs was not enabled, pass -t to enable tmpfs")
@@ -157,5 +164,6 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	if err := manager.Build(); err != nil {
 		log.Panic("Failed to build packages")
 	}
+
 	log.Infoln("Building succeeded")
 }

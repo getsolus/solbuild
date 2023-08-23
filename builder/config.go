@@ -69,6 +69,7 @@ func NewConfig() (*Config, error) {
 			if err != nil {
 				return nil, err
 			}
+
 			var b []byte
 
 			// We don't defer the close because of the amount of files we could
@@ -78,6 +79,7 @@ func NewConfig() (*Config, error) {
 				fi.Close()
 				return nil, err
 			}
+
 			fi.Close()
 
 			if _, err = toml.Decode(string(b), config); err != nil {
@@ -85,5 +87,6 @@ func NewConfig() (*Config, error) {
 			}
 		}
 	}
+
 	return config, nil
 }

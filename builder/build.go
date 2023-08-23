@@ -46,6 +46,7 @@ func (p *Package) CreateDirs(o *Overlay) error {
 		if err := os.MkdirAll(LegacyCcacheDirectory, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create ccache directory %+v, reason: %w\n", p, err)
 		}
+
 		if err := os.MkdirAll(LegacySccacheDirectory, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create sccache directory %+v, reason: %w\n", p, err)
 		}
@@ -54,12 +55,15 @@ func (p *Package) CreateDirs(o *Overlay) error {
 		if err := os.MkdirAll(CcacheDirectory, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create ccache directory %+v, reason: %w\n", p, err)
 		}
+
 		if err := os.Chown(CcacheDirectory, BuildUserID, BuildUserGID); err != nil {
 			return fmt.Errorf("Failed to chown ccache directory %+v, reason: %w\n", p, err)
 		}
+
 		if err := os.MkdirAll(SccacheDirectory, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create sccache directory %+v, reason: %w\n", p, err)
 		}
+
 		if err := os.Chown(SccacheDirectory, BuildUserID, BuildUserGID); err != nil {
 			return fmt.Errorf("Failed to chown sccache directory %+v, reason: %w\n", p, err)
 		}
@@ -76,10 +80,12 @@ func (p *Package) FetchSources(o *Overlay) error {
 		if source.IsFetched() {
 			continue
 		}
+
 		if err := source.Fetch(); err != nil {
 			return fmt.Errorf("Failed to fetch source %s, reason: %w\n", source.GetIdentifier(), err)
 		}
 	}
+
 	return nil
 }
 
@@ -124,6 +130,7 @@ func (p *Package) BindSources(o *Overlay) error {
 		// Account for these to help cleanups
 		o.ExtraMounts = append(o.ExtraMounts, bindConfig.BindTarget)
 	}
+
 	return nil
 }
 
@@ -145,7 +152,9 @@ func (p *Package) BindCcache(o *Overlay) error {
 	if err := mountMan.BindMount(ccacheSource, ccacheDir); err != nil {
 		return fmt.Errorf("Failed to bind mount ccache %s, reason: %w\n", ccacheDir, err)
 	}
+
 	o.ExtraMounts = append(o.ExtraMounts, ccacheDir)
+
 	return nil
 }
 
@@ -167,7 +176,9 @@ func (p *Package) BindSccache(o *Overlay) error {
 	if err := mountMan.BindMount(sccacheSource, sccacheDir); err != nil {
 		return fmt.Errorf("Failed to bind mount sccache %s, reason: %w\n", sccacheDir, err)
 	}
+
 	o.ExtraMounts = append(o.ExtraMounts, sccacheDir)
+
 	return nil
 }
 
@@ -182,6 +193,7 @@ func (p *Package) GetWorkDirInternal() string {
 	if p.Type == PackageTypeXML {
 		return "/WORK"
 	}
+
 	return filepath.Join(BuildUserHome, "work")
 }
 
@@ -196,6 +208,7 @@ func (p *Package) GetSourceDirInternal() string {
 	if p.Type == PackageTypeXML {
 		return "/var/cache/eopkg/archives"
 	}
+
 	return filepath.Join(BuildUserHome, "YPKG", "sources")
 }
 
@@ -210,6 +223,7 @@ func (p *Package) GetCcacheDirInternal() string {
 	if p.Type == PackageTypeXML {
 		return "/root/.ccache"
 	}
+
 	return filepath.Join(BuildUserHome, ".ccache")
 }
 
@@ -224,6 +238,7 @@ func (p *Package) GetSccacheDirInternal() string {
 	if p.Type == PackageTypeXML {
 		return "/root/.cache/sccache"
 	}
+
 	return filepath.Join(BuildUserHome, ".cache", "sccache")
 }
 
@@ -253,10 +268,12 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 
 	for _, pat := range copyPaths {
 		fso := filepath.Join(baseDir, pat)
+
 		newDest := destdir
 		if p.Type == PackageTypeXML && pat == "component.xml" {
 			newDest = filepath.Dir(destdir)
 		}
+
 		if err := CopyAll(fso, newDest); err != nil {
 			return err
 		}
@@ -267,12 +284,14 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 	}
 	// Write the history file out
 	histPath := filepath.Join(destdir, "history.xml")
+
 	return h.WriteXML(histPath)
 }
 
 // PrepYpkg will do the initial leg work of preparing us for a ypkg build.
 func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager, overlay *Overlay, h *PackageHistory) error {
 	log.Debugln("Writing packager file")
+
 	fp := filepath.Join(overlay.MountPoint, BuildUserHome, ".config", "solus", "packager")
 	fpd := filepath.Dir(fp)
 
@@ -288,6 +307,7 @@ func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager,
 
 	wdir := p.GetWorkDirInternal()
 	ymlFile := filepath.Join(wdir, filepath.Base(p.Path))
+
 	cmd := fmt.Sprintf("ypkg-install-deps -f %s", ymlFile)
 	if DisableColors {
 		cmd += " -n"
@@ -299,10 +319,12 @@ func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager,
 	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
 		return fmt.Errorf("Failed to install build dependencies %s, reason: %w\n", ymlFile, err)
 	}
+
 	notif.SetActivePID(0)
 
 	// Cleanup now
 	log.Debugln("Stopping D-BUS")
+
 	if err := pman.StopDBUS(); err != nil {
 		return fmt.Errorf("Failed to stop d-bus, reason: %w\n", err)
 	}
@@ -312,7 +334,9 @@ func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager,
 	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
 		return fmt.Errorf("Failed to set home directory permissions, reason: %w\n", err)
 	}
+
 	notif.SetActivePID(0)
+
 	return nil
 }
 
@@ -376,6 +400,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 	}
 
 	log.Infoln("Now starting build of package")
+
 	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
 		return fmt.Errorf("Failed to start build of package, reason: %w\n", err)
 	}
@@ -383,6 +408,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 	// Generate ABI Report
 	if !DisableABIReport {
 		log.Debugln("Attempting to generate ABI report")
+
 		if err := p.GenerateABIReport(notif, overlay); err != nil {
 			log.Warnf("Failed to generate ABI report, reason: %s\n", err)
 			return nil
@@ -390,6 +416,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 	}
 
 	notif.SetActivePID(0)
+
 	return nil
 }
 
@@ -425,24 +452,31 @@ func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overl
 	// Now build the package, ignore-sandbox in case someone is stupid
 	// and activates it in eopkg.conf..
 	cmd := eopkgCommand(fmt.Sprintf("eopkg build --ignore-sandbox --yes-all -O %s %s", wdir, xmlFile))
+
 	log.Infof("Now starting build of package %s\n", p.Name)
+
 	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
 		return fmt.Errorf("Failed to start build of package.\n")
 	}
+
 	notif.SetActivePID(0)
 
 	// Now we can stop dbus..
 	log.Debugln("Stopping D-BUS")
+
 	if err := pman.StopDBUS(); err != nil {
 		return fmt.Errorf("Failed to stop d-bus, reason: %w\n", err)
 	}
+
 	notif.SetActivePID(0)
+
 	return nil
 }
 
 // GenerateABIReport will take care of generating the abireport using abi-wizard.
 func (p *Package) GenerateABIReport(notif PidNotifier, overlay *Overlay) error {
 	wdir := p.GetWorkDirInternal()
+
 	cmd := fmt.Sprintf("cd %s; abi-wizard %s/YPKG/root/%s/install", wdir, BuildUserHome, p.Name)
 	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
 		log.Warnf("Failed to generate abi report %s\n", err)
@@ -450,6 +484,7 @@ func (p *Package) GenerateABIReport(notif PidNotifier, overlay *Overlay) error {
 	}
 
 	notif.SetActivePID(0)
+
 	return nil
 }
 
@@ -458,6 +493,7 @@ func (p *Package) GenerateABIReport(notif PidNotifier, overlay *Overlay) error {
 // then attempt to set the owner as the original user.
 func (p *Package) CollectAssets(overlay *Overlay, usr *UserInfo, manifestTarget string) error {
 	collectionDir := p.GetWorkDir(overlay)
+
 	collections, _ := filepath.Glob(filepath.Join(collectionDir, "*.eopkg"))
 	if len(collections) < 1 {
 		log.Errorln("Mysterious lack of eopkg files is mysterious")
@@ -516,6 +552,7 @@ func (p *Package) CollectAssets(overlay *Overlay, usr *UserInfo, manifestTarget 
 			log.Errorf("Error in restoring file ownership %s, reason: %s\n", filepath.Base(p), err)
 		}
 	}
+
 	return nil
 }
 
@@ -531,6 +568,7 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 	} else {
 		env = SaneEnvironment(BuildUser, BuildUserHome)
 	}
+
 	ChrootEnvironment = env
 
 	// Set up environment
@@ -549,6 +587,7 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 	}
 
 	log.Debugln("Validating sources")
+
 	if err := p.FetchSources(overlay); err != nil {
 		return err
 	}
@@ -560,6 +599,7 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 
 	// Bring up dbus to do Things
 	log.Debugln("Starting D-BUS")
+
 	if err := pman.StartDBUS(); err != nil {
 		return fmt.Errorf("Failed to start d-bus, reason: %w\n", err)
 	}
@@ -570,11 +610,13 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 	}
 
 	log.Debugln("Upgrading system base")
+
 	if err := pman.Upgrade(); err != nil {
 		return fmt.Errorf("Failed to upgrade rootfs, reason: %w\n", err)
 	}
 
 	log.Debugln("Asserting system.devel component installation")
+
 	if err := pman.InstallComponent("system.devel"); err != nil {
 		return fmt.Errorf("Failed to assert system.devel, reason: %w\n", err)
 	}

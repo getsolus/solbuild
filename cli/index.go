@@ -62,9 +62,11 @@ func IndexRun(r *cmd.Root, s *cmd.Sub) {
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
+
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
 	}
+
 	if os.Geteuid() != 0 {
 		log.Fatalln("You must be root to use index")
 	}
@@ -82,11 +84,15 @@ func IndexRun(r *cmd.Root, s *cmd.Sub) {
 		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
+
 		os.Exit(1)
 	}
+
 	manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
+
 	if err := manager.Index(args.Dir); err != nil {
 		log.Fatalln("Index failure")
 	}
+
 	log.Infoln("Indexing complete")
 }

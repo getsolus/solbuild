@@ -88,6 +88,7 @@ func NewManager() (*Manager, error) {
 	if err := ConfigureNamespace(); err != nil {
 		return nil, err
 	}
+
 	man := &Manager{
 		cancelled:  false,
 		activePID:  0,
@@ -105,6 +106,7 @@ func NewManager() (*Manager, error) {
 	}
 
 	man.lock = new(sync.Mutex)
+
 	return man, nil
 }
 
@@ -153,6 +155,7 @@ func (m *Manager) SetProfile(profile string) error {
 
 	m.profile = prof
 	m.image = NewBackingImage(m.profile.Image)
+
 	return nil
 }
 
@@ -160,6 +163,7 @@ func (m *Manager) SetProfile(profile string) error {
 func (m *Manager) GetProfile() *Profile {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	return m.profile
 }
 
@@ -183,6 +187,7 @@ func (m *Manager) SetPackage(pkg *Package) error {
 		if PathExists(filepath.Join(repoDir, ".git")) {
 			if history, err := NewPackageHistory(pkg.Path); err == nil {
 				log.Debugln("Obtained package history")
+
 				m.history = history
 			} else {
 				log.Warnf("Failed to obtain package git history %s\n", err)
@@ -193,6 +198,7 @@ func (m *Manager) SetPackage(pkg *Package) error {
 	m.pkg = pkg
 	m.overlay = NewOverlay(m.Config, m.profile, m.image, m.pkg)
 	m.pkgManager = NewEopkgManager(m, m.overlay.MountPoint)
+
 	return nil
 }
 
@@ -201,6 +207,7 @@ func (m *Manager) SetPackage(pkg *Package) error {
 func (m *Manager) IsCancelled() bool {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	return m.cancelled
 }
 
@@ -220,6 +227,7 @@ func (m *Manager) Cleanup() {
 	if !m.didStart {
 		return
 	}
+
 	log.Debugln("Acquiring global lock")
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -236,6 +244,7 @@ func (m *Manager) Cleanup() {
 	if m.overlay != nil {
 		deathPoint = m.overlay.MountPoint
 	}
+
 	if m.updateMode {
 		deathPoint = m.image.RootDir
 	}
@@ -272,6 +281,7 @@ func (m *Manager) Cleanup() {
 		if err := m.lockfile.Unlock(); err != nil {
 			log.Errorf("Failure in unlocking root %s\n", err)
 		}
+
 		if err := m.lockfile.Clean(); err != nil {
 			log.Errorf("Failure in cleaning lockfile %s\n", err)
 		}
@@ -286,6 +296,7 @@ func (m *Manager) doLock(path, opType string) error {
 		log.Errorf("Failed to lock root for %s %s %s\n", opType, path, err)
 		return err
 	}
+
 	m.lockfile = lock
 
 	if err = m.lockfile.Lock(); err != nil {
@@ -294,9 +305,12 @@ func (m *Manager) doLock(path, opType string) error {
 		} else {
 			log.Errorf("Failed to lock root pid='%d' %s\n", m.lockfile.GetOwnerPID(), err)
 		}
+
 		return err
 	}
+
 	m.didStart = true
+
 	return nil
 }
 
@@ -304,6 +318,7 @@ func (m *Manager) doLock(path, opType string) error {
 func (m *Manager) SigIntCleanup() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
 		<-ch
 		log.Warnln("CTRL+C interrupted, cleaning up")
@@ -335,6 +350,7 @@ func (m *Manager) Build() error {
 	// Now set our options according to the config
 	m.overlay.EnableTmpfs = m.Config.EnableTmpfs
 	m.overlay.TmpfsSize = m.Config.TmpfsSize
+
 	if !ValidMemSize(m.overlay.TmpfsSize) && m.overlay.EnableTmpfs {
 		log.Panicf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
 	}
@@ -375,15 +391,18 @@ func (m *Manager) Update() error {
 	if m.IsCancelled() {
 		return ErrInterrupted
 	}
+
 	m.lock.Lock()
 	if m.image == nil {
 		m.lock.Unlock()
 		return ErrInvalidProfile
 	}
+
 	if !m.image.IsInstalled() {
 		m.lock.Unlock()
 		return ErrProfileNotInstalled
 	}
+
 	m.updateMode = true
 	m.pkgManager = NewEopkgManager(m, m.image.RootDir)
 	m.lock.Unlock()
@@ -418,6 +437,7 @@ func (m *Manager) Index(dir string) error {
 	// Now set our options according to the config
 	m.overlay.EnableTmpfs = m.Config.EnableTmpfs
 	m.overlay.TmpfsSize = m.Config.TmpfsSize
+
 	if !ValidMemSize(m.overlay.TmpfsSize) && m.overlay.EnableTmpfs {
 		log.Panicf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
 	}
@@ -434,8 +454,10 @@ func (m *Manager) SetTmpfs(enable bool, size string) {
 	if m.IsCancelled() {
 		return
 	}
+
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	if m.overlay != nil {
 		m.Config.EnableTmpfs = enable
 		m.Config.TmpfsSize = strings.TrimSpace(size)

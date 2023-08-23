@@ -57,12 +57,15 @@ func NewPasswd(path string) (*Passwd, error) {
 	var err error
 
 	ret := &Passwd{}
+
 	if ret.Users, err = ParseUsers(passwdPath); err != nil {
 		return nil, err
 	}
+
 	if ret.Groups, err = ParseGroups(groupPath); err != nil {
 		return nil, err
 	}
+
 	return ret, nil
 }
 
@@ -79,10 +82,12 @@ func ParseUsers(passwd string) (map[string]*User, error) {
 	sc := bufio.NewScanner(fi)
 	for sc.Scan() {
 		line := sc.Text()
+
 		splits := strings.Split(line, ":")
 		if len(splits) != 7 {
 			return nil, fmt.Errorf("Invalid number of fields in passwd file: %d", len(splits))
 		}
+
 		user := &User{
 			Name:  strings.TrimSpace(splits[0]),
 			Gecos: strings.TrimSpace(splits[4]),
@@ -95,6 +100,7 @@ func ParseUsers(passwd string) (map[string]*User, error) {
 		} else {
 			return nil, err
 		}
+
 		if gid, err := strconv.Atoi(strings.TrimSpace(splits[3])); err == nil {
 			user.GID = gid
 		} else {
@@ -103,9 +109,11 @@ func ParseUsers(passwd string) (map[string]*User, error) {
 		// Success
 		ret[user.Name] = user
 	}
+
 	if err := sc.Err(); err != nil {
 		return nil, err
 	}
+
 	return ret, nil
 }
 
@@ -122,10 +130,12 @@ func ParseGroups(grps string) (map[string]*Group, error) {
 	sc := bufio.NewScanner(fi)
 	for sc.Scan() {
 		line := sc.Text()
+
 		splits := strings.Split(line, ":")
 		if len(splits) != 4 {
 			return nil, fmt.Errorf("Invalid number of fields in group file: %d", len(splits))
 		}
+
 		group := &Group{
 			Name: strings.TrimSpace(splits[0]),
 		}
@@ -143,8 +153,10 @@ func ParseGroups(grps string) (map[string]*Group, error) {
 		// Success
 		ret[group.Name] = group
 	}
+
 	if err := sc.Err(); err != nil {
 		return nil, err
 	}
+
 	return ret, nil
 }

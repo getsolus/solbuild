@@ -63,13 +63,16 @@ func (p *Package) ActivateRoot(overlay *Overlay) error {
 	}
 
 	log.Debugln("Bringing up virtual filesystems")
+
 	return overlay.MountVFS()
 }
 
 // DeactivateRoot will tear down the previously activated root.
 func (p *Package) DeactivateRoot(overlay *Overlay) {
 	MurderDeathKill(overlay.MountPoint)
+
 	mountMan := disk.GetMountManager()
+
 	commands.SetStdin(nil)
 	overlay.Unmount()
 	log.Debugln("Requesting unmount of all remaining mountpoints")
@@ -103,6 +106,7 @@ func MurderDeathKill(root string) error {
 		}
 
 		spid := f.Name()
+
 		var pid int
 
 		if pid, err = strconv.Atoi(spid); err != nil {
@@ -114,11 +118,13 @@ func MurderDeathKill(root string) error {
 		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
 			log.Errorf("Error terminating process, attempting force kill %d\n", pid)
 			time.Sleep(400 * time.Millisecond)
+
 			if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
 				log.Errorf("Error killing (-9) process %d\n", pid)
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -129,7 +135,9 @@ func TouchFile(path string) error {
 	if err != nil {
 		return err
 	}
+
 	defer w.Close()
+
 	return nil
 }
 
@@ -155,21 +163,26 @@ func SaneEnvironment(username, home string) []string {
 	if !DisableColors {
 		permitted = append(permitted, "TERM")
 	}
+
 	for _, p := range permitted {
 		env := os.Getenv(p)
 		if env == "" {
 			p = strings.ToUpper(p)
 			env = os.Getenv(p)
 		}
+
 		if env == "" {
 			continue
 		}
+
 		environment = append(environment,
 			fmt.Sprintf("%s=%s", p, env))
 	}
+
 	if DisableColors {
 		environment = append(environment, "TERM=dumb")
 	}
+
 	return environment
 }
 
@@ -187,7 +200,9 @@ func ChrootExec(notif PidNotifier, dir, command string) error {
 	if err := c.Start(); err != nil {
 		return err
 	}
+
 	notif.SetActivePID(c.Process.Pid)
+
 	return c.Wait()
 }
 
@@ -204,7 +219,9 @@ func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 	if err := c.Start(); err != nil {
 		return err
 	}
+
 	notif.SetActivePID(c.Process.Pid)
+
 	return c.Wait()
 }
 
@@ -220,6 +237,7 @@ func AddBuildUser(rootfs string) error {
 	if _, ok := pwd.Users[BuildUser]; ok {
 		return nil
 	}
+
 	log.Debugf("Adding build user to system: user='%s' uid='%d' gid='%d' home='%s' shell='%s' gecos='%s'\n", BuildUser, BuildUserID, BuildUserGID, BuildUserHome, BuildUserShell, BuildUserGecos)
 
 	// Add the build group
@@ -230,6 +248,7 @@ func AddBuildUser(rootfs string) error {
 	if err := commands.AddUser(rootfs, BuildUser, BuildUserGecos, BuildUserHome, BuildUserShell, BuildUserID, BuildUserGID); err != nil {
 		return fmt.Errorf("Failed to add build user to system, reason: %w\n", err)
 	}
+
 	return nil
 }
 
@@ -239,10 +258,13 @@ func FileSha256sum(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	defer mfile.Close()
+
 	h := sha256.New()
 	// Pump from memory into hash for zero-copy sha1sum
 	h.Write(mfile.Data)
+
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
@@ -255,6 +277,7 @@ func ValidMemSize(s string) bool {
 
 	// Size is numeric?
 	allButLast := s[0 : len(s)-1]
+
 	_, err := strconv.ParseFloat(allButLast, 64)
 	if err != nil {
 		log.Errorf("Invalid Memory Size: %s: %s is not numeric\n", s, allButLast)
@@ -264,11 +287,14 @@ func ValidMemSize(s string) bool {
 	// Size ends with valid memory unit?
 	lastChar := s[len(s)-1:]
 	validLastChars := []string{"G", "T", "P", "E"}
+
 	for _, v := range validLastChars {
 		if v == lastChar {
 			return true
 		}
 	}
+
 	log.Errorf("Invalid Memory Size: %s doesn't end in a valid memory unit, e.g. G\n", s)
+
 	return false
 }

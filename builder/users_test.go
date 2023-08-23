@@ -30,9 +30,11 @@ func TestPasswd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to parse known good passwd data: %v", err)
 	}
+
 	if len(pwd.Users) != 19 {
 		t.Fatalf("Invalid number of users parsed: %v vs expected 19", len(pwd.Users))
 	}
+
 	if len(pwd.Groups) != 48 {
 		t.Fatalf("Invalid number of groups parsed: %v vs expected 48", len(pwd.Groups))
 	}
@@ -41,12 +43,15 @@ func TestPasswd(t *testing.T) {
 	if !foundDerp {
 		t.Fatalf("Failed to find known user")
 	}
+
 	if derp.UID != 1001 {
 		t.Fatalf("User ID wrong: %d vs expected 1001", derp.UID)
 	}
+
 	if derp.GID != 1002 {
 		t.Fatalf("User GID wrong: %d vs expected 1002", derp.UID)
 	}
+
 	if derp.Home != "/home/derpmcderpface" {
 		t.Fatalf("Wrong homedir: '%s' vs expected /home/derpmcderpface", derp.Home)
 	}
@@ -59,9 +64,11 @@ func TestPasswd(t *testing.T) {
 	if !foundSudo {
 		t.Fatalf("I am without sudo")
 	}
+
 	if len(sudo.Members) != 2 {
 		t.Fatalf("sudo has wrong member count of %d vs expected 2", len(sudo.Members))
 	}
+
 	members := strings.Join(sudo.Members, ",")
 	if members != "ikey,derpmcderpface" {
 		t.Fatalf("Wrong members for sudo: %s", members)
