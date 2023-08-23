@@ -254,7 +254,7 @@ func ValidMemSize(s string) bool {
 	}
 
 	// Size is numeric?
-	allButLast := string(s[0 : len(s)-1])
+	allButLast := s[0 : len(s)-1]
 	_, err := strconv.ParseFloat(allButLast, 64)
 	if err != nil {
 		log.Errorf("Invalid Memory Size: %s: %s is not numeric\n", s, allButLast)
@@ -262,7 +262,7 @@ func ValidMemSize(s string) bool {
 	}
 
 	// Size ends with valid memory unit?
-	lastChar := string(s[len(s)-1:])
+	lastChar := s[len(s)-1:]
 	validLastChars := []string{"G", "T", "P", "E"}
 	for _, v := range validLastChars {
 		if v == lastChar {

@@ -19,7 +19,6 @@ linters:
     - revive
     - stylecheck
     - testpackage
-    - unconvert
     - unparam
     - unused
     - wastedassign
