@@ -330,7 +330,7 @@ func (p *PackageHistory) WriteXML(path string) error {
 	}
 
 	// Dump it to the file
-	_, err = fi.WriteString(string(bytes))
+	_, err = fi.Write(bytes)
 	return err
 }
 
