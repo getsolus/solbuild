@@ -25,7 +25,7 @@ import (
 	"github.com/getsolus/libosdev/disk"
 )
 
-func (b *BackingImage) updatePackages(notif PidNotifier, pkgManager *EopkgManager) error {
+func (b *BackingImage) updatePackages(_ PidNotifier, pkgManager *EopkgManager) error {
 	log.Debugln("Initialising package manager")
 
 	if err := pkgManager.Init(); err != nil {

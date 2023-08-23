@@ -73,7 +73,7 @@ func NewGit(uri, ref string) (*GitSource, error) {
 }
 
 // completed is called when the fetch is done.
-func (g *GitSource) completed(r git.RemoteCompletion) git.ErrorCode {
+func (g *GitSource) completed(_ git.RemoteCompletion) git.ErrorCode {
 	log.Debugf("Completed fetch of git source %s\n", g.BaseName)
 	return 0
 }
