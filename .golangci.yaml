@@ -15,7 +15,6 @@ linters:
     - gosec
     - lll
     - nestif
-    - nilerr
     - noctx
     - prealloc
     - revive

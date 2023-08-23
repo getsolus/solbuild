@@ -36,9 +36,8 @@ import (
 func CopyAll(source, destdir string) error {
 	// We double stat, get over it.
 	st, err := os.Stat(source)
-	// File doesn't exist, move on
 	if err != nil || st == nil {
-		return nil
+		return nil //nolint:nilerr // File doesn't exist, move on
 	}
 
 	if st.Mode().IsDir() {
