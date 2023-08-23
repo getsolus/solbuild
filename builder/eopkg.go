@@ -45,7 +45,7 @@ type EopkgRepo struct {
 }
 
 // EopkgManager is our own very shorted version of libosdev EopkgManager, to
-// enable very very simple operations
+// enable extremely simple operations
 type EopkgManager struct {
 	dbusActive  bool
 	root        string

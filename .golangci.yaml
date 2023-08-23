@@ -5,7 +5,6 @@ linters:
     # Disabled to get codebase to pass the linter.
     # We can enable these one at a time.
     - cyclop
-    - dupword
     - errcheck
     - errorlint
     - exhaustive
