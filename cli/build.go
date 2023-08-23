@@ -45,10 +45,12 @@ var Build = cmd.Sub{
 }
 
 // BuildFlags are flags for the "build" sub-command.
+//
+//nolint:tagalign
 type BuildFlags struct {
 	Tmpfs           bool   `short:"t" long:"tmpfs"              desc:"Enable building in a tmpfs"`
 	Memory          string `short:"m" long:"memory"             desc:"Set the tmpfs size to use, e.g. 8G"`
-	TransitManifest string `long:"transit-manifest"             desc:"Create transit manifest for the given target"`
+	TransitManifest string `          long:"transit-manifest"   desc:"Create transit manifest for the given target"`
 	ABIReport       bool   `short:"r" long:"disable-abi-report" desc:"Don't generate an ABI report of the completed build"`
 }
 

@@ -18,7 +18,6 @@ linters:
     - noctx
     - revive
     - stylecheck
-    - tagalign
     - testpackage
     - unconvert
     - unparam
@@ -121,6 +120,7 @@ linters-settings:
 
   tagalign:
     order:
+      - zero
       - short
       - long
       - desc
