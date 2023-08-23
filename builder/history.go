@@ -249,7 +249,8 @@ func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*P
 	// basename of file
 	fname := filepath.Base(p.pkgfile)
 
-	var updateSet []*PackageUpdate
+	updateSet := make([]*PackageUpdate, 0, len(tags))
+
 	// Iterate the commit set in order
 	for _, tagID := range tags {
 		update := updates[tagID]
@@ -300,7 +301,7 @@ type YPKGUpdate struct {
 // WriteXML will attempt to dump the update history to an XML file
 // in order for ypkg to merge it into the package build.
 func (p *PackageHistory) WriteXML(path string) error {
-	var ypkgUpdates []*YPKGUpdate
+	ypkgUpdates := make([]*YPKGUpdate, 0, len(p.Updates))
 
 	fi, err := os.Create(path)
 	if err != nil {

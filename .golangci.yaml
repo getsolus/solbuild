@@ -16,7 +16,6 @@ linters:
     - lll
     - nestif
     - noctx
-    - prealloc
     - revive
     - staticcheck
     - stylecheck

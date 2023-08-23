@@ -276,7 +276,7 @@ func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 		return nil, nil
 	}
 
-	var repos []*EopkgRepo
+	repos := make([]*EopkgRepo, 0, len(repoFiles))
 
 	for _, repo := range repoFiles {
 		uri, err := readURIFile(repo)
