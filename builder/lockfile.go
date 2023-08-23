@@ -58,13 +58,13 @@ func NewLockFile(path string) (*LockFile, error) {
 	// Automatically create the leading directory structure
 	dir := filepath.Dir(path)
 	if !PathExists(dir) {
-		if err := os.MkdirAll(dir, 00755); err != nil {
+		if err := os.MkdirAll(dir, 0o0755); err != nil {
 			return nil, err
 		}
 	}
 
 	// We can consider setting the permissions to 0600
-	w, err := os.OpenFile(lock.path, os.O_RDWR|os.O_CREATE, 00644)
+	w, err := os.OpenFile(lock.path, os.O_RDWR|os.O_CREATE, 0o0644)
 	if err != nil {
 		return nil, err
 	}

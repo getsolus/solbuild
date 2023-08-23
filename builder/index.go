@@ -59,7 +59,7 @@ func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 
 	// Create the target
 	target := filepath.Join(overlay.MountPoint, IndexBindTarget[1:])
-	if err := os.MkdirAll(target, 00755); err != nil {
+	if err := os.MkdirAll(target, 0o0755); err != nil {
 		log.Errorf("Cannot create bind target %s, reason: %s\n", target, err)
 		return err
 	}

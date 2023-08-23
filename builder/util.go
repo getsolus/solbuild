@@ -34,10 +34,8 @@ import (
 	"github.com/getsolus/libosdev/disk"
 )
 
-var (
-	// ChrootEnvironment is the env used by ChrootExec calls
-	ChrootEnvironment []string
-)
+// ChrootEnvironment is the env used by ChrootExec calls
+var ChrootEnvironment []string
 
 func init() {
 	ChrootEnvironment = nil
@@ -128,7 +126,7 @@ func MurderDeathKill(root string) error {
 // TouchFile will create the file if it doesn't exist, enabling use of bind
 // mounts.
 func TouchFile(path string) error {
-	w, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 00644)
+	w, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0o0644)
 	if err != nil {
 		return err
 	}

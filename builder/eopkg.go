@@ -85,7 +85,7 @@ func (e *EopkgManager) CopyAssets() error {
 		dirName := filepath.Dir(value)
 		if !PathExists(dirName) {
 			log.Debugf("Creating required directory: %s\n", dirName)
-			if err := os.MkdirAll(dirName, 00755); err != nil {
+			if err := os.MkdirAll(dirName, 0o0755); err != nil {
 				return fmt.Errorf("Failed to create required asset directory %s, reason %s\n", dirName, err)
 			}
 		}
@@ -113,12 +113,12 @@ func (e *EopkgManager) Init() error {
 	// Ensure system wide cache exists
 	if !PathExists(e.cacheSource) {
 		log.Debugf("Creating system-wide package cache: %s\n", e.cacheSource)
-		if err := os.MkdirAll(e.cacheSource, 00755); err != nil {
+		if err := os.MkdirAll(e.cacheSource, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create package cache %s, reason: %s\n", e.cacheSource, err)
 		}
 	}
 
-	if err := os.MkdirAll(e.cacheTarget, 00755); err != nil {
+	if err := os.MkdirAll(e.cacheTarget, 0o0755); err != nil {
 		return err
 	}
 	return disk.GetMountManager().BindMount(e.cacheSource, e.cacheTarget)
@@ -130,7 +130,7 @@ func (e *EopkgManager) StartDBUS() error {
 		return nil
 	}
 	dbusDir := filepath.Join(e.root, "run", "dbus")
-	if err := os.MkdirAll(dbusDir, 00755); err != nil {
+	if err := os.MkdirAll(dbusDir, 0o0755); err != nil {
 		return err
 	}
 	if err := ChrootExec(e.notif, e.root, "dbus-uuidgen --ensure"); err != nil {
@@ -221,14 +221,14 @@ func EnsureEopkgLayout(root string) error {
 		}
 	}
 
-	if err := os.MkdirAll(runPath, 00755); err != nil {
+	if err := os.MkdirAll(runPath, 0o0755); err != nil {
 		return fmt.Errorf("Failed to clean stale /run, reason: %s\n", err)
 	}
 
 	// Construct the required directories in the tree
 	for _, dir := range reqDirs {
 		dirPath := filepath.Join(root, dir)
-		if err := os.MkdirAll(dirPath, 00755); err != nil {
+		if err := os.MkdirAll(dirPath, 0o0755); err != nil {
 			return err
 		}
 	}

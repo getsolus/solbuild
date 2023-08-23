@@ -17,7 +17,6 @@ linters:
     - gocritic
     - godot
     - goerr113
-    - gofumpt
     - gomnd
     - gosec
     - gosimple

@@ -88,7 +88,7 @@ func doInit(manager *builder.Manager) {
 	imgDir := builder.ImagesDir
 	// Ensure directories exist
 	if !builder.PathExists(imgDir) {
-		if err := os.MkdirAll(imgDir, 00755); err != nil {
+		if err := os.MkdirAll(imgDir, 0o0755); err != nil {
 			log.Fatalf("Failed to create images directory '%s', reason: %s", imgDir, err)
 		}
 		log.Debugf("Created images directory '%s'\n", imgDir)

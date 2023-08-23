@@ -48,7 +48,6 @@ type BindConfiguration struct {
 // Source's may be of multiple types, but all are abstracted and dealt
 // with by the interfaces.
 type Source interface {
-
 	// IsFetched is called during the early build process to determine
 	// whether this source is available for use.
 	IsFetched() bool

@@ -84,13 +84,11 @@ const (
 	BuildUserShell = "/bin/bash"
 )
 
-var (
-	// ValidImages is a set of known, Solus-published, base profiles
-	ValidImages = []string{
-		"main-x86_64",
-		"unstable-x86_64",
-	}
-)
+// ValidImages is a set of known, Solus-published, base profiles
+var ValidImages = []string{
+	"main-x86_64",
+	"unstable-x86_64",
+}
 
 // PathExists is a helper function to determine the existence of a file path
 func PathExists(path string) bool {

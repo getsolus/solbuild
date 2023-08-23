@@ -34,10 +34,8 @@ const (
 	GitSourceDir = "/var/lib/solbuild/sources/git"
 )
 
-var (
-	// ErrGitNoContinue is returned when git processing cannot continue
-	ErrGitNoContinue = errors.New("Fatal errors in git fetch")
-)
+// ErrGitNoContinue is returned when git processing cannot continue
+var ErrGitNoContinue = errors.New("Fatal errors in git fetch")
 
 // A GitSource as referenced by `ypkg` build spec. A git source must have
 // a valid ref to check out to.
@@ -218,7 +216,8 @@ func (g *GitSource) resetOnto(repo *git.Repository, ref string) error {
 	log.Debugf("Resetting git repository to commit %s\n", ref)
 
 	checkOpts := &git.CheckoutOpts{
-		Strategy: git.CheckoutForce | git.CheckoutRemoveUntracked | git.CheckoutRemoveIgnored}
+		Strategy: git.CheckoutForce | git.CheckoutRemoveUntracked | git.CheckoutRemoveIgnored,
+	}
 
 	if err := repo.ResetToCommit(commit, git.ResetHard, checkOpts); err != nil {
 		log.Errorf("Failed to reset git repository %s %s\n", ref, err)

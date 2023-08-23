@@ -39,11 +39,9 @@ const (
 	UpdateDateFormat = "2006-01-02"
 )
 
-var (
-	// CveRegex is used to identify security updates which mention a specific
-	// CVE ID.
-	CveRegex *regexp.Regexp
-)
+// CveRegex is used to identify security updates which mention a specific
+// CVE ID.
+var CveRegex *regexp.Regexp
 
 func init() {
 	CveRegex = regexp.MustCompile(`(CVE\-[0-9]+\-[0-9]+)`)
@@ -277,7 +275,6 @@ func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*P
 	} else {
 		p.Updates = updateSet
 	}
-
 }
 
 // YPKG provides ypkg-gen-history history.xml compatibility

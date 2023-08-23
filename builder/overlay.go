@@ -93,7 +93,7 @@ func (o *Overlay) EnsureDirs() error {
 			continue
 		}
 		log.Debugf("Creating overlay storage directory: %s\n", p)
-		if err := os.MkdirAll(p, 00755); err != nil {
+		if err := os.MkdirAll(p, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create overlay storage directory: dir='%s', reason: %s\n", p, err)
 		}
 	}
@@ -122,7 +122,7 @@ func (o *Overlay) Mount() error {
 
 	// Mount tmpfs as the root of all other mounts if requested
 	if o.EnableTmpfs {
-		if err := os.MkdirAll(o.BaseDir, 00755); err != nil {
+		if err := os.MkdirAll(o.BaseDir, 0o0755); err != nil {
 			log.Errorf("Failed to create tmpfs directory: dir='%s', reason: %s\n", o.BaseDir, err)
 			return nil
 		}
@@ -161,7 +161,6 @@ func (o *Overlay) Mount() error {
 		fmt.Sprintf("lowerdir=%s", o.ImgDir),
 		fmt.Sprintf("upperdir=%s", o.UpperDir),
 		fmt.Sprintf("workdir=%s", o.WorkDir))
-
 	// Check non-fatal..
 	if err != nil {
 		log.Fatalf("Failed to mount overlayfs: point='%s', reason: %s\n", o.MountPoint, err)
@@ -235,7 +234,7 @@ func (o *Overlay) MountVFS() error {
 
 		log.Debugf("Creating VFS directory: dir='%s'\n", p)
 
-		if err := os.MkdirAll(p, 00755); err != nil {
+		if err := os.MkdirAll(p, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create VFS directory. dir='%s', reason: %s\n", p, err)
 		}
 	}

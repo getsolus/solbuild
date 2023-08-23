@@ -52,7 +52,7 @@ func NewSimple(uri, validator string, legacy bool) (*SimpleSource, error) {
 		return nil, err
 	}
 	fileName := filepath.Base(uriObj.Path)
-	//support URI fragments for renaming sources
+	// support URI fragments for renaming sources
 	if uriObj.Fragment != "" {
 		fileName = uriObj.Fragment
 		uriObj.Fragment = ""
@@ -117,7 +117,6 @@ func (s *SimpleSource) IsFetched() bool {
 
 // download downloads simple files using go grab
 func (s *SimpleSource) download(destination string) error {
-
 	req, err := grab.NewRequest(destination, s.URI)
 	if err != nil {
 		return err
@@ -169,7 +168,7 @@ func (s *SimpleSource) Fetch() error {
 
 	// Check staging is available
 	if !PathExists(SourceStagingDir) {
-		if err := os.MkdirAll(SourceStagingDir, 00755); err != nil {
+		if err := os.MkdirAll(SourceStagingDir, 0o0755); err != nil {
 			return err
 		}
 	}
@@ -187,7 +186,7 @@ func (s *SimpleSource) Fetch() error {
 	// Make the target directory
 	tgtDir := filepath.Join(SourceDir, hash)
 	if !PathExists(tgtDir) {
-		if err := os.MkdirAll(tgtDir, 00755); err != nil {
+		if err := os.MkdirAll(tgtDir, 0o0755); err != nil {
 			return err
 		}
 	}

@@ -43,17 +43,15 @@ const (
 	PackageTypeIndex PackageType = "index"
 )
 
-var (
-	// IndexPackage is used by the index command to make use of the overlayfs
-	// system.
-	IndexPackage = Package{
-		Name:    "index",
-		Version: "1.4.5.2",
-		Type:    PackageTypeIndex,
-		Release: 1,
-		Path:    "",
-	}
-)
+// IndexPackage is used by the index command to make use of the overlayfs
+// system.
+var IndexPackage = Package{
+	Name:    "index",
+	Version: "1.4.5.2",
+	Type:    PackageTypeIndex,
+	Release: 1,
+	Path:    "",
+}
 
 // Package is the main item we deal with, avoiding the internals
 type Package struct {

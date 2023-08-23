@@ -35,7 +35,7 @@ func (p *Package) CreateDirs(o *Overlay) error {
 		p.GetSccacheDir(o),
 	}
 	for _, p := range dirs {
-		if err := os.MkdirAll(p, 00755); err != nil {
+		if err := os.MkdirAll(p, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create required directory %s. Reason: %s\n", p, err)
 		}
 	}
@@ -43,21 +43,21 @@ func (p *Package) CreateDirs(o *Overlay) error {
 	// Fix up the ccache directories
 	if p.Type == PackageTypeXML {
 		// Ensure we have root owned ccache/sccache
-		if err := os.MkdirAll(LegacyCcacheDirectory, 00755); err != nil {
+		if err := os.MkdirAll(LegacyCcacheDirectory, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create ccache directory %+v, reason: %s\n", p, err)
 		}
-		if err := os.MkdirAll(LegacySccacheDirectory, 00755); err != nil {
+		if err := os.MkdirAll(LegacySccacheDirectory, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create sccache directory %+v, reason: %s\n", p, err)
 		}
 	} else {
 		// Ensure we have root owned ccache/sccache
-		if err := os.MkdirAll(CcacheDirectory, 00755); err != nil {
+		if err := os.MkdirAll(CcacheDirectory, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create ccache directory %+v, reason: %s\n", p, err)
 		}
 		if err := os.Chown(CcacheDirectory, BuildUserID, BuildUserGID); err != nil {
 			return fmt.Errorf("Failed to chown ccache directory %+v, reason: %s\n", p, err)
 		}
-		if err := os.MkdirAll(SccacheDirectory, 00755); err != nil {
+		if err := os.MkdirAll(SccacheDirectory, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create sccache directory %+v, reason: %s\n", p, err)
 		}
 		if err := os.Chown(SccacheDirectory, BuildUserID, BuildUserGID); err != nil {
@@ -94,7 +94,7 @@ func (p *Package) BindSources(o *Overlay) error {
 
 		// Ensure sources tree exists
 		if !PathExists(sourceDir) {
-			if err := os.MkdirAll(sourceDir, 00755); err != nil {
+			if err := os.MkdirAll(sourceDir, 0o0755); err != nil {
 				return fmt.Errorf("Failed to create source directory %s, reason: %s\n", sourceDir, err)
 			}
 		}
@@ -104,7 +104,7 @@ func (p *Package) BindSources(o *Overlay) error {
 
 		if st, err := os.Stat(bindConfig.BindSource); err == nil && st != nil {
 			if st.IsDir() {
-				if err := os.MkdirAll(bindConfig.BindTarget, 00755); err != nil {
+				if err := os.MkdirAll(bindConfig.BindTarget, 0o0755); err != nil {
 					log.Errorf("Failed to create bind mount target %s, reason: %s\n", bindConfig.BindTarget, err)
 					return nil
 				}
@@ -277,7 +277,7 @@ func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager,
 	fpd := filepath.Dir(fp)
 
 	if !PathExists(fpd) {
-		if err := os.MkdirAll(fpd, 00755); err != nil {
+		if err := os.MkdirAll(fpd, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create packager directory %s, reason: %s\n", fpd, err)
 		}
 	}

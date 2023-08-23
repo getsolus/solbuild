@@ -45,10 +45,8 @@ type Profile struct {
 	Repos       map[string]*Repo `toml:"repo"`         // Allow defining custom repos
 }
 
-var (
-	// ProfileSuffix is the fixed extension for solbuild profile files
-	ProfileSuffix = ".profile"
-)
+// ProfileSuffix is the fixed extension for solbuild profile files
+var ProfileSuffix = ".profile"
 
 // NewProfile will attempt to load the named profile from the system paths
 func NewProfile(name string) (*Profile, error) {

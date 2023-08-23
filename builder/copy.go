@@ -56,7 +56,7 @@ func CopyAll(source, destdir string) error {
 	} else {
 		if !PathExists(destdir) {
 			log.Debugf("Creating target directory: %s\n", destdir)
-			if err = os.MkdirAll(destdir, 00755); err != nil {
+			if err = os.MkdirAll(destdir, 0o0755); err != nil {
 				return fmt.Errorf("Failed to create target directory: %s, reason: %s\n", destdir, err)
 			}
 		}

@@ -42,7 +42,7 @@ func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgM
 	// Ensure the target mountpoint actually exists ...
 	tgt := filepath.Join(o.MountPoint, BindRepoDir[1:], repo.Name)
 	if !PathExists(tgt) {
-		if err := os.MkdirAll(tgt, 00755); err != nil {
+		if err := os.MkdirAll(tgt, 0o0755); err != nil {
 			return err
 		}
 	}

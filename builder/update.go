@@ -64,7 +64,7 @@ func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error
 	log.Debugf("Updating backing image %s\n", b.Name)
 
 	if !PathExists(b.RootDir) {
-		if err := os.MkdirAll(b.RootDir, 00755); err != nil {
+		if err := os.MkdirAll(b.RootDir, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create required directories, reason: %s\n", err)
 		}
 		log.Debugf("Created root directory %s\n", b.Name)
