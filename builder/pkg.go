@@ -20,11 +20,13 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/getsolus/solbuild/builder/source"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/getsolus/solbuild/builder/source"
 )
 
 // PackageType is simply the type of package we're building, i.e. xml / pspec
