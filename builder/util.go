@@ -20,10 +20,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/commands"
-	"github.com/getsolus/libosdev/disk"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,18 +27,20 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/commands"
+	"github.com/getsolus/libosdev/disk"
 )
 
-var (
-	// ChrootEnvironment is the env used by ChrootExec calls
-	ChrootEnvironment []string
-)
+// ChrootEnvironment is the env used by ChrootExec calls.
+var ChrootEnvironment []string
 
 func init() {
 	ChrootEnvironment = nil
 }
 
-// PidNotifier provides a simple way to set the PID on a blocking process
+// PidNotifier provides a simple way to set the PID on a blocking process.
 type PidNotifier interface {
 	SetActivePID(int)
 }
@@ -65,13 +63,16 @@ func (p *Package) ActivateRoot(overlay *Overlay) error {
 	}
 
 	log.Debugln("Bringing up virtual filesystems")
+
 	return overlay.MountVFS()
 }
 
-// DeactivateRoot will tear down the previously activated root
+// DeactivateRoot will tear down the previously activated root.
 func (p *Package) DeactivateRoot(overlay *Overlay) {
 	MurderDeathKill(overlay.MountPoint)
+
 	mountMan := disk.GetMountManager()
+
 	commands.SetStdin(nil)
 	overlay.Unmount()
 	log.Debugln("Requesting unmount of all remaining mountpoints")
@@ -86,9 +87,9 @@ func MurderDeathKill(root string) error {
 		return err
 	}
 
-	var files []os.FileInfo
+	var files []os.DirEntry
 
-	if files, err = ioutil.ReadDir("/proc"); err != nil {
+	if files, err = os.ReadDir("/proc"); err != nil {
 		return err
 	}
 
@@ -105,10 +106,11 @@ func MurderDeathKill(root string) error {
 		}
 
 		spid := f.Name()
+
 		var pid int
 
 		if pid, err = strconv.Atoi(spid); err != nil {
-			return fmt.Errorf("POSIX Weeps - broken pid identifier %s, reason: %s\n", spid, err)
+			return fmt.Errorf("POSIX Weeps - broken pid identifier %s, reason: %w\n", spid, err)
 		}
 
 		log.Debugf("Killing child process in chroot %d\n", pid)
@@ -116,27 +118,31 @@ func MurderDeathKill(root string) error {
 		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
 			log.Errorf("Error terminating process, attempting force kill %d\n", pid)
 			time.Sleep(400 * time.Millisecond)
+
 			if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
 				log.Errorf("Error killing (-9) process %d\n", pid)
 			}
 		}
 	}
+
 	return nil
 }
 
 // TouchFile will create the file if it doesn't exist, enabling use of bind
 // mounts.
 func TouchFile(path string) error {
-	w, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 00644)
+	w, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0o0644)
 	if err != nil {
 		return err
 	}
+
 	defer w.Close()
+
 	return nil
 }
 
 // SaneEnvironment will generate a clean environment for the chroot'd
-// processes to use
+// processes to use.
 func SaneEnvironment(username, home string) []string {
 	environment := []string{
 		"PATH=/usr/bin:/usr/sbin:/bin/:/sbin",
@@ -157,26 +163,31 @@ func SaneEnvironment(username, home string) []string {
 	if !DisableColors {
 		permitted = append(permitted, "TERM")
 	}
+
 	for _, p := range permitted {
 		env := os.Getenv(p)
 		if env == "" {
 			p = strings.ToUpper(p)
 			env = os.Getenv(p)
 		}
+
 		if env == "" {
 			continue
 		}
+
 		environment = append(environment,
 			fmt.Sprintf("%s=%s", p, env))
 	}
+
 	if DisableColors {
 		environment = append(environment, "TERM=dumb")
 	}
+
 	return environment
 }
 
 // ChrootExec is a simple wrapper to return a correctly set up chroot command,
-// so that we can store the PID, for long running tasks
+// so that we can store the PID, for long running tasks.
 func ChrootExec(notif PidNotifier, dir, command string) error {
 	args := []string{dir, "/bin/sh", "-c", command}
 	c := exec.Command("chroot", args...)
@@ -189,12 +200,14 @@ func ChrootExec(notif PidNotifier, dir, command string) error {
 	if err := c.Start(); err != nil {
 		return err
 	}
+
 	notif.SetActivePID(c.Process.Pid)
+
 	return c.Wait()
 }
 
 // ChrootExecStdin is almost identical to ChrootExec, except it permits a stdin
-// to be associated with the command
+// to be associated with the command.
 func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 	args := []string{dir, "/bin/sh", "-c", command}
 	c := exec.Command("chroot", args...)
@@ -206,57 +219,65 @@ func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 	if err := c.Start(); err != nil {
 		return err
 	}
+
 	notif.SetActivePID(c.Process.Pid)
+
 	return c.Wait()
 }
 
 // AddBuildUser will attempt to add the solbuild user & group if they've not
 // previously been added
-// Note this should be changed when Solus goes fully stateless for /etc/passwd
+// Note this should be changed when Solus goes fully stateless for /etc/passwd.
 func AddBuildUser(rootfs string) error {
 	pwd, err := NewPasswd(filepath.Join(rootfs, "etc"))
 	if err != nil {
-		return fmt.Errorf("Unable to discover chroot users, reason: %s\n", err)
+		return fmt.Errorf("Unable to discover chroot users, reason: %w\n", err)
 	}
 	// User already exists
 	if _, ok := pwd.Users[BuildUser]; ok {
 		return nil
 	}
+
 	log.Debugf("Adding build user to system: user='%s' uid='%d' gid='%d' home='%s' shell='%s' gecos='%s'\n", BuildUser, BuildUserID, BuildUserGID, BuildUserHome, BuildUserShell, BuildUserGecos)
 
 	// Add the build group
 	if err := commands.AddGroup(rootfs, BuildUser, BuildUserGID); err != nil {
-		return fmt.Errorf("Failed to add build group to system, reason: %s\n", err)
+		return fmt.Errorf("Failed to add build group to system, reason: %w\n", err)
 	}
 
 	if err := commands.AddUser(rootfs, BuildUser, BuildUserGecos, BuildUserHome, BuildUserShell, BuildUserID, BuildUserGID); err != nil {
-		return fmt.Errorf("Failed to add build user to system, reason: %s\n", err)
+		return fmt.Errorf("Failed to add build user to system, reason: %w\n", err)
 	}
+
 	return nil
 }
 
-// FileSha256sum is a quick wrapper to grab the sha256sum for the given file
+// FileSha256sum is a quick wrapper to grab the sha256sum for the given file.
 func FileSha256sum(path string) (string, error) {
 	mfile, err := MapFile(path)
 	if err != nil {
 		return "", err
 	}
+
 	defer mfile.Close()
+
 	h := sha256.New()
 	// Pump from memory into hash for zero-copy sha1sum
 	h.Write(mfile.Data)
+
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 // ValidMemSize will determine if a string is a valid memory size,
-// it must start with a number and end with a valid unit size
+// it must start with a number and end with a valid unit size.
 func ValidMemSize(s string) bool {
 	if s == "" {
 		return false
 	}
 
 	// Size is numeric?
-	allButLast := string(s[0 : len(s)-1])
+	allButLast := s[0 : len(s)-1]
+
 	_, err := strconv.ParseFloat(allButLast, 64)
 	if err != nil {
 		log.Errorf("Invalid Memory Size: %s: %s is not numeric\n", s, allButLast)
@@ -264,13 +285,16 @@ func ValidMemSize(s string) bool {
 	}
 
 	// Size ends with valid memory unit?
-	lastChar := string(s[len(s)-1:])
+	lastChar := s[len(s)-1:]
 	validLastChars := []string{"G", "T", "P", "E"}
+
 	for _, v := range validLastChars {
 		if v == lastChar {
 			return true
 		}
 	}
+
 	log.Errorf("Invalid Memory Size: %s doesn't end in a valid memory unit, e.g. G\n", s)
+
 	return false
 }

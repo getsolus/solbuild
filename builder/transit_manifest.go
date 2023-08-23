@@ -19,21 +19,20 @@ package builder
 import (
 	"bytes"
 	"errors"
-	"github.com/BurntSushi/toml"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/BurntSushi/toml"
 )
 
 const (
-	// TransitManifestSuffix is the extension that a valid transit manifest must have
+	// TransitManifestSuffix is the extension that a valid transit manifest must have.
 	TransitManifestSuffix = ".tram"
 )
 
-var (
-	// ErrIllegalUpload is returned when someone is a spanner and tries uploading an unsupported file
-	ErrIllegalUpload = errors.New("The manifest file is NOT an eopkg")
-)
+// ErrIllegalUpload is returned when someone is a spanner and tries uploading an unsupported file.
+var ErrIllegalUpload = errors.New("The manifest file is NOT an eopkg")
 
 // A TransitManifestHeader is required in all .tram uploads to ensure that both
 // the sender and recipient are talking in the same fashion.
@@ -50,7 +49,6 @@ type TransitManifestHeader struct {
 //
 // This is to ensure all uploads are intentional, complete and verifiable.
 type TransitManifest struct {
-
 	// Every .tram file has a [manifest] header - this will never change and is
 	// version agnostic.
 	Manifest TransitManifestHeader `toml:"manifest"`
@@ -62,7 +60,6 @@ type TransitManifest struct {
 // TransitManifestFile provides simple verification data for each file in the
 // uploaded payload.
 type TransitManifestFile struct {
-
 	// Relative filename, i.e. nano-2.7.5-68-1-x86_64.eopkg
 	Path string `toml:"path"`
 
@@ -81,11 +78,12 @@ func NewTransitManifest(target string) *TransitManifest {
 	}
 }
 
-// AddFile will attempt to add a file to the payload for this package
+// AddFile will attempt to add a file to the payload for this package.
 func (t *TransitManifest) AddFile(path string) error {
 	if !strings.HasSuffix(path, ".eopkg") {
 		return ErrIllegalUpload
 	}
+
 	hash, err := FileSha256sum(path)
 	if err != nil {
 		return err
@@ -95,10 +93,11 @@ func (t *TransitManifest) AddFile(path string) error {
 		Path:   filepath.Base(path),
 		Sha256: hash,
 	})
+
 	return nil
 }
 
-// Write will dump the manifest to the given file path
+// Write will dump the manifest to the given file path.
 func (t *TransitManifest) Write(path string) error {
 	blob := bytes.Buffer{}
 	tmenc := toml.NewEncoder(&blob)
@@ -107,5 +106,6 @@ func (t *TransitManifest) Write(path string) error {
 	if err := tmenc.Encode(t); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path, blob.Bytes(), 00644)
+
+	return os.WriteFile(path, blob.Bytes(), 0o0644)
 }

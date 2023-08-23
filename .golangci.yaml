@@ -1,0 +1,122 @@
+---
+linters:
+  enable-all: true
+  disable:
+    # Disabled to get codebase to pass the linter.
+    # We can enable these one at a time.
+    - cyclop
+    - errcheck
+    - funlen
+    - gochecknoglobals
+    - gochecknoinits
+    - goerr113
+    - gomnd
+    - gosec
+    - lll
+    - nestif
+    - noctx
+    - revive
+    - stylecheck
+    - wrapcheck
+    # Disabled permanently
+    - exhaustruct     # structs may be uninitialized
+    - nlreturn        # covered by wsl cuddle rules
+    - paralleltest    # tests are acceptable in sequence
+    - goimports       # conflicts with GCI
+    - depguard        # manage using go.mod for now
+    - nonamedreturns  # named returns are acceptable in short functions
+    # Deprecated
+    - exhaustivestruct
+    - scopelint
+    - interfacer
+    - maligned
+    - golint
+    - structcheck
+    - varcheck
+    - deadcode
+    - nosnakecase
+    - ifshort
+
+severity:
+  default-severity: major
+
+issues:
+  fast: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-use-default: false
+  exclude-case-sensitive: true
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gochecknoglobals
+        - errcheck
+        - wrapcheck
+        - gosec
+        - goerr113
+
+linters-settings:
+  varnamelen:
+    min-name-length: 1
+
+  exhaustive:
+    default-signifies-exhaustive: true
+
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/getsolus/solbuild)
+
+  gomnd:
+    ignored-numbers: ['2', '4', '8', '16', '32', '64', '10']
+
+  gosec:
+    excludes: []
+
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment  # misalignment is accepted
+
+  misspell:
+    ignore-words:
+      - evolveos
+
+  revive:
+    enable-all-rules: false
+    rules:  # see https://github.com/mgechev/revive#recommended-configuration
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id
+
+  stylecheck:
+    checks: [all]
+
+  tagalign:
+    order:
+      - zero
+      - short
+      - long
+      - desc

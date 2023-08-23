@@ -19,24 +19,23 @@ package source
 import (
 	"errors"
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/commands"
-	git "github.com/libgit2/git2go/v34"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/commands"
+	git "github.com/libgit2/git2go/v34"
 )
 
 const (
-	// GitSourceDir is the base directory for all cached git sources
+	// GitSourceDir is the base directory for all cached git sources.
 	GitSourceDir = "/var/lib/solbuild/sources/git"
 )
 
-var (
-	// ErrGitNoContinue is returned when git processing cannot continue
-	ErrGitNoContinue = errors.New("Fatal errors in git fetch")
-)
+// ErrGitNoContinue is returned when git processing cannot continue.
+var ErrGitNoContinue = errors.New("Fatal errors in git fetch")
 
 // A GitSource as referenced by `ypkg` build spec. A git source must have
 // a valid ref to check out to.
@@ -73,19 +72,13 @@ func NewGit(uri, ref string) (*GitSource, error) {
 	return g, nil
 }
 
-// completed is called when the fetch is done
-func (g *GitSource) completed(r git.RemoteCompletion) git.ErrorCode {
-	log.Debugf("Completed fetch of git source %s\n", g.BaseName)
-	return 0
-}
-
-// message will be called to emit standard git text to the terminal
+// message will be called to emit standard git text to the terminal.
 func (g *GitSource) message(str string) error {
 	os.Stdout.Write([]byte(str))
 	return nil
 }
 
-// CreateCallbacks will create the default git callbacks
+// CreateCallbacks will create the default git callbacks.
 func (g *GitSource) CreateCallbacks() git.RemoteCallbacks {
 	return git.RemoteCallbacks{
 		SidebandProgressCallback: g.message,
@@ -106,24 +99,29 @@ func (g *GitSource) Clone() error {
 		Bare:         false,
 		FetchOptions: *fetchOpts,
 	})
+
 	return err
 }
 
-// HasTag will attempt to find the tag, if possible
+// HasTag will attempt to find the tag, if possible.
 func (g *GitSource) HasTag(repo *git.Repository, tagName string) bool {
 	haveTag := false
+
 	repo.Tags.Foreach(func(name string, id *git.Oid) error {
 		if name == "refs/tags/"+tagName {
 			haveTag = true
 		}
+
 		return nil
 	})
+
 	return haveTag
 }
 
-// fetch will attempt
+// fetch will attempt.
 func (g *GitSource) fetch(repo *git.Repository) error {
 	log.Infof("Git fetching existing clone %s\n", g.URI)
+
 	remote, err := repo.Remotes.Lookup("origin")
 	if err != nil {
 		log.Errorf("Failed to find git remote %s %s\n", g.URI, err)
@@ -137,7 +135,7 @@ func (g *GitSource) fetch(repo *git.Repository) error {
 	return remote.Fetch([]string{}, fetchOpts, "")
 }
 
-// GetCommitID will attempt to find the oid of the selected ref type
+// GetCommitID will attempt to find the oid of the selected ref type.
 func (g *GitSource) GetCommitID(repo *git.Repository) string {
 	oid := ""
 	// Attempt to find the branch
@@ -145,6 +143,7 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 	if err == nil {
 		oid = branch.Target().String()
 		log.Debugf("Found git commit of branch %s %s\n", g.Ref, oid)
+
 		return oid
 	}
 
@@ -159,6 +158,7 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 			// Force break the foreach
 			return errors.New("")
 		}
+
 		return nil
 	})
 
@@ -170,6 +170,7 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 
 	// Check the oid is valid
 	oid = g.Ref
+
 	obj, err := git.NewOid(oid)
 	if err != nil {
 		return ""
@@ -180,26 +181,30 @@ func (g *GitSource) GetCommitID(repo *git.Repository) string {
 	if err != nil {
 		return ""
 	}
+
 	log.Debugf("Found git commit %s %s\n", tagName, oid)
+
 	return obj.String()
 }
 
-// GetHead will attempt to gain the OID for head
+// GetHead will attempt to gain the OID for head.
 func (g *GitSource) GetHead(repo *git.Repository) (string, error) {
 	head, err := repo.Head()
 	if err != nil {
 		return "", err
 	}
+
 	return head.Target().String(), nil
 }
 
-// resetOnto will attempt to reset the repo (hard) onto the given commit
+// resetOnto will attempt to reset the repo (hard) onto the given commit.
 func (g *GitSource) resetOnto(repo *git.Repository, ref string) error {
 	// this stuff _really_ shouldn't happen but oh well.
 	oid, err := git.NewOid(ref)
 	if err != nil {
 		return err
 	}
+
 	commitFind, err := repo.Lookup(oid)
 	if err != nil {
 		return err
@@ -209,6 +214,7 @@ func (g *GitSource) resetOnto(repo *git.Repository, ref string) error {
 	if err != nil {
 		return err
 	}
+
 	commit, err := commitObj.AsCommit()
 	if err != nil {
 		return err
@@ -216,8 +222,9 @@ func (g *GitSource) resetOnto(repo *git.Repository, ref string) error {
 
 	log.Debugf("Resetting git repository to commit %s\n", ref)
 
-	checkOpts := &git.CheckoutOpts{
-		Strategy: git.CheckoutForce | git.CheckoutRemoveUntracked | git.CheckoutRemoveIgnored}
+	checkOpts := &git.CheckoutOptions{
+		Strategy: git.CheckoutForce | git.CheckoutRemoveUntracked | git.CheckoutRemoveIgnored,
+	}
 
 	if err := repo.ResetToCommit(commit, git.ResetHard, checkOpts); err != nil {
 		log.Errorf("Failed to reset git repository %s %s\n", ref, err)
@@ -246,6 +253,7 @@ func (g *GitSource) Fetch() error {
 			log.Errorf("Failed to clone remote repository %s %s\n", g.URI, err)
 			return err
 		}
+
 		hadRepo = false
 	}
 

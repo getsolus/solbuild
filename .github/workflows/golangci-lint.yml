@@ -1,0 +1,29 @@
+name: golangci-lint
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: false
+      # Install libgit2-dev 1.5 for git2go
+      - run: sudo apt-get install -qqy wget
+      - run: wget http://archive.ubuntu.com/ubuntu/pool/universe/libg/libgit2/libgit2-{1.5,dev}_1.5.1+ds-1ubuntu1_amd64.deb
+      - run: sudo apt-get install -qqy ./*.deb
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54

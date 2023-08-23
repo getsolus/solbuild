@@ -18,12 +18,13 @@ package builder
 
 import (
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"gopkg.in/ini.v1"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
+
+	log "github.com/DataDrake/waterlog"
+	"gopkg.in/ini.v1"
 )
 
 // UserInfo is required for ypkg builds, to set the .config/solus/package internally
@@ -38,19 +39,20 @@ type UserInfo struct {
 }
 
 const (
-	// FallbackUserName is what we fallback to if everything else fails
+	// FallbackUserName is what we fallback to if everything else fails.
 	FallbackUserName = "Automated Package Build"
 
-	// FallbackUserEmail is what we fallback to if everything else fails
+	// FallbackUserEmail is what we fallback to if everything else fails.
 	FallbackUserEmail = "no.email.set.in.config"
 )
 
-// SetFromSudo will attempt to set our details from sudo user environment
+// SetFromSudo will attempt to set our details from sudo user environment.
 func (u *UserInfo) SetFromSudo() bool {
+	var uid, gid int
+
 	sudoUID := os.Getenv("SUDO_UID")
 	sudoGID := os.Getenv("SUDO_GID")
-	uid := -1
-	gid := -1
+
 	var err error
 
 	if sudoGID == "" {
@@ -90,7 +92,7 @@ func (u *UserInfo) SetFromSudo() bool {
 	return true
 }
 
-// SetFromCurrent will set the UserInfo details from the current user
+// SetFromCurrent will set the UserInfo details from the current user.
 func (u *UserInfo) SetFromCurrent() {
 	u.UID = os.Getuid()
 	u.GID = os.Getgid()
@@ -107,7 +109,7 @@ func (u *UserInfo) SetFromCurrent() {
 	}
 }
 
-// SetFromPackager will set the username/email fields from one of our packager files
+// SetFromPackager will set the username/email fields from one of our packager files.
 func (u *UserInfo) SetFromPackager() bool {
 	candidatePaths := []string{
 		filepath.Join(u.HomeDir, ".config", "solus", "packager"),
@@ -120,6 +122,7 @@ func (u *UserInfo) SetFromPackager() bool {
 		if !PathExists(p) {
 			continue
 		}
+
 		cfg, err := ini.Load(p)
 		if err != nil {
 			log.Errorf("Error loading INI file %s %s\n", p, err)
@@ -137,21 +140,25 @@ func (u *UserInfo) SetFromPackager() bool {
 			log.Errorf("Packager file has missing Name %s %s\n", p, err)
 			continue
 		}
+
 		email, err := section.GetKey("Email")
 		if err != nil {
 			log.Errorf("Packager file has missing Email %s %s\n", p, err)
 			continue
 		}
+
 		u.Name = uname.String()
 		u.Email = email.String()
+
 		log.Debugln("Setting packager details from packager INI file")
+
 		return true
 	}
 
 	return false
 }
 
-// SetFromGit will set the username/email fields from the git config file
+// SetFromGit will set the username/email fields from the git config file.
 func (u *UserInfo) SetFromGit() bool {
 	gitConfPath := filepath.Join(u.HomeDir, ".gitconfig")
 	if !PathExists(gitConfPath) {
@@ -175,13 +182,16 @@ func (u *UserInfo) SetFromGit() bool {
 		log.Errorf("gitconfig file has missing name %s %s\n", gitConfPath, err)
 		return false
 	}
+
 	email, err := section.GetKey("email")
 	if err != nil {
 		log.Errorf("gitconfig file has missing email %s %s\n", gitConfPath, err)
 		return false
 	}
+
 	u.Name = uname.String()
 	u.Email = email.String()
+
 	log.Debugln("Setting packager details from git config")
 
 	return true
@@ -211,6 +221,7 @@ func GetUserInfo() *UserInfo {
 	if uinfo.Name == "" {
 		uinfo.Name = FallbackUserName
 	}
+
 	if uinfo.Email == "" {
 		if ho, err := os.Hostname(); err != nil {
 			uinfo.Email = fmt.Sprintf("%s@%s", uinfo.Username, ho)
@@ -222,16 +233,19 @@ func GetUserInfo() *UserInfo {
 	return uinfo
 }
 
-// WritePackager will attempt to write the packager file to given path
+// WritePackager will attempt to write the packager file to given path.
 func (u *UserInfo) WritePackager(path string) error {
 	fi, err := os.Create(path)
 	if err != nil {
 		return err
 	}
+
 	defer fi.Close()
+
 	contents := fmt.Sprintf("[Packager]\nName=%s\nEmail=%s\n", u.Name, u.Email)
 	if _, err := fi.WriteString(contents); err != nil {
 		return err
 	}
+
 	return nil
 }

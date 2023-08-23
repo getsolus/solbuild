@@ -18,11 +18,11 @@ package builder
 
 import (
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/disk"
-	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 )
 
 // CopyAll will copy the source asset into the given destdir.
@@ -35,35 +35,41 @@ import (
 func CopyAll(source, destdir string) error {
 	// We double stat, get over it.
 	st, err := os.Stat(source)
-	// File doesn't exist, move on
 	if err != nil || st == nil {
-		return nil
+		return nil //nolint:nilerr // File doesn't exist, move on
 	}
 
 	if st.Mode().IsDir() {
-		var files []os.FileInfo
-		if files, err = ioutil.ReadDir(source); err != nil {
+		var files []os.DirEntry
+
+		if files, err = os.ReadDir(source); err != nil {
 			return err
 		}
+
 		for _, f := range files {
 			spath := filepath.Join(source, f.Name())
 			dpath := filepath.Join(destdir, filepath.Base(source))
-			if err := CopyAll(spath, dpath); err != nil {
+
+			if err = CopyAll(spath, dpath); err != nil {
 				return err
 			}
 		}
 	} else {
 		if !PathExists(destdir) {
 			log.Debugf("Creating target directory: %s\n", destdir)
-			if err = os.MkdirAll(destdir, 00755); err != nil {
-				return fmt.Errorf("Failed to create target directory: %s, reason: %s\n", destdir, err)
+
+			if err = os.MkdirAll(destdir, 0o0755); err != nil {
+				return fmt.Errorf("Failed to create target directory: %s, reason: %w\n", destdir, err)
 			}
 		}
+
 		tgt := filepath.Join(destdir, filepath.Base(source))
 		log.Debugf("Copying source asset %s to %s\n", source, tgt)
+
 		if err = disk.CopyFile(source, tgt); err != nil {
-			return fmt.Errorf("Failed to copy source asset to target: source='%s' target='%s', reason: %s\n", source, tgt, err)
+			return fmt.Errorf("Failed to copy source asset to target: source='%s' target='%s', reason: %w\n", source, tgt, err)
 		}
 	}
+
 	return nil
 }

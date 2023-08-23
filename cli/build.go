@@ -17,23 +17,25 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
-	"github.com/getsolus/solbuild/builder"
-	"os"
-	"strings"
-
 	login "github.com/coreos/go-systemd/v22/login1"
+
+	"github.com/getsolus/solbuild/builder"
 )
 
 func init() {
 	cmd.Register(&Build)
 }
 
-// Build package(s) in a chroot and output the archives
+// Build package(s) in a chroot and output the archives.
 var Build = cmd.Sub{
 	Name:  "build",
 	Short: "Build the given package(s) in a chroot environment",
@@ -42,44 +44,51 @@ var Build = cmd.Sub{
 	Run:   BuildRun,
 }
 
-// BuildFlags are flags for the "build" sub-command
+// BuildFlags are flags for the "build" sub-command.
+//
+//nolint:tagalign
 type BuildFlags struct {
 	Tmpfs           bool   `short:"t" long:"tmpfs"              desc:"Enable building in a tmpfs"`
 	Memory          string `short:"m" long:"memory"             desc:"Set the tmpfs size to use, e.g. 8G"`
-	TransitManifest string `long:"transit-manifest"             desc:"Create transit manifest for the given target"`
+	TransitManifest string `          long:"transit-manifest"   desc:"Create transit manifest for the given target"`
 	ABIReport       bool   `short:"r" long:"disable-abi-report" desc:"Don't generate an ABI report of the completed build"`
 }
 
-// BuildArgs are arguments for the "build" sub-command
+// BuildArgs are arguments for the "build" sub-command.
 type BuildArgs struct {
 	Path []string `zero:"yes" desc:"Location of [package.yml|pspec.xml] file to build."`
 }
 
-// BuildRun carries out the "build" sub-command
+// BuildRun carries out the "build" sub-command.
 func BuildRun(r *cmd.Root, s *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
-	sFlags := s.Flags.(*BuildFlags)
+	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
+	sFlags := s.Flags.(*BuildFlags)  //nolint:forcetypeassert // guaranteed by callee.
+	sArgs := s.Args.(*BuildArgs)     //nolint:forcetypeassert // guaranteed by callee.
+
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
 
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
+
 		builder.DisableColors = true
 	}
 
 	if sFlags.ABIReport {
 		log.Debugln("Not attempting generation of an ABI report")
+
 		builder.DisableABIReport = true
 	}
 
 	// Allow loading a build recipe from an arbitrary location
 	// (Convert from []string to string to allow usage of cli-ng's zero (optional) property.)
-	pkgPath := strings.Join(s.Args.(*BuildArgs).Path, "")
+	pkgPath := strings.Join(sArgs.Path, "")
 	if len(pkgPath) == 0 {
 		// Otherwise look for a suitable file in the current directory
 		pkgPath = FindLikelyArg()
 	}
+
 	if len(pkgPath) == 0 {
 		log.Fatalln("No package.yml or pspec.xml file in current directory and no file provided.")
 	}
@@ -96,44 +105,49 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		os.Exit(1)
 	}
+
 	pkg, err := builder.NewPackage(pkgPath)
 	if err != nil {
 		log.Fatalf("Failed to load package: %s\n", err)
 	}
+
 	manager.SetManifestTarget(sFlags.TransitManifest)
 	// Set the package
-	if err := manager.SetPackage(pkg); err != nil {
-		if err == builder.ErrProfileNotInstalled {
+	if err = manager.SetPackage(pkg); err != nil {
+		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
+
 		os.Exit(1)
 	}
 
 	// Handle tmpfs and memory size options
-	if sFlags.Tmpfs == true {
-		if sFlags.Memory != "" {
+	if sFlags.Tmpfs {
+		switch {
+		case sFlags.Memory != "":
 			manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
-		} else if sFlags.Memory == "" && manager.Config.TmpfsSize != "" {
+		case sFlags.Memory == "" && manager.Config.TmpfsSize != "":
 			manager.SetTmpfs(sFlags.Tmpfs, manager.Config.TmpfsSize)
-		} else {
+		default:
 			log.Fatalln("tmpfs: No memory size specified")
 		}
 	}
-	if sFlags.Memory != "" && sFlags.Tmpfs != true {
-		if manager.Config.EnableTmpfs != true {
+
+	if sFlags.Memory != "" && !sFlags.Tmpfs {
+		if !manager.Config.EnableTmpfs {
 			log.Fatalln("tmpfs: Memory size specified but tmpfs was not enabled, pass -t to enable tmpfs")
 		} else {
 			manager.SetTmpfs(manager.Config.EnableTmpfs, sFlags.Memory)
 		}
 	}
 
-	// Set a inhibitor lock to prevent system from accidently going down
+	// Set a inhibitor lock to prevent system from accidentally going down
 	conn, err := login.New()
 	if err != nil {
-		log.Errorln("org.freedesktop.login1: Failed to initalize dbus connection")
+		log.Errorln("org.freedesktop.login1: Failed to initialize dbus connection")
 	}
-	connected := conn.Connected()
-	if connected != true {
+
+	if !conn.Connected() {
 		log.Errorln("org.freedesktop.login1: Not connected to dbus system bus")
 	}
 
@@ -148,7 +162,8 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	defer fd.Close()
 
 	if err := manager.Build(); err != nil {
-		log.Fatalln("Failed to build packages")
+		log.Panic("Failed to build packages")
 	}
+
 	log.Infoln("Building succeeded")
 }

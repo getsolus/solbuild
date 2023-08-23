@@ -20,21 +20,19 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 
+	log "github.com/DataDrake/waterlog"
 	"github.com/cavaliergopher/grab/v3"
 	"github.com/cheggaaa/pb/v3"
-
-	log "github.com/DataDrake/waterlog"
 )
 
 const progressBarTemplate string = `{{with string . "prefix"}}{{.}} {{end}}{{printf "%25s" (counters .) }} {{bar . }} {{printf "%7s" (percent .) }} {{printf "%14s" (speed . "%s/s" "??/s")}}{{with string . "suffix"}} {{.}}{{end}}`
 
-// A SimpleSource is a tarball or other source for a package
+// A SimpleSource is a tarball or other source for a package.
 type SimpleSource struct {
 	URI  string
 	File string // Basename of the file
@@ -45,15 +43,16 @@ type SimpleSource struct {
 	url *url.URL
 }
 
-// NewSimple will create a new source instance
+// NewSimple will create a new source instance.
 func NewSimple(uri, validator string, legacy bool) (*SimpleSource, error) {
 	// Ensure the URI is actually valid.
 	uriObj, err := url.Parse(uri)
 	if err != nil {
 		return nil, err
 	}
+
 	fileName := filepath.Base(uriObj.Path)
-	//support URI fragments for renaming sources
+	// support URI fragments for renaming sources
 	if uriObj.Fragment != "" {
 		fileName = uriObj.Fragment
 		uriObj.Fragment = ""
@@ -66,6 +65,7 @@ func NewSimple(uri, validator string, legacy bool) (*SimpleSource, error) {
 		validator: validator,
 		url:       uriObj,
 	}
+
 	return ret, nil
 }
 
@@ -82,43 +82,46 @@ func (s *SimpleSource) GetBindConfiguration(rootfs string) BindConfiguration {
 	}
 }
 
-// GetPath gets the path on the filesystem of the source
+// GetPath gets the path on the filesystem of the source.
 func (s *SimpleSource) GetPath(hash string) string {
 	return filepath.Join(SourceDir, hash, s.File)
 }
 
-// GetSHA1Sum will return the sha1sum for the given path
+// GetSHA1Sum will return the sha1sum for the given path.
 func (s *SimpleSource) GetSHA1Sum(path string) (string, error) {
-	inp, err := ioutil.ReadFile(path)
+	inp, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
+
 	hash := sha1.New()
 	hash.Write(inp)
 	sum := hash.Sum(nil)
+
 	return hex.EncodeToString(sum), nil
 }
 
-// GetSHA256Sum will return the sha1sum for the given path
+// GetSHA256Sum will return the sha1sum for the given path.
 func (s *SimpleSource) GetSHA256Sum(path string) (string, error) {
-	inp, err := ioutil.ReadFile(path)
+	inp, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
+
 	hash := sha256.New()
 	hash.Write(inp)
 	sum := hash.Sum(nil)
+
 	return hex.EncodeToString(sum), nil
 }
 
-// IsFetched will determine if the source is already present
+// IsFetched will determine if the source is already present.
 func (s *SimpleSource) IsFetched() bool {
 	return PathExists(s.GetPath(s.validator))
 }
 
-// download downloads simple files using go grab
+// download downloads simple files using go grab.
 func (s *SimpleSource) download(destination string) error {
-
 	req, err := grab.NewRequest(destination, s.URI)
 	if err != nil {
 		return err
@@ -130,6 +133,7 @@ func (s *SimpleSource) download(destination string) error {
 		if err != nil {
 			return err
 		}
+
 		req.SetChecksum(sha256.New(), sum, false)
 	}
 
@@ -139,6 +143,7 @@ func (s *SimpleSource) download(destination string) error {
 	pbar := pb.Start64(resp.Size())
 	pbar.Set(pb.Bytes, true)
 	pbar.SetTemplateString(progressBarTemplate)
+
 	defer pbar.Finish()
 
 	// Timer to integrate into pbar (30fps)
@@ -152,16 +157,18 @@ func (s *SimpleSource) download(destination string) error {
 		case <-resp.Done:
 			// Ensure progressbar completes to 100%
 			pbar.SetCurrent(resp.BytesComplete())
+
 			if err := resp.Err(); err != nil {
 				log.Errorf("Error downloading %s: %v\n", s.URI, err)
 				return err
 			}
+
 			return nil
 		}
 	}
 }
 
-// Fetch will download the given source and cache it locally
+// Fetch will download the given source and cache it locally.
 func (s *SimpleSource) Fetch() error {
 	// Now go and download it
 	log.Debugf("Downloading source %s\n", s.URI)
@@ -170,7 +177,7 @@ func (s *SimpleSource) Fetch() error {
 
 	// Check staging is available
 	if !PathExists(SourceStagingDir) {
-		if err := os.MkdirAll(SourceStagingDir, 00755); err != nil {
+		if err := os.MkdirAll(SourceStagingDir, 0o0755); err != nil {
 			return err
 		}
 	}
@@ -188,7 +195,7 @@ func (s *SimpleSource) Fetch() error {
 	// Make the target directory
 	tgtDir := filepath.Join(SourceDir, hash)
 	if !PathExists(tgtDir) {
-		if err := os.MkdirAll(tgtDir, 00755); err != nil {
+		if err := os.MkdirAll(tgtDir, 0o0755); err != nil {
 			return err
 		}
 	}
@@ -204,10 +211,12 @@ func (s *SimpleSource) Fetch() error {
 		if err != nil {
 			return err
 		}
+
 		tgtLink := filepath.Join(SourceDir, sha)
 		if err := os.Symlink(hash, tgtLink); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

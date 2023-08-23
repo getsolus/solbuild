@@ -18,13 +18,14 @@ package builder
 
 import (
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/BurntSushi/toml"
 )
 
-// Config defines the global defaults for solbuild
+// Config defines the global defaults for solbuild.
 type Config struct {
 	DefaultProfile string `toml:"default_profile"`  // Name of the default profile to use
 	EnableTmpfs    bool   `toml:"enable_tmpfs"`     // Whether to enable tmpfs builds or
@@ -33,13 +34,13 @@ type Config struct {
 }
 
 var (
-	// ConfigPaths is a set of locations for valid solbuild configuration files
+	// ConfigPaths is a set of locations for valid solbuild configuration files.
 	ConfigPaths = []string{
 		"/etc/solbuild",
 		"/usr/share/solbuild",
 	}
 
-	// ConfigSuffix is the suffix a file must have to be glob loaded by solbuild
+	// ConfigSuffix is the suffix a file must have to be glob loaded by solbuild.
 	ConfigSuffix = ".conf"
 )
 
@@ -68,15 +69,17 @@ func NewConfig() (*Config, error) {
 			if err != nil {
 				return nil, err
 			}
+
 			var b []byte
 
 			// We don't defer the close because of the amount of files we could
 			// potentially glob & open, we don't want to take the piss with open
 			// file descriptors.
-			if b, err = ioutil.ReadAll(fi); err != nil {
+			if b, err = io.ReadAll(fi); err != nil {
 				fi.Close()
 				return nil, err
 			}
+
 			fi.Close()
 
 			if _, err = toml.Decode(string(b), config); err != nil {
@@ -84,5 +87,6 @@ func NewConfig() (*Config, error) {
 			}
 		}
 	}
+
 	return config, nil
 }

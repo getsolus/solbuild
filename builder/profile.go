@@ -18,11 +18,12 @@ package builder
 
 import (
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/BurntSushi/toml"
 )
 
 // A Repo is a definition of a repository to add to the eopkg root during
@@ -44,24 +45,24 @@ type Profile struct {
 	Repos       map[string]*Repo `toml:"repo"`         // Allow defining custom repos
 }
 
-var (
-	// ProfileSuffix is the fixed extension for solbuild profile files
-	ProfileSuffix = ".profile"
-)
+// ProfileSuffix is the fixed extension for solbuild profile files.
+var ProfileSuffix = ".profile"
 
-// NewProfile will attempt to load the named profile from the system paths
+// NewProfile will attempt to load the named profile from the system paths.
 func NewProfile(name string) (*Profile, error) {
 	for _, p := range ConfigPaths {
 		fp := filepath.Join(p, fmt.Sprintf("%s%s", name, ProfileSuffix))
 		if !PathExists(fp) {
 			continue
 		}
+
 		return NewProfileFromPath(fp)
 	}
+
 	return nil, ErrInvalidProfile
 }
 
-// GetAllProfiles will locate all available profiles for solbuild
+// GetAllProfiles will locate all available profiles for solbuild.
 func GetAllProfiles() (map[string]*Profile, error) {
 	ret := make(map[string]*Profile)
 
@@ -78,10 +79,11 @@ func GetAllProfiles() (map[string]*Profile, error) {
 			}
 		}
 	}
+
 	return ret, nil
 }
 
-// NewProfileFromPath will attempt to load a profile from the given file name
+// NewProfileFromPath will attempt to load a profile from the given file name.
 func NewProfileFromPath(path string) (*Profile, error) {
 	basename := filepath.Base(path)
 	if !strings.HasSuffix(basename, ProfileSuffix) {
@@ -97,10 +99,11 @@ func NewProfileFromPath(path string) (*Profile, error) {
 	profileName := basename[:len(basename)-len(ProfileSuffix)]
 
 	var b []byte
+
 	profile := &Profile{Name: profileName}
 
 	// Read the config file
-	if b, err = ioutil.ReadAll(fi); err != nil {
+	if b, err = io.ReadAll(fi); err != nil {
 		return nil, err
 	}
 

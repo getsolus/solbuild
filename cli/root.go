@@ -17,8 +17,9 @@
 package cli
 
 import (
-	"github.com/DataDrake/cli-ng/v2/cmd"
 	"os"
+
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 func init() {
@@ -26,14 +27,14 @@ func init() {
 	cmd.Register(&cmd.Help)
 }
 
-// Root is the root command for solbuild
+// Root is the root command for solbuild.
 var Root = cmd.Root{
 	Name:  "solbuild",
 	Short: "solbuild is the Solus package builder",
 	Flags: &GlobalFlags{},
 }
 
-// GlobalFlags are available to all sub-commands
+// GlobalFlags are available to all sub-commands.
 type GlobalFlags struct {
 	Debug   bool   `short:"d" long:"debug"    desc:"Enable debug message"`
 	NoColor bool   `short:"n" long:"no-color" desc:"Disable color output"`
@@ -54,5 +55,6 @@ func FindLikelyArg() string {
 			}
 		}
 	}
+
 	return ""
 }

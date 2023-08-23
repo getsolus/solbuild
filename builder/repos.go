@@ -18,18 +18,19 @@ package builder
 
 import (
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/disk"
 	"os"
 	"path/filepath"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 )
 
 const (
-	// BindRepoDir is where we make repos available from the host side
+	// BindRepoDir is where we make repos available from the host side.
 	BindRepoDir = "/hostRepos"
 )
 
-// addLocalRepo will try to add the repo and bind mount it into the target
+// addLocalRepo will try to add the repo and bind mount it into the target.
 func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgManager, repo *Repo) error {
 	// Ensure the source exists too. Sorta helpful like that.
 	if !PathExists(repo.URI) {
@@ -41,7 +42,7 @@ func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgM
 	// Ensure the target mountpoint actually exists ...
 	tgt := filepath.Join(o.MountPoint, BindRepoDir[1:], repo.Name)
 	if !PathExists(tgt) {
-		if err := os.MkdirAll(tgt, 00755); err != nil {
+		if err := os.MkdirAll(tgt, 0o0755); err != nil {
 			return err
 		}
 	}
@@ -50,6 +51,7 @@ func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgM
 	if err := mman.BindMount(repo.URI, tgt); err != nil {
 		return err
 	}
+
 	o.ExtraMounts = append(o.ExtraMounts, tgt)
 
 	// Attempt to autoindex the repo
@@ -59,6 +61,7 @@ func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgM
 		command := fmt.Sprintf("cd %s/%s; %s", BindRepoDir, repo.Name, eopkgCommand("eopkg index --skip-signing ."))
 		err := ChrootExec(notif, o.MountPoint, command)
 		notif.SetActivePID(0)
+
 		if err != nil {
 			return err
 		}
@@ -71,6 +74,7 @@ func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgM
 
 	// Now add the local repo
 	chrootLocal := filepath.Join(BindRepoDir, repo.Name, "eopkg-index.xml.xz")
+
 	return pkgManager.AddRepo(repo.Name, chrootLocal)
 }
 
@@ -78,34 +82,42 @@ func (p *Package) removeRepos(pkgManager *EopkgManager, repos []string) error {
 	if len(repos) < 1 {
 		return nil
 	}
+
 	for _, id := range repos {
 		log.Debugf("Removing repository %s\n", id)
+
 		if err := pkgManager.RemoveRepo(id); err != nil {
-			return fmt.Errorf("Failed to remove repository %s, reason: %s\n", id, err)
+			return fmt.Errorf("Failed to remove repository %s, reason: %w\n", id, err)
 		}
 	}
+
 	return nil
 }
 
-// addRepos will add the specified filtered set of repos to the rootfs
+// addRepos will add the specified filtered set of repos to the rootfs.
 func (p *Package) addRepos(notif PidNotifier, o *Overlay, pkgManager *EopkgManager, repos []*Repo) error {
 	if len(repos) < 1 {
 		return nil
 	}
+
 	for _, repo := range repos {
 		if repo.Local {
 			log.Debugf("Adding local repo to system %s %s\n", repo.Name, repo.URI)
 
 			if err := p.addLocalRepo(notif, o, pkgManager, repo); err != nil {
-				return fmt.Errorf("Failed to add local repo to system %s, reason: %s\n", repo.Name, err)
+				return fmt.Errorf("Failed to add local repo to system %s, reason: %w\n", repo.Name, err)
 			}
+
 			continue
 		}
+
 		log.Debugf("Adding repo to system %s %s\n", repo.Name, repo.URI)
+
 		if err := pkgManager.AddRepo(repo.Name, repo.URI); err != nil {
-			return fmt.Errorf("Failed to add repo to system %s, reason: %s\n", repo.Name, err)
+			return fmt.Errorf("Failed to add repo to system %s, reason: %w\n", repo.Name, err)
 		}
 	}
+
 	return nil
 }
 
@@ -125,9 +137,7 @@ func (p *Package) ConfigureRepos(notif PidNotifier, o *Overlay, pkgManager *Eopk
 			removals = append(removals, r.ID)
 		}
 	} else {
-		for _, r := range profile.RemoveRepos {
-			removals = append(removals, r)
-		}
+		removals = append(removals, profile.RemoveRepos...)
 	}
 
 	if err := p.removeRepos(pkgManager, removals); err != nil {

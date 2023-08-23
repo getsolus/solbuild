@@ -22,10 +22,10 @@ import (
 )
 
 const (
-	// SourceDir is where we store all tarballs
+	// SourceDir is where we store all tarballs.
 	SourceDir = "/var/lib/solbuild/sources"
 
-	// SourceStagingDir is where we initially fetch downloads
+	// SourceStagingDir is where we initially fetch downloads.
 	SourceStagingDir = "/var/lib/solbuild/sources/staging"
 )
 
@@ -48,7 +48,6 @@ type BindConfiguration struct {
 // Source's may be of multiple types, but all are abstracted and dealt
 // with by the interfaces.
 type Source interface {
-
 	// IsFetched is called during the early build process to determine
 	// whether this source is available for use.
 	IsFetched() bool
@@ -75,8 +74,8 @@ type Source interface {
 // The legacy argument will determine whether special care should be taken
 // for legacy packages (i.e. sha1sum vs sha256sum).
 //
-// In all cases, New will fallback to the SimpleSource implementation
-func New(uri, validator string, legacy bool) (Source, error) {
+// In all cases, New will fallback to the SimpleSource implementation.
+func New(uri, validator string, legacy bool) (Source, error) { //nolint:ireturn // can return multiple implementations
 	if legacy {
 		return NewSimple(uri, validator, legacy)
 	}
@@ -84,13 +83,15 @@ func New(uri, validator string, legacy bool) (Source, error) {
 	if strings.HasPrefix(uri, "git|") {
 		return NewGit(uri[len("git|"):], validator)
 	}
+
 	return NewSimple(uri, validator, legacy)
 }
 
-// PathExists is a helper function to determine the existence of a file path
+// PathExists is a helper function to determine the existence of a file path.
 func PathExists(path string) bool {
 	if st, err := os.Stat(path); err == nil && st != nil {
 		return true
 	}
+
 	return false
 }

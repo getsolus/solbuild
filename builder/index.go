@@ -19,21 +19,22 @@ package builder
 import (
 	"errors"
 	"fmt"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/disk"
 	"os"
 	"path/filepath"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 )
 
 var (
-	// ErrCannotContinue is a stock error return
+	// ErrCannotContinue is a stock error return.
 	ErrCannotContinue = errors.New("Index cannot continue")
 
-	// IndexBindTarget is where we always mount the repo
+	// IndexBindTarget is where we always mount the repo.
 	IndexBindTarget = "/hostRepo/Index"
 )
 
-// Index will attempt to index the given directory
+// Index will attempt to index the given directory.
 func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 	log.Debugf("Beginning indexer: profile='%s'\n", overlay.Back.Name)
 
@@ -58,7 +59,7 @@ func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 
 	// Create the target
 	target := filepath.Join(overlay.MountPoint, IndexBindTarget[1:])
-	if err := os.MkdirAll(target, 00755); err != nil {
+	if err := os.MkdirAll(target, 0o0755); err != nil {
 		log.Errorf("Cannot create bind target %s, reason: %s\n", target, err)
 		return err
 	}
@@ -74,10 +75,12 @@ func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 	overlay.ExtraMounts = append(overlay.ExtraMounts, target)
 
 	log.Debugln("Now indexing")
+
 	command := fmt.Sprintf("cd %s; %s", IndexBindTarget, eopkgCommand("eopkg index --skip-signing ."))
 	if err := ChrootExec(notif, overlay.MountPoint, command); err != nil {
 		log.Errorf("Indexing failed: dir='%s', reason: %s\n", dir, err)
 		return err
 	}
+
 	return nil
 }

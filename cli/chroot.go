@@ -17,21 +17,24 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
+
 	"github.com/getsolus/solbuild/builder"
-	"os"
-	"strings"
 )
 
 func init() {
 	cmd.Register(&Chroot)
 }
 
-// Chroot opens an interactive shell inside the chroot environment
+// Chroot opens an interactive shell inside the chroot environment.
 var Chroot = cmd.Sub{
 	Name:  "chroot",
 	Short: "Interactively chroot into the package's build environment",
@@ -39,29 +42,34 @@ var Chroot = cmd.Sub{
 	Run:   ChrootRun,
 }
 
-// ChrootArgs are arguments for the "chroot" sub-command
+// ChrootArgs are arguments for the "chroot" sub-command.
 type ChrootArgs struct {
 	Path []string `zero:"yes" desc:"Chroot into the environment for a [package.yml|pspec.xml] receipe."`
 }
 
-// ChrootRun carries out the "chroot" sub-command
+// ChrootRun carries out the "chroot" sub-command.
 func ChrootRun(r *cmd.Root, s *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
+	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
+	sArgs := s.Args.(*ChrootArgs)    //nolint:forcetypeassert // guaranteed by callee.
+
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
+
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
+
 		builder.DisableColors = true
 	}
 
 	// Allow chrooting into an environment for a build recipe for a given file
 	// (Convert from []string to string to allow usage of cli-ng's zero (optional) property.)
-	pkgPath := strings.Join(s.Args.(*ChrootArgs).Path, "")
+	pkgPath := strings.Join(sArgs.Path, "")
 	if len(pkgPath) == 0 {
 		// Otherwise look for a suitable file to chroot into from the current directory
 		pkgPath = FindLikelyArg()
 	}
+
 	if len(pkgPath) == 0 {
 		log.Fatalln("No package.yml or pspec.xml found in current directory and no file provided.")
 	}
@@ -79,19 +87,23 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		os.Exit(1)
 	}
+
 	pkg, err := builder.NewPackage(pkgPath)
 	if err != nil {
 		log.Fatalf("Failed to load package: %s\n", err)
 	}
 	// Set the package
 	if err := manager.SetPackage(pkg); err != nil {
-		if err == builder.ErrProfileNotInstalled {
+		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
+
 		os.Exit(1)
 	}
+
 	if err := manager.Chroot(); err != nil {
 		log.Fatalln("Chroot failure")
 	}
+
 	log.Infoln("Chroot complete")
 }

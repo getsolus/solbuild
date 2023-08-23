@@ -17,20 +17,23 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
+	"os"
+
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
+
 	"github.com/getsolus/solbuild/builder"
-	"os"
 )
 
 func init() {
 	cmd.Register(&Update)
 }
 
-// Update updates a solbuild image with the latest available packages
+// Update updates a solbuild image with the latest available packages.
 var Update = cmd.Sub{
 	Name:  "update",
 	Alias: "up",
@@ -38,15 +41,17 @@ var Update = cmd.Sub{
 	Run:   UpdateRun,
 }
 
-// UpdateRun carries out the "update" sub-command
+// UpdateRun carries out the "update" sub-command.
 func UpdateRun(r *cmd.Root, c *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
+	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
+
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
 	}
+
 	if os.Geteuid() != 0 {
 		log.Fatalln("You must be root to run init profiles")
 	}
@@ -57,15 +62,18 @@ func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 	}
 	// Safety first..
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
-		if err == builder.ErrProfileNotInstalled {
+		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
+
 		os.Exit(1)
 	}
+
 	if err := manager.Update(); err != nil {
-		if err == builder.ErrProfileNotInstalled {
+		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
+
 		os.Exit(1)
 	}
 }

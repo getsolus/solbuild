@@ -20,12 +20,13 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	git "github.com/libgit2/git2go/v34"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"time"
+
+	git "github.com/libgit2/git2go/v34"
 )
 
 const (
@@ -34,15 +35,13 @@ const (
 	MaxChangelogEntries = 10
 
 	// UpdateDateFormat is the time format we emit in the history.xml, i.e.
-	// 2016-09-24
+	// 2016-09-24.
 	UpdateDateFormat = "2006-01-02"
 )
 
-var (
-	// CveRegex is used to identify security updates which mention a specific
-	// CVE ID.
-	CveRegex *regexp.Regexp
-)
+// CveRegex is used to identify security updates which mention a specific
+// CVE ID.
+var CveRegex *regexp.Regexp
 
 func init() {
 	CveRegex = regexp.MustCompile(`(CVE\-[0-9]+\-[0-9]+)`)
@@ -70,7 +69,7 @@ type PackageHistory struct {
 }
 
 // A PackageUpdate is a point in history in the git changes, which is parsed
-// from a git.Commit
+// from a git.Commit.
 type PackageUpdate struct {
 	Tag         string    // The associated git tag
 	Author      string    // The author name of the change
@@ -83,7 +82,7 @@ type PackageUpdate struct {
 }
 
 // NewPackageUpdate will attempt to parse the given commit and provide a usable
-// entry for the PackageHistory
+// entry for the PackageHistory.
 func NewPackageUpdate(tag string, commit *git.Commit, objectID string) *PackageUpdate {
 	signature := commit.Author()
 	update := &PackageUpdate{Tag: tag}
@@ -105,16 +104,18 @@ func NewPackageUpdate(tag string, commit *git.Commit, objectID string) *PackageU
 	return update
 }
 
-// CatGitBlob will return the contents of the given entry
+// CatGitBlob will return the contents of the given entry.
 func CatGitBlob(repo *git.Repository, entry *git.TreeEntry) ([]byte, error) {
 	obj, err := repo.Lookup(entry.Id)
 	if err != nil {
 		return nil, err
 	}
+
 	blob, err := obj.AsBlob()
 	if err != nil {
 		return nil, err
 	}
+
 	return blob.Contents(), nil
 }
 
@@ -125,18 +126,22 @@ func GetFileContents(repo *git.Repository, tag, path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	commit, err := repo.Lookup(oid)
 	if err != nil {
 		return nil, err
 	}
+
 	treeObj, err := commit.Peel(git.ObjectTree)
 	if err != nil {
 		return nil, err
 	}
+
 	tree, err := treeObj.AsTree()
 	if err != nil {
 		return nil, err
 	}
+
 	entry, err := tree.EntryByPath(path)
 	if err != nil {
 		return nil, err
@@ -161,6 +166,7 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	}
 	// Get all the tags
 	var tags []string
+
 	tags, err = repo.Tags.List()
 	if err != nil {
 		return nil, err
@@ -176,38 +182,44 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 
 		var commit *git.Commit
 
-		obj, err := repo.Lookup(id)
-		if err != nil {
-			return err
+		obj, rErr := repo.Lookup(id)
+		if rErr != nil {
+			return rErr
 		}
 
 		switch obj.Type() {
 		// Unannotated tag
 		case git.ObjectCommit:
-			commit, err = obj.AsCommit()
-			if err != nil {
-				return err
+			commit, rErr = obj.AsCommit()
+			if rErr != nil {
+				return rErr
 			}
+
 			tags = append(tags, name)
 		// Annotated tag with commit target
 		case git.ObjectTag:
-			tag, err := obj.AsTag()
-			if err != nil {
-				return err
+			tag, tErr := obj.AsTag()
+			if tErr != nil {
+				return tErr
 			}
-			commit, err = repo.LookupCommit(tag.TargetId())
-			if err != nil {
-				return err
+
+			commit, tErr = repo.LookupCommit(tag.TargetId())
+			if tErr != nil {
+				return tErr
 			}
+
 			tags = append(tags, name)
 		default:
 			return fmt.Errorf("Internal git error, found %s", obj.Type().String())
 		}
+
 		if commit == nil {
 			return nil
 		}
+
 		commitObj := NewPackageUpdate(name, commit, id.String())
 		updates[name] = commitObj
+
 		return nil
 	})
 	// Foreach went bork
@@ -229,7 +241,7 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	return ret, nil
 }
 
-// SortUpdatesByRelease is a simple wrapper to allowing sorting history
+// SortUpdatesByRelease is a simple wrapper to allowing sorting history.
 type SortUpdatesByRelease []*PackageUpdate
 
 func (a SortUpdatesByRelease) Len() int {
@@ -250,13 +262,15 @@ func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*P
 	// basename of file
 	fname := filepath.Base(p.pkgfile)
 
-	var updateSet []*PackageUpdate
+	updateSet := make([]*PackageUpdate, 0, len(tags))
+
 	// Iterate the commit set in order
 	for _, tagID := range tags {
 		update := updates[tagID]
 		if update == nil {
 			continue
 		}
+
 		b, err := GetFileContents(repo, update.ObjectID, fname)
 		if err != nil {
 			continue
@@ -267,24 +281,26 @@ func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*P
 		if pkg, err = NewYmlPackageFromBytes(b); err != nil {
 			continue
 		}
+
 		update.Package = pkg
 		updateSet = append(updateSet, update)
 	}
+
 	sort.Sort(sort.Reverse(SortUpdatesByRelease(updateSet)))
+
 	if len(updateSet) >= MaxChangelogEntries {
 		p.Updates = updateSet[:MaxChangelogEntries]
 	} else {
 		p.Updates = updateSet
 	}
-
 }
 
-// YPKG provides ypkg-gen-history history.xml compatibility
+// YPKG provides ypkg-gen-history history.xml compatibility.
 type YPKG struct {
 	History []*YPKGUpdate `xml:">Update"`
 }
 
-// YPKGUpdate represents an update in the package history
+// YPKGUpdate represents an update in the package history.
 type YPKGUpdate struct {
 	Release int    `xml:"release,attr"`
 	Type    string `xml:"type,attr,omitempty"`
@@ -302,7 +318,7 @@ type YPKGUpdate struct {
 // WriteXML will attempt to dump the update history to an XML file
 // in order for ypkg to merge it into the package build.
 func (p *PackageHistory) WriteXML(path string) error {
-	var ypkgUpdates []*YPKGUpdate
+	ypkgUpdates := make([]*YPKGUpdate, 0, len(p.Updates))
 
 	fi, err := os.Create(path)
 	if err != nil {
@@ -319,20 +335,24 @@ func (p *PackageHistory) WriteXML(path string) error {
 		}
 		yUpdate.Comment.Value = update.Body
 		yUpdate.Name.Value = update.Author
+
 		if update.IsSecurity {
 			yUpdate.Type = "security"
 		}
+
 		ypkgUpdates = append(ypkgUpdates, yUpdate)
 	}
 
 	ypkg := &YPKG{History: ypkgUpdates}
+
 	bytes, err := xml.MarshalIndent(ypkg, "", "    ")
 	if err != nil {
 		return err
 	}
 
 	// Dump it to the file
-	_, err = fi.WriteString(string(bytes))
+	_, err = fi.Write(bytes)
+
 	return err
 }
 
@@ -343,7 +363,7 @@ func (p *PackageHistory) WriteXML(path string) error {
 // change, and not from simple bumps. The idea here is to only increment the
 // timestamp if we've actually upgraded to a major version, and in general
 // attempt to reduce the noise, and thus, produce better delta packages
-// between minor package alterations
+// between minor package alterations.
 func (p *PackageHistory) GetLastVersionTimestamp() int64 {
 	lastVersion := p.Updates[0].Package.Version
 	lastTime := p.Updates[0].Time
@@ -359,6 +379,7 @@ func (p *PackageHistory) GetLastVersionTimestamp() int64 {
 		if newVersion != lastVersion {
 			break
 		}
+
 		lastVersion = p.Updates[i].Package.Version
 		lastTime = p.Updates[i].Time
 	}

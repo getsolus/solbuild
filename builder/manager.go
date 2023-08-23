@@ -18,8 +18,6 @@ package builder
 
 import (
 	"errors"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/disk"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -27,29 +25,32 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
 )
 
 var (
 	// ErrManagerInitialised is returned when the library user attempts to set
-	// a core part of the Manager after it's already been initialised
+	// a core part of the Manager after it's already been initialised.
 	ErrManagerInitialised = errors.New("The manager has already been initialised")
 
-	// ErrNoPackage is returned when we've got no package
+	// ErrNoPackage is returned when we've got no package.
 	ErrNoPackage = errors.New("You must first set a package to build it")
 
 	// ErrNotImplemented is returned as a placeholder when developing functionality.
 	ErrNotImplemented = errors.New("Function not yet implemented")
 
-	// ErrProfileNotInstalled is returned when a profile is not yet installed
+	// ErrProfileNotInstalled is returned when a profile is not yet installed.
 	ErrProfileNotInstalled = errors.New("Profile is not installed")
 
-	// ErrInvalidProfile is returned when there is an invalid profile
+	// ErrInvalidProfile is returned when there is an invalid profile.
 	ErrInvalidProfile = errors.New("Invalid profile")
 
-	// ErrInvalidImage is returned when the backing image is unknown
+	// ErrInvalidImage is returned when the backing image is unknown.
 	ErrInvalidImage = errors.New("Invalid image")
 
-	// ErrInterrupted is returned when the build is interrupted
+	// ErrInterrupted is returned when the build is interrupted.
 	ErrInterrupted = errors.New("The operation was cancelled by the user")
 )
 
@@ -81,12 +82,13 @@ type Manager struct {
 	activePID int // Active PID
 }
 
-// NewManager will return a newly initialised manager instance
+// NewManager will return a newly initialised manager instance.
 func NewManager() (*Manager, error) {
 	// First things first, setup the namespace
 	if err := ConfigureNamespace(); err != nil {
 		return nil, err
 	}
+
 	man := &Manager{
 		cancelled:  false,
 		activePID:  0,
@@ -104,10 +106,11 @@ func NewManager() (*Manager, error) {
 	}
 
 	man.lock = new(sync.Mutex)
+
 	return man, nil
 }
 
-// SetActivePID will set the active task PID
+// SetActivePID will set the active task PID.
 func (m *Manager) SetActivePID(pid int) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -115,7 +118,7 @@ func (m *Manager) SetActivePID(pid int) {
 }
 
 // SetManifestTarget will set the manifest target to be used
-// An empty target (default) means no manifest
+// An empty target (default) means no manifest.
 func (m *Manager) SetManifestTarget(target string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -152,13 +155,15 @@ func (m *Manager) SetProfile(profile string) error {
 
 	m.profile = prof
 	m.image = NewBackingImage(m.profile.Image)
+
 	return nil
 }
 
-// GetProfile will return the profile associated with this builder
+// GetProfile will return the profile associated with this builder.
 func (m *Manager) GetProfile() *Profile {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	return m.profile
 }
 
@@ -182,6 +187,7 @@ func (m *Manager) SetPackage(pkg *Package) error {
 		if PathExists(filepath.Join(repoDir, ".git")) {
 			if history, err := NewPackageHistory(pkg.Path); err == nil {
 				log.Debugln("Obtained package history")
+
 				m.history = history
 			} else {
 				log.Warnf("Failed to obtain package git history %s\n", err)
@@ -192,14 +198,16 @@ func (m *Manager) SetPackage(pkg *Package) error {
 	m.pkg = pkg
 	m.overlay = NewOverlay(m.Config, m.profile, m.image, m.pkg)
 	m.pkgManager = NewEopkgManager(m, m.overlay.MountPoint)
+
 	return nil
 }
 
 // IsCancelled will determine if the build has been cancelled, this will result
-// in a lot of locking between all operations
+// in a lot of locking between all operations.
 func (m *Manager) IsCancelled() bool {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	return m.cancelled
 }
 
@@ -219,6 +227,7 @@ func (m *Manager) Cleanup() {
 	if !m.didStart {
 		return
 	}
+
 	log.Debugln("Acquiring global lock")
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -235,6 +244,7 @@ func (m *Manager) Cleanup() {
 	if m.overlay != nil {
 		deathPoint = m.overlay.MountPoint
 	}
+
 	if m.updateMode {
 		deathPoint = m.image.RootDir
 	}
@@ -271,13 +281,14 @@ func (m *Manager) Cleanup() {
 		if err := m.lockfile.Unlock(); err != nil {
 			log.Errorf("Failure in unlocking root %s\n", err)
 		}
+
 		if err := m.lockfile.Clean(); err != nil {
 			log.Errorf("Failure in cleaning lockfile %s\n", err)
 		}
 	}
 }
 
-// doLock will handle the relevant locking operation for the given path
+// doLock will handle the relevant locking operation for the given path.
 func (m *Manager) doLock(path, opType string) error {
 	// Handle file locking
 	lock, err := NewLockFile(path)
@@ -285,17 +296,21 @@ func (m *Manager) doLock(path, opType string) error {
 		log.Errorf("Failed to lock root for %s %s %s\n", opType, path, err)
 		return err
 	}
+
 	m.lockfile = lock
 
 	if err = m.lockfile.Lock(); err != nil {
-		if err == ErrOwnedLockFile {
+		if errors.Is(err, ErrOwnedLockFile) {
 			log.Errorf("Failed to lock root - another process (%s,%d) is using it, reason: %s\n", m.lockfile.GetOwnerProcess(), m.lockfile.GetOwnerPID(), err)
 		} else {
 			log.Errorf("Failed to lock root pid='%d' %s\n", m.lockfile.GetOwnerPID(), err)
 		}
+
 		return err
 	}
+
 	m.didStart = true
+
 	return nil
 }
 
@@ -303,6 +318,7 @@ func (m *Manager) doLock(path, opType string) error {
 func (m *Manager) SigIntCleanup() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
 		<-ch
 		log.Warnln("CTRL+C interrupted, cleaning up")
@@ -334,8 +350,9 @@ func (m *Manager) Build() error {
 	// Now set our options according to the config
 	m.overlay.EnableTmpfs = m.Config.EnableTmpfs
 	m.overlay.TmpfsSize = m.Config.TmpfsSize
-	if ValidMemSize(m.overlay.TmpfsSize) != true && m.overlay.EnableTmpfs == true {
-		log.Fatalf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
+
+	if !ValidMemSize(m.overlay.TmpfsSize) && m.overlay.EnableTmpfs {
+		log.Panicf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
 	}
 
 	if err := m.doLock(m.overlay.LockPath, "building"); err != nil {
@@ -345,7 +362,7 @@ func (m *Manager) Build() error {
 	return m.pkg.Build(m, m.history, m.GetProfile(), m.pkgManager, m.overlay, m.manifestTarget)
 }
 
-// Chroot will enter the build environment to allow users to introspect it
+// Chroot will enter the build environment to allow users to introspect it.
 func (m *Manager) Chroot() error {
 	if m.IsCancelled() {
 		return ErrInterrupted
@@ -369,20 +386,23 @@ func (m *Manager) Chroot() error {
 	return m.pkg.Chroot(m, m.pkgManager, m.overlay)
 }
 
-// Update will attempt to update the base image
+// Update will attempt to update the base image.
 func (m *Manager) Update() error {
 	if m.IsCancelled() {
 		return ErrInterrupted
 	}
+
 	m.lock.Lock()
 	if m.image == nil {
 		m.lock.Unlock()
 		return ErrInvalidProfile
 	}
+
 	if !m.image.IsInstalled() {
 		m.lock.Unlock()
 		return ErrProfileNotInstalled
 	}
+
 	m.updateMode = true
 	m.pkgManager = NewEopkgManager(m, m.image.RootDir)
 	m.lock.Unlock()
@@ -397,7 +417,7 @@ func (m *Manager) Update() error {
 	return m.image.Update(m, m.pkgManager)
 }
 
-// Index will attempt to index the given directory for eopkgs
+// Index will attempt to index the given directory for eopkgs.
 func (m *Manager) Index(dir string) error {
 	if m.IsCancelled() {
 		return ErrInterrupted
@@ -417,8 +437,9 @@ func (m *Manager) Index(dir string) error {
 	// Now set our options according to the config
 	m.overlay.EnableTmpfs = m.Config.EnableTmpfs
 	m.overlay.TmpfsSize = m.Config.TmpfsSize
-	if ValidMemSize(m.overlay.TmpfsSize) != true && m.overlay.EnableTmpfs == true {
-		log.Fatalf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
+
+	if !ValidMemSize(m.overlay.TmpfsSize) && m.overlay.EnableTmpfs {
+		log.Panicf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
 	}
 
 	if err := m.doLock(m.overlay.LockPath, "indexing"); err != nil {
@@ -428,13 +449,15 @@ func (m *Manager) Index(dir string) error {
 	return m.pkg.Index(m, dir, m.overlay)
 }
 
-// SetTmpfs sets the manager tmpfs option
+// SetTmpfs sets the manager tmpfs option.
 func (m *Manager) SetTmpfs(enable bool, size string) {
 	if m.IsCancelled() {
 		return
 	}
+
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	if m.overlay != nil {
 		m.Config.EnableTmpfs = enable
 		m.Config.TmpfsSize = strings.TrimSpace(size)

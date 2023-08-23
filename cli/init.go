@@ -17,17 +17,20 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/getsolus/libosdev/commands"
+
 	"github.com/getsolus/solbuild/builder"
-	"io"
-	"net/http"
-	"os"
 )
 
 func init() {
@@ -35,7 +38,7 @@ func init() {
 	cmd.Register(&cmd.Help)
 }
 
-// Init downloads a solbuid image and initializes the profile
+// Init downloads a solbuid image and initializes the profile.
 var Init = cmd.Sub{
 	Name:  "init",
 	Short: "Initialise a solbuild profile",
@@ -43,20 +46,24 @@ var Init = cmd.Sub{
 	Run:   InitRun,
 }
 
-// InitFlags are flags for the "init" sub-command
+// InitFlags are flags for the "init" sub-command.
 type InitFlags struct {
 	AutoUpdate bool `short:"u" long:"update" desc:"Automatically update the new image"`
 }
 
-// InitRun carries out the "init" sub-command
+// InitRun carries out the "init" sub-command.
 func InitRun(r *cmd.Root, s *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
+	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
+	sFlags := s.Flags.(*InitFlags)   //nolint:forcetypeassert // guaranteed by callee.
+
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
+
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
 	}
+
 	if os.Geteuid() != 0 {
 		log.Fatalln("You must be root to run init profiles")
 	}
@@ -69,8 +76,9 @@ func InitRun(r *cmd.Root, s *cmd.Sub) {
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		log.Fatalln(err.Error())
 	}
+
 	doInit(manager)
-	sFlags := s.Flags.(*InitFlags)
+
 	if sFlags.AutoUpdate {
 		doUpdate(manager)
 	}
@@ -79,16 +87,19 @@ func InitRun(r *cmd.Root, s *cmd.Sub) {
 func doInit(manager *builder.Manager) {
 	prof := manager.GetProfile()
 	bk := builder.NewBackingImage(prof.Image)
+
 	if bk.IsInstalled() {
 		log.Warnf("'%s' has already been initialised\n", prof.Name)
 		return
 	}
+
 	imgDir := builder.ImagesDir
 	// Ensure directories exist
 	if !builder.PathExists(imgDir) {
-		if err := os.MkdirAll(imgDir, 00755); err != nil {
+		if err := os.MkdirAll(imgDir, 0o0755); err != nil {
 			log.Fatalf("Failed to create images directory '%s', reason: %s", imgDir, err)
 		}
+
 		log.Debugf("Created images directory '%s'\n", imgDir)
 	}
 	// Now ensure we actually have said image
@@ -99,9 +110,11 @@ func doInit(manager *builder.Manager) {
 	}
 	// Decompress the image
 	log.Debugf("Decompressing backing image, source: '%s' target: '%s'\n", bk.ImagePathXZ, bk.ImagePath)
+
 	if err := commands.ExecStdoutArgsDir(builder.ImagesDir, "unxz", []string{bk.ImagePathXZ}); err != nil {
 		log.Fatalf("Failed to decompress image '%s', reason: %s\n", bk.ImagePathXZ, err)
 	}
+
 	log.Infoln("Profile successfully initialised")
 }
 
@@ -109,42 +122,51 @@ func doInit(manager *builder.Manager) {
 func downloadImage(bk *builder.BackingImage) (err error) {
 	file, err := os.Create(bk.ImagePathXZ)
 	if err != nil {
-		return fmt.Errorf("failed to create file '%s', reason: '%s'", bk.ImagePathXZ, err)
+		return fmt.Errorf("failed to create file '%s', reason: '%w'", bk.ImagePathXZ, err)
 	}
+
 	defer func() {
 		if err != nil {
 			os.Remove(bk.ImagePathXZ)
 		}
 	}()
 	defer file.Close()
+
 	resp, err := http.Get(bk.ImageURI)
 	if err != nil {
-		return fmt.Errorf("failed to fetch image '%s', reason: '%s'", bk.ImageURI, err)
+		return fmt.Errorf("failed to fetch image '%s', reason: '%w'", bk.ImageURI, err)
 	}
+
 	defer resp.Body.Close()
 	bar := pb.New64(resp.ContentLength).Set(pb.Bytes, true)
 	reader := bar.NewProxyReader(resp.Body)
 	bar.Start()
+
 	defer bar.Finish()
+
 	bytesRemaining := resp.ContentLength
 	done := false
 	buf := make([]byte, 32*1024)
+
 	for !done {
 		bytesRead, err := reader.Read(buf)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			done = true
 		} else if err != nil {
-			return fmt.Errorf("failed to fetch image '%s', reason: '%s'", bk.ImageURI, err)
+			return fmt.Errorf("failed to fetch image '%s', reason: '%w'", bk.ImageURI, err)
 		}
+
 		if _, err = file.Write(buf[:bytesRead]); err != nil {
-			return fmt.Errorf("failed to write image '%s', reason: '%s'", bk.ImagePathXZ, err)
+			return fmt.Errorf("failed to write image '%s', reason: '%w'", bk.ImagePathXZ, err)
 		}
+
 		bytesRemaining -= int64(bytesRead)
 	}
+
 	return nil
 }
 
-// doUpdate will perform an update to the image after the initial init stage
+// doUpdate will perform an update to the image after the initial init stage.
 func doUpdate(manager *builder.Manager) {
 	if err := manager.Update(); err != nil {
 		log.Fatalf("Update failed, reason: '%s'\n", err)

@@ -18,12 +18,13 @@ package builder
 
 import (
 	"fmt"
+	"os"
+
 	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
-	"os"
 )
 
-// Chroot will attempt to spawn a chroot in the overlayfs system
+// Chroot will attempt to spawn a chroot in the overlayfs system.
 func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay) error {
 	log.Debugf("Beginning chroot: profile='%s' version='%s' package='%s' type='%s' release='%d'\n", overlay.Back.Name, p.Version, p.Name, p.Type, p.Release)
 
@@ -33,6 +34,7 @@ func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay
 	} else {
 		env = SaneEnvironment(BuildUser, BuildUserHome)
 	}
+
 	ChrootEnvironment = env
 
 	if err := p.ActivateRoot(overlay); err != nil {
@@ -67,7 +69,9 @@ func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay
 
 	loginCommand := fmt.Sprintf("/bin/su - %s -s %s", user, BuildUserShell)
 	err := ChrootExecStdin(notif, overlay.MountPoint, loginCommand)
+
 	commands.SetStdin(nil)
 	notif.SetActivePID(0)
+
 	return err
 }

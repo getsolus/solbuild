@@ -20,40 +20,40 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/getsolus/solbuild/builder/source"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/getsolus/solbuild/builder/source"
 )
 
-// PackageType is simply the type of package we're building, i.e. xml / pspec
+// PackageType is simply the type of package we're building, i.e. xml / pspec.
 type PackageType string
 
 const (
 	// PackageTypeXML is the legacy package format, to be removed with sol introduction.
 	PackageTypeXML PackageType = "legacy"
 
-	// PackageTypeYpkg is the native build format of Solus, the package.yml format
+	// PackageTypeYpkg is the native build format of Solus, the package.yml format.
 	PackageTypeYpkg PackageType = "ypkg"
 
-	// PackageTypeIndex is a faux type to enable indexing
+	// PackageTypeIndex is a faux type to enable indexing.
 	PackageTypeIndex PackageType = "index"
 )
 
-var (
-	// IndexPackage is used by the index command to make use of the overlayfs
-	// system.
-	IndexPackage = Package{
-		Name:    "index",
-		Version: "1.4.5.2",
-		Type:    PackageTypeIndex,
-		Release: 1,
-		Path:    "",
-	}
-)
+// IndexPackage is used by the index command to make use of the overlayfs
+// system.
+var IndexPackage = Package{
+	Name:    "index",
+	Version: "1.4.5.2",
+	Type:    PackageTypeIndex,
+	Release: 1,
+	Path:    "",
+}
 
-// Package is the main item we deal with, avoiding the internals
+// Package is the main item we deal with, avoiding the internals.
 type Package struct {
 	Name       string          // Name of the package
 	Version    string          // Version of this package
@@ -64,16 +64,16 @@ type Package struct {
 	CanNetwork bool            // Only applicable to ypkg builds
 }
 
-// YmlPackage is a parsed ypkg build file
+// YmlPackage is a parsed ypkg build file.
 type YmlPackage struct {
-	Name       string
-	Version    string
-	Release    int
-	Networking bool // If set to false (default) we disable networking in the build
-	Source     []map[string]string
+	Name       string              `yaml:"name"`
+	Version    string              `yaml:"version"`
+	Release    int                 `yaml:"release"`
+	Networking bool                `yaml:"networking"` // If set to false (default) we disable networking in the build
+	Source     []map[string]string `yaml:"source"`
 }
 
-// XMLUpdate represents an update in the package history
+// XMLUpdate represents an update in the package history.
 type XMLUpdate struct {
 	Release int `xml:"release,attr"`
 	Date    string
@@ -83,24 +83,24 @@ type XMLUpdate struct {
 	Email   string
 }
 
-// XMLArchive is an <Archive> line in Source section
+// XMLArchive is an <Archive> line in Source section.
 type XMLArchive struct {
 	Type    string `xml:"type,attr"`
 	SHA1Sum string `xml:"sha1sum,attr"`
 	URI     string `xml:",chardata"`
 }
 
-// XMLSource is the actual source info for each pspec.xml
+// XMLSource is the actual source info for each pspec.xml.
 type XMLSource struct {
-	Homepage string
-	Name     string
-	Archive  []XMLArchive
+	Homepage string       `xml:"Homepage"`
+	Name     string       `xml:"Name"`
+	Archive  []XMLArchive `xml:"Archive"`
 }
 
-// XMLPackage contains all of the pspec.xml metadata
+// XMLPackage contains all of the pspec.xml metadata.
 type XMLPackage struct {
-	Name    string
-	Source  XMLSource
+	Name    string      `xml:"Name"`
+	Source  XMLSource   `xml:"Source"`
 	History []XMLUpdate `xml:"History>Update"`
 }
 
@@ -110,13 +110,16 @@ func NewPackage(path string) (*Package, error) {
 	if strings.HasSuffix(path, ".xml") {
 		return NewXMLPackage(path)
 	}
+
 	return NewYmlPackage(path)
 }
 
-// NewXMLPackage will attempt to parse the pspec.xml file @ path
+// NewXMLPackage will attempt to parse the pspec.xml file @ path.
 func NewXMLPackage(path string) (*Package, error) {
 	var by []byte
+
 	var err error
+
 	var fi *os.File
 
 	fi, err = os.Open(path)
@@ -125,14 +128,16 @@ func NewXMLPackage(path string) (*Package, error) {
 	}
 	defer fi.Close()
 
-	by, err = ioutil.ReadAll(fi)
+	by, err = io.ReadAll(fi)
 	if err != nil {
 		return nil, err
 	}
+
 	xpkg := &XMLPackage{}
 	if err = xml.Unmarshal(by, xpkg); err != nil {
 		return nil, err
 	}
+
 	if len(xpkg.History) < 1 {
 		return nil, errors.New("xml: Malformed pspec file")
 	}
@@ -152,25 +157,31 @@ func NewXMLPackage(path string) (*Package, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		ret.Sources = append(ret.Sources, source)
 	}
 
 	if ret.Name == "" {
 		return nil, errors.New("xml: Missing name in package")
 	}
+
 	if ret.Version == "" {
 		return nil, errors.New("xml: Missing version in package")
 	}
+
 	if ret.Release < 0 {
 		return nil, fmt.Errorf("xml: Invalid release in package: %d", ret.Release)
 	}
+
 	return ret, nil
 }
 
-// NewYmlPackage will attempt to parse the ypkg package.yml file @ path
+// NewYmlPackage will attempt to parse the ypkg package.yml file @ path.
 func NewYmlPackage(path string) (*Package, error) {
 	var by []byte
+
 	var err error
+
 	var fi *os.File
 
 	fi, err = os.Open(path)
@@ -179,19 +190,22 @@ func NewYmlPackage(path string) (*Package, error) {
 	}
 	defer fi.Close()
 
-	by, err = ioutil.ReadAll(fi)
+	by, err = io.ReadAll(fi)
 	if err != nil {
 		return nil, err
 	}
+
 	ret, err := NewYmlPackageFromBytes(by)
 	if err != nil {
 		return nil, err
 	}
+
 	ret.Path = path
+
 	return ret, nil
 }
 
-// NewYmlPackageFromBytes will attempt to parse the ypkg package.yml in memory
+// NewYmlPackageFromBytes will attempt to parse the ypkg package.yml in memory.
 func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 	var err error
 
@@ -214,6 +228,7 @@ func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 			if err != nil {
 				return nil, err
 			}
+
 			ret.Sources = append(ret.Sources, source)
 		}
 	}
@@ -221,11 +236,14 @@ func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 	if ret.Name == "" {
 		return nil, errors.New("ypkg: Missing name in package")
 	}
+
 	if ret.Version == "" {
 		return nil, errors.New("ypkg: Missing version in package")
 	}
+
 	if ret.Release < 0 {
 		return nil, fmt.Errorf("ypkg: Invalid release in package: %d", ret.Release)
 	}
+
 	return ret, nil
 }

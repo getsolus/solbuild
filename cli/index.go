@@ -17,20 +17,23 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
+	"os"
+
 	"github.com/DataDrake/cli-ng/v2/cmd"
 	log "github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"
+
 	"github.com/getsolus/solbuild/builder"
-	"os"
 )
 
 func init() {
 	cmd.Register(&Index)
 }
 
-// Index generates index files for a local repository
+// Index generates index files for a local repository.
 var Index = cmd.Sub{
 	Name:  "index",
 	Short: "Create repo index in the given directory",
@@ -39,27 +42,31 @@ var Index = cmd.Sub{
 	Run:   IndexRun,
 }
 
-// IndexFlags are flags for the "index" sub-command
+// IndexFlags are flags for the "index" sub-command.
 type IndexFlags struct {
 	Tmpfs  bool   `short:"t" long:"tmpfs"  desc:"Enable building in a tmpfs"`
 	Memory string `short:"m" long:"memory" desc:"Set the tmpfs size to use"`
 }
 
-// IndexArgs are args for the "index" sub-command
+// IndexArgs are args for the "index" sub-command.
 type IndexArgs struct {
 	Dir string `desc:"Output directory the generated index files"`
 }
 
-// IndexRun carries out the "index" sub-command
+// IndexRun carries out the "index" sub-command.
 func IndexRun(r *cmd.Root, s *cmd.Sub) {
-	rFlags := r.Flags.(*GlobalFlags)
-	sFlags := s.Flags.(*IndexFlags)
+	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
+	sFlags := s.Flags.(*IndexFlags)  //nolint:forcetypeassert // guaranteed by callee.
+	args := s.Args.(*IndexArgs)      //nolint:forcetypeassert // guaranteed by callee.
+
 	if rFlags.Debug {
 		log.SetLevel(level.Debug)
 	}
+
 	if rFlags.NoColor {
 		log.SetFormat(format.Un)
 	}
+
 	if os.Geteuid() != 0 {
 		log.Fatalln("You must be root to use index")
 	}
@@ -74,15 +81,18 @@ func IndexRun(r *cmd.Root, s *cmd.Sub) {
 	}
 	// Set the package
 	if err := manager.SetPackage(&builder.IndexPackage); err != nil {
-		if err == builder.ErrProfileNotInstalled {
+		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)
 		}
+
 		os.Exit(1)
 	}
+
 	manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
-	args := s.Args.(*IndexArgs)
+
 	if err := manager.Index(args.Dir); err != nil {
 		log.Fatalln("Index failure")
 	}
+
 	log.Infoln("Indexing complete")
 }
