@@ -158,7 +158,7 @@ func getDirSize(path string) (int64, error) {
 // humanReadableFormat pretty prints a float64 input into a human friendly string in IEC format.
 func humanReadableFormat(i float64) string {
 	if i <= 0 {
-		return fmt.Sprintf("0.0 B")
+		return "0.0 B"
 	}
 	units := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"}
 	chosenUnit := math.Min(math.Floor(math.Log(i)/math.Log(1024)), float64(len(units)-1))

@@ -126,9 +126,7 @@ func (p *Package) ConfigureRepos(notif PidNotifier, o *Overlay, pkgManager *Eopk
 			removals = append(removals, r.ID)
 		}
 	} else {
-		for _, r := range profile.RemoveRepos {
-			removals = append(removals, r)
-		}
+		removals = append(removals, profile.RemoveRepos...)
 	}
 
 	if err := p.removeRepos(pkgManager, removals); err != nil {

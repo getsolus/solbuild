@@ -114,7 +114,7 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	}
 
 	// Handle tmpfs and memory size options
-	if sFlags.Tmpfs == true {
+	if sFlags.Tmpfs {
 		switch {
 		case sFlags.Memory != "":
 			manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
@@ -124,8 +124,8 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 			log.Fatalln("tmpfs: No memory size specified")
 		}
 	}
-	if sFlags.Memory != "" && sFlags.Tmpfs != true {
-		if manager.Config.EnableTmpfs != true {
+	if sFlags.Memory != "" && !sFlags.Tmpfs {
+		if !manager.Config.EnableTmpfs {
 			log.Fatalln("tmpfs: Memory size specified but tmpfs was not enabled, pass -t to enable tmpfs")
 		} else {
 			manager.SetTmpfs(manager.Config.EnableTmpfs, sFlags.Memory)
@@ -137,8 +137,8 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	if err != nil {
 		log.Errorln("org.freedesktop.login1: Failed to initalize dbus connection")
 	}
-	connected := conn.Connected()
-	if connected != true {
+
+	if !conn.Connected() {
 		log.Errorln("org.freedesktop.login1: Not connected to dbus system bus")
 	}
 
