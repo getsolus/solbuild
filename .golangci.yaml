@@ -14,7 +14,6 @@ linters:
     - gomnd
     - gosec
     - lll
-    - misspell
     - musttag
     - nestif
     - nilerr
@@ -88,6 +87,10 @@ linters-settings:
     enable-all: true
     disable:
       - fieldalignment  # misalignment is accepted
+
+  misspell:
+    ignore-words:
+      - evolveos
 
   revive:
     enable-all-rules: false

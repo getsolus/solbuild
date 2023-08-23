@@ -132,10 +132,10 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 		}
 	}
 
-	// Set a inhibitor lock to prevent system from accidently going down
+	// Set a inhibitor lock to prevent system from accidentally going down
 	conn, err := login.New()
 	if err != nil {
-		log.Errorln("org.freedesktop.login1: Failed to initalize dbus connection")
+		log.Errorln("org.freedesktop.login1: Failed to initialize dbus connection")
 	}
 
 	if !conn.Connected() {
