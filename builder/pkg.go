@@ -66,11 +66,11 @@ type Package struct {
 
 // YmlPackage is a parsed ypkg build file.
 type YmlPackage struct {
-	Name       string
-	Version    string
-	Release    int
-	Networking bool // If set to false (default) we disable networking in the build
-	Source     []map[string]string
+	Name       string              `yaml:"name"`
+	Version    string              `yaml:"version"`
+	Release    int                 `yaml:"release"`
+	Networking bool                `yaml:"networking"` // If set to false (default) we disable networking in the build
+	Source     []map[string]string `yaml:"source"`
 }
 
 // XMLUpdate represents an update in the package history.
@@ -92,15 +92,15 @@ type XMLArchive struct {
 
 // XMLSource is the actual source info for each pspec.xml.
 type XMLSource struct {
-	Homepage string
-	Name     string
-	Archive  []XMLArchive
+	Homepage string       `xml:"Homepage"`
+	Name     string       `xml:"Name"`
+	Archive  []XMLArchive `xml:"Archive"`
 }
 
 // XMLPackage contains all of the pspec.xml metadata.
 type XMLPackage struct {
-	Name    string
-	Source  XMLSource
+	Name    string      `xml:"Name"`
+	Source  XMLSource   `xml:"Source"`
 	History []XMLUpdate `xml:"History>Update"`
 }
 
