@@ -76,10 +76,11 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	if sFlags.Sizes {
 		sizeDirs := []string{
 			manager.Config.OverlayRootDir,
-			builder.CcacheDirectory,
-			builder.LegacyCcacheDirectory,
-			builder.SccacheDirectory,
-			builder.LegacySccacheDirectory,
+			builder.CacheDirectory,
+			builder.ObsoleteCcacheDirectory,
+			builder.ObsoleteSccacheDirectory,
+			builder.ObsoleteLegacyCcacheDirectory,
+			builder.ObsoleteLegacySccacheDirectory,
 			builder.PackageCacheDirectory,
 			source.SourceDir,
 		}
@@ -108,10 +109,11 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	}
 	if sFlags.All {
 		nukeDirs = append(nukeDirs, []string{
-			builder.CcacheDirectory,
-			builder.LegacyCcacheDirectory,
-			builder.SccacheDirectory,
-			builder.LegacySccacheDirectory,
+			builder.CacheDirectory,
+			builder.ObsoleteCcacheDirectory,
+			builder.ObsoleteSccacheDirectory,
+			builder.ObsoleteLegacyCcacheDirectory,
+			builder.ObsoleteLegacySccacheDirectory,
 			builder.PackageCacheDirectory,
 			source.SourceDir,
 		}...)
