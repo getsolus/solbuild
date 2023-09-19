@@ -19,14 +19,17 @@ package builder
 import (
 	"encoding/xml"
 	"errors"
-	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
-	git "github.com/libgit2/git2go/v34"
+	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 const (
@@ -71,28 +74,28 @@ type PackageHistory struct {
 // A PackageUpdate is a point in history in the git changes, which is parsed
 // from a git.Commit.
 type PackageUpdate struct {
-	Tag         string    // The associated git tag
-	Author      string    // The author name of the change
-	AuthorEmail string    // The author email of the change
-	Body        string    // The associated message of the commit
-	Time        time.Time // When the update took place
-	ObjectID    string    // OID stored in string form
-	Package     *Package  // Associated parsed package
-	IsSecurity  bool      // Whether this is a security update
+	Commit      plumbing.Hash // The associated git commit
+	Author      string        // The author name of the change
+	AuthorEmail string        // The author email of the change
+	Body        string        // The associated message of the commit
+	Time        time.Time     // When the update took place
+	ObjectID    string        // OID stored in string form
+	Package     *Package      // Associated parsed package
+	IsSecurity  bool          // Whether this is a security update
 }
 
 // NewPackageUpdate will attempt to parse the given commit and provide a usable
 // entry for the PackageHistory.
-func NewPackageUpdate(tag string, commit *git.Commit, objectID string) *PackageUpdate {
-	signature := commit.Author()
-	update := &PackageUpdate{Tag: tag}
-
-	// We duplicate. cgo makes life difficult.
-	update.Author = signature.Name
-	update.AuthorEmail = signature.Email
-	update.Body = commit.Message()
-	update.Time = signature.When
-	update.ObjectID = objectID
+func NewPackageUpdate(commit *object.Commit, objectID string) *PackageUpdate {
+	signature := commit.Author
+	update := &PackageUpdate{
+		Commit:      commit.Hash,
+		Author:      signature.Name,
+		AuthorEmail: signature.Email,
+		Body:        commit.Message,
+		Time:        signature.When,
+		ObjectID:    objectID,
+	}
 
 	// Attempt to identify the update type. Limit to 1 match, we only need to
 	// know IF there is a CVE fix, not how many.
@@ -105,44 +108,34 @@ func NewPackageUpdate(tag string, commit *git.Commit, objectID string) *PackageU
 }
 
 // CatGitBlob will return the contents of the given entry.
-func CatGitBlob(repo *git.Repository, entry *git.TreeEntry) ([]byte, error) {
-	obj, err := repo.Lookup(entry.Id)
+func CatGitBlob(repo *git.Repository, entry *object.TreeEntry) ([]byte, error) {
+	obj, err := repo.BlobObject(entry.Hash)
 	if err != nil {
 		return nil, err
 	}
 
-	blob, err := obj.AsBlob()
+	reader, err := obj.Reader()
 	if err != nil {
 		return nil, err
 	}
 
-	return blob.Contents(), nil
+	return io.ReadAll(reader)
 }
 
 // GetFileContents will attempt to read the entire object at path from
 // the given tag, within that repo.
-func GetFileContents(repo *git.Repository, tag, path string) ([]byte, error) {
-	oid, err := git.NewOid(tag)
+func GetFileContents(repo *git.Repository, hash plumbing.Hash, path string) ([]byte, error) {
+	commit, err := repo.CommitObject(hash)
 	if err != nil {
 		return nil, err
 	}
 
-	commit, err := repo.Lookup(oid)
+	tree, err := commit.Tree()
 	if err != nil {
 		return nil, err
 	}
 
-	treeObj, err := commit.Peel(git.ObjectTree)
-	if err != nil {
-		return nil, err
-	}
-
-	tree, err := treeObj.AsTree()
-	if err != nil {
-		return nil, err
-	}
-
-	entry, err := tree.EntryByPath(path)
+	entry, err := tree.FindEntry(path)
 	if err != nil {
 		return nil, err
 	}
@@ -157,84 +150,58 @@ func GetFileContents(repo *git.Repository, tag, path string) ([]byte, error) {
 // The repository path will be taken as the directory name of the pkgfile that
 // is given to this function.
 func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
-	// Repodir
-	path := filepath.Dir(pkgfile)
+	// Get the root of the package repo
+	pathParts := strings.Split(filepath.Dir(pkgfile), string(os.PathListSeparator))
+	rootPath := filepath.Join(pathParts[:2]...)
 
-	repo, err := git.OpenRepository(path)
-	if err != nil {
-		return nil, err
-	}
-	// Get all the tags
-	var tags []string
-
-	tags, err = repo.Tags.List()
+	repo, err := git.PlainOpen(rootPath)
 	if err != nil {
 		return nil, err
 	}
 
+	// Get the commits for this path
+	commits, err := repo.Log(&git.LogOptions{
+		PathFilter: func(path string) bool {
+			packageDir := filepath.Dir(pkgfile)
+			return strings.HasPrefix(path, packageDir)
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var hashes []string
 	updates := make(map[string]*PackageUpdate)
 
 	// Iterate all of the tags
-	err = repo.Tags.Foreach(func(name string, id *git.Oid) error {
-		if name == "" || id == nil {
-			return nil
-		}
-
-		var commit *git.Commit
-
-		obj, rErr := repo.Lookup(id)
-		if rErr != nil {
-			return rErr
-		}
-
-		switch obj.Type() {
-		// Unannotated tag
-		case git.ObjectCommit:
-			commit, rErr = obj.AsCommit()
-			if rErr != nil {
-				return rErr
-			}
-
-			tags = append(tags, name)
-		// Annotated tag with commit target
-		case git.ObjectTag:
-			tag, tErr := obj.AsTag()
-			if tErr != nil {
-				return tErr
-			}
-
-			commit, tErr = repo.LookupCommit(tag.TargetId())
-			if tErr != nil {
-				return tErr
-			}
-
-			tags = append(tags, name)
-		default:
-			return fmt.Errorf("Internal git error, found %s", obj.Type().String())
-		}
-
+	err = commits.ForEach(func(commit *object.Commit) error {
 		if commit == nil {
 			return nil
 		}
 
-		commitObj := NewPackageUpdate(name, commit, id.String())
-		updates[name] = commitObj
+		hash := commit.ID().String()
+		commitObj := NewPackageUpdate(commit, hash)
+		hashes = append(hashes, hash)
+		updates[hash] = commitObj
 
 		return nil
 	})
+
 	// Foreach went bork
 	if err != nil {
 		return nil, err
 	}
+
 	// Sort the tags by -refname
-	sort.Sort(sort.Reverse(sort.StringSlice(tags)))
+	sort.Sort(sort.Reverse(sort.StringSlice(hashes)))
 
 	ret := &PackageHistory{pkgfile: pkgfile}
-	ret.scanUpdates(repo, updates, tags)
+	ret.scanUpdates(repo, updates, hashes)
 	updates = nil
 
 	if len(ret.Updates) < 1 {
-		return nil, errors.New("No usable git history found")
+		return nil, errors.New("no usable git history found")
 	}
 
 	// All done!
@@ -258,20 +225,20 @@ func (a SortUpdatesByRelease) Less(i, j int) bool {
 
 // scanUpdates will go back through the collected, "ok" tags, and analyze
 // them to be more useful.
-func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*PackageUpdate, tags []string) {
+func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*PackageUpdate, hashes []string) {
 	// basename of file
 	fname := filepath.Base(p.pkgfile)
 
-	updateSet := make([]*PackageUpdate, 0, len(tags))
+	updateSet := make([]*PackageUpdate, 0, len(hashes))
 
 	// Iterate the commit set in order
-	for _, tagID := range tags {
+	for _, tagID := range hashes {
 		update := updates[tagID]
 		if update == nil {
 			continue
 		}
 
-		b, err := GetFileContents(repo, update.ObjectID, fname)
+		b, err := GetFileContents(repo, update.Commit, fname)
 		if err != nil {
 			continue
 		}
