@@ -172,6 +172,7 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	}
 
 	var hashes []string
+
 	updates := make(map[string]*PackageUpdate)
 
 	// Iterate all of the tags

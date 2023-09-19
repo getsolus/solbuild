@@ -87,7 +87,7 @@ func (g *GitSource) submodules(tree *git.Worktree) error {
 		return err
 	}
 
-	if len(submodules) <= 0 {
+	if len(submodules) == 0 {
 		return nil
 	}
 
@@ -95,6 +95,7 @@ func (g *GitSource) submodules(tree *git.Worktree) error {
 		Init:              true,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
+
 	return submodules.Update(&opts)
 }
 
@@ -137,12 +138,13 @@ func (g *GitSource) Fetch() error {
 
 	// Get the ref we want
 	var hash plumbing.Hash
+
 	if len(g.Ref) != 40 {
 		log.Debugf("reference '%s' does not look like a hash; attempting to resolve\n", g.Ref)
 
-		h, err := repo.ResolveRevision(plumbing.Revision(g.Ref))
-		if err != nil {
-			return err
+		h, resolveErr := repo.ResolveRevision(plumbing.Revision(g.Ref))
+		if resolveErr != nil {
+			return resolveErr
 		}
 
 		hash = *h
