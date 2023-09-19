@@ -183,14 +183,14 @@ func (m *Manager) SetPackage(pkg *Package) error {
 
 	// Obtain package history for git builds
 	if pkg.Type == PackageTypeYpkg {
-		repoDir := filepath.Dir(pkg.Path)
-		if PathExists(filepath.Join(repoDir, ".git")) {
+		if PathExists(filepath.Join("../../..", ".git")) {
+			log.Goodln("yay, found the root dir!")
 			if history, err := NewPackageHistory(pkg.Path); err == nil {
 				log.Debugln("Obtained package history")
 
 				m.history = history
 			} else {
-				log.Warnf("Failed to obtain package git history %s\n", err)
+				log.Warnf("Failed to obtain package git history: %s\n", err)
 			}
 		}
 	}

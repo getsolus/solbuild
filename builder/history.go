@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strings"
 	"time"
 
 	git "github.com/go-git/go-git/v5"
@@ -153,41 +152,49 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	// Get the root of the package repo
 	packageDir := filepath.Dir(pkgfile)
 
-	repo, err := git.PlainOpen(packageDir)
+	repo, err := git.PlainOpenWithOptions(packageDir, &git.PlainOpenOptions{
+		DetectDotGit: true,
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
 	// Get the commits for this path
-	commits, err := repo.Log(&git.LogOptions{
-		PathFilter: func(path string) bool {
-			return strings.HasPrefix(path, packageDir)
-		},
+	//commits, err := repo.CommitObjects()
+
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	var hashes []string
+
+	updates := make(map[string]*PackageUpdate)
+
+	cIter, err := repo.Log(&git.LogOptions{
+		FileName: &packageDir,
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	var hashes []string
-
-	updates := make(map[string]*PackageUpdate)
-
-	// Iterate all of the tags
-	err = commits.ForEach(func(commit *object.Commit) error {
-		if commit == nil {
-			return nil
-		}
-
+	err = cIter.ForEach(func(commit *object.Commit) error {
 		hash := commit.ID().String()
-		commitObj := NewPackageUpdate(commit, hash)
 		hashes = append(hashes, hash)
-		updates[hash] = commitObj
-
+		updates[hash] = NewPackageUpdate(commit, hash)
 		return nil
 	})
 
-	// Foreach went bork
+	//err = commits.ForEach(func(commit *object.Commit) error {
+	//	return commit.Parents().ForEach(func(commit *object.Commit) error {
+	//		hash := commit.ID().String()
+	//		hashes = append(hashes, hash)
+	//		updates[hash] = NewPackageUpdate(commit, hash)
+	//		return nil
+	//	})
+	//})
+
 	if err != nil {
 		return nil, err
 	}
