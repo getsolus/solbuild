@@ -19,6 +19,7 @@ package builder
 import (
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -151,10 +152,9 @@ func GetFileContents(repo *git.Repository, hash plumbing.Hash, path string) ([]b
 // is given to this function.
 func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	// Get the root of the package repo
-	pathParts := strings.Split(filepath.Dir(pkgfile), string(os.PathListSeparator))
-	rootPath := filepath.Join(pathParts[:2]...)
+	packageDir := filepath.Dir(pkgfile)
 
-	repo, err := git.PlainOpen(rootPath)
+	repo, err := git.PlainOpen(packageDir)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,8 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	// Get the commits for this path
 	commits, err := repo.Log(&git.LogOptions{
 		PathFilter: func(path string) bool {
-			packageDir := filepath.Dir(pkgfile)
+			fmt.Printf("Search path: %s\n", packageDir)
+			fmt.Printf("search path: %s\n", path)
 			return strings.HasPrefix(path, packageDir)
 		},
 	})
