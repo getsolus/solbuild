@@ -19,7 +19,6 @@ package builder
 import (
 	"encoding/xml"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -162,8 +161,6 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	// Get the commits for this path
 	commits, err := repo.Log(&git.LogOptions{
 		PathFilter: func(path string) bool {
-			fmt.Printf("Search path: %s\n", packageDir)
-			fmt.Printf("search path: %s\n", path)
 			return strings.HasPrefix(path, packageDir)
 		},
 	})
