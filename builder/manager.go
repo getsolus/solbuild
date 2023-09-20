@@ -18,8 +18,6 @@ package builder
 
 import (
 	"errors"
-	log "github.com/DataDrake/waterlog"
-	"github.com/getsolus/libosdev/disk"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -27,6 +25,10 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/libosdev/disk"
+	git "github.com/libgit2/git2go/v34"
 )
 
 var (
@@ -179,8 +181,10 @@ func (m *Manager) SetPackage(pkg *Package) error {
 	// Obtain package history for git builds
 	if pkg.Type == PackageTypeYpkg {
 		repoDir := filepath.Dir(pkg.Path)
-		if PathExists(filepath.Join(repoDir, ".git")) {
-			if history, err := NewPackageHistory(pkg.Path); err == nil {
+		repo, err := git.OpenRepositoryExtended(repoDir, 0, "/")
+
+		if err == nil {
+			if history, err := NewPackageHistory(repo, pkg.Path); err == nil {
 				log.Debugln("Obtained package history")
 				m.history = history
 			} else {
