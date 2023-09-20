@@ -17,14 +17,17 @@
 package builder
 
 import (
+	"bytes"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	git "github.com/libgit2/git2go/v34"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -151,75 +154,30 @@ func GetFileContents(repo *git.Repository, tag, path string) ([]byte, error) {
 //
 // The repository path will be taken as the directory name of the pkgfile that
 // is given to this function.
-func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
-	// Repodir
-	path := filepath.Dir(pkgfile)
+func NewPackageHistory(repo *git.Repository, pkgfile string) (*PackageHistory, error) {
+	repoDir := abs(filepath.Dir(strings.TrimSuffix(repo.Path(), "/")))
+	pkgDir := abs(filepath.Dir(pkgfile))
 
-	repo, err := git.OpenRepository(path)
-	if err != nil {
-		return nil, err
-	}
-	// Get all the tags
-	var tags []string
-	tags, err = repo.Tags.List()
+	refs, err := gitLog(pkgDir)
 	if err != nil {
 		return nil, err
 	}
 
 	updates := make(map[string]*PackageUpdate)
 
-	// Iterate all of the tags
-	err = repo.Tags.Foreach(func(name string, id *git.Oid) error {
-		if name == "" || id == nil {
-			return nil
-		}
+	for _, ref := range refs {
+		oid, _ := git.NewOid(ref)
 
-		var commit *git.Commit
-
-		obj, err := repo.Lookup(id)
+		commit, err := repo.LookupCommit(oid)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("unable to resolve commit %q: %w", ref, err)
 		}
 
-		switch obj.Type() {
-		// Unannotated tag
-		case git.ObjectCommit:
-			commit, err = obj.AsCommit()
-			if err != nil {
-				return err
-			}
-			tags = append(tags, name)
-		// Annotated tag with commit target
-		case git.ObjectTag:
-			tag, err := obj.AsTag()
-			if err != nil {
-				return err
-			}
-			commit, err = repo.LookupCommit(tag.TargetId())
-			if err != nil {
-				return err
-			}
-			tags = append(tags, name)
-		default:
-			return fmt.Errorf("Internal git error, found %s", obj.Type().String())
-		}
-		if commit == nil {
-			return nil
-		}
-		commitObj := NewPackageUpdate(name, commit, id.String())
-		updates[name] = commitObj
-		return nil
-	})
-	// Foreach went bork
-	if err != nil {
-		return nil, err
+		updates[ref] = NewPackageUpdate(ref, commit, ref)
 	}
-	// Sort the tags by -refname
-	sort.Sort(sort.Reverse(sort.StringSlice(tags)))
 
-	ret := &PackageHistory{pkgfile: pkgfile}
-	ret.scanUpdates(repo, updates, tags)
-	updates = nil
+	ret := &PackageHistory{pkgfile: rel(repoDir, pkgfile)}
+	ret.scanUpdates(repo, updates)
 
 	if len(ret.Updates) < 1 {
 		return nil, errors.New("No usable git history found")
@@ -229,7 +187,41 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	return ret, nil
 }
 
-// SortUpdatesByRelease is a simple wrapper to allowing sorting history
+func execGit(args ...string) (string, error) {
+	var buf bytes.Buffer
+
+	cmd := exec.Command("git", args...)
+	cmd.Stdout = &buf
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("error running Git: %w", err)
+	}
+
+	return buf.String(), nil
+}
+
+func gitLog(path string) ([]string, error) {
+	out, err := execGit("-C", path, "log", "--pretty=format:%H", path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get Git history: %w", err)
+	}
+
+	return strings.Split(out, "\n"), nil
+}
+
+func rel(base, target string) string {
+	s, _ := filepath.Rel(abs(base), abs(target))
+
+	return s
+}
+
+func abs(path string) string {
+	s, _ := filepath.Abs(path)
+
+	return s
+}
+
+// SortUpdatesByRelease is a simple wrapper to allowing sorting history.
 type SortUpdatesByRelease []*PackageUpdate
 
 func (a SortUpdatesByRelease) Len() int {
@@ -241,22 +233,20 @@ func (a SortUpdatesByRelease) Swap(i, j int) {
 }
 
 func (a SortUpdatesByRelease) Less(i, j int) bool {
+	if a[i].Package.Release == a[j].Package.Release {
+		return a[i].Time.Before(a[j].Time)
+	}
+
 	return a[i].Package.Release < a[j].Package.Release
 }
 
 // scanUpdates will go back through the collected, "ok" tags, and analyze
 // them to be more useful.
-func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*PackageUpdate, tags []string) {
-	// basename of file
-	fname := filepath.Base(p.pkgfile)
+func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*PackageUpdate) {
+	fname := p.pkgfile
+	updateSet := make(map[int]*PackageUpdate, len(updates))
 
-	var updateSet []*PackageUpdate
-	// Iterate the commit set in order
-	for _, tagID := range tags {
-		update := updates[tagID]
-		if update == nil {
-			continue
-		}
+	for _, update := range updates {
 		b, err := GetFileContents(repo, update.ObjectID, fname)
 		if err != nil {
 			continue
@@ -267,16 +257,28 @@ func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*P
 		if pkg, err = NewYmlPackageFromBytes(b); err != nil {
 			continue
 		}
+
+		if u, ok := updateSet[pkg.Release]; ok && u.Time.Before(update.Time) {
+			continue
+		}
+
 		update.Package = pkg
-		updateSet = append(updateSet, update)
-	}
-	sort.Sort(sort.Reverse(SortUpdatesByRelease(updateSet)))
-	if len(updateSet) >= MaxChangelogEntries {
-		p.Updates = updateSet[:MaxChangelogEntries]
-	} else {
-		p.Updates = updateSet
+		updateSet[pkg.Release] = update
 	}
 
+	updateList := make(SortUpdatesByRelease, 0, len(updates))
+
+	for _, update := range updateSet {
+		updateList = append(updateList, update)
+	}
+
+	sort.Sort(sort.Reverse(updateList))
+
+	if len(updateList) >= MaxChangelogEntries {
+		p.Updates = updateList[:MaxChangelogEntries]
+	} else {
+		p.Updates = updateList
+	}
 }
 
 // YPKG provides ypkg-gen-history history.xml compatibility
