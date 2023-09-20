@@ -23,7 +23,7 @@ import (
 
 const (
 	// SolbuildVersion is the current public version of solbuild
-	SolbuildVersion = "1.5.3.0"
+	SolbuildVersion = "1.5.4"
 )
 
 func init() {
