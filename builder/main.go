@@ -51,7 +51,7 @@ const (
 	// PackageCacheDirectory is where we share packages between all builders.
 	PackageCacheDirectory = "/var/lib/solbuild/packages"
 
-	// CacheDirectory is where packages' build cache are stored
+	// CacheDirectory is where packages' build cache are stored.
 	CacheDirectory = "/var/lib/solbuild/cache"
 
 	// Obsolete cache directories. These are only still specified so that the

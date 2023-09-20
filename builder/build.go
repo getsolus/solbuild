@@ -115,13 +115,15 @@ func (p *Package) BindSources(o *Overlay) error {
 	return nil
 }
 
-// BindCache will make all cache defined in [caches] available to the build
+// BindCache will make all cache defined in [caches] available to the build.
 func (p *Package) BindCaches(o *Overlay) error {
 	mountMan := disk.GetMountManager()
 
 	for _, c := range Caches {
-		var cacheSource string
-		var cacheDir string
+		var (
+			cacheSource string
+			cacheDir    string
+		)
 
 		if p.Type == PackageTypeYpkg {
 			cacheSource = filepath.Join(CacheDirectory, c.Name, "ypkg")
@@ -132,8 +134,9 @@ func (p *Package) BindCaches(o *Overlay) error {
 
 		// Bind mount local ccache into chroot
 		if err := mountMan.BindMount(cacheSource, cacheDir); err != nil {
-			return fmt.Errorf("Failed to bind mount %s %s, reason: %s\n", c.Name, cacheDir, err)
+			return fmt.Errorf("Failed to bind mount %s %s, reason: %w\n", c.Name, cacheDir, err)
 		}
+
 		o.ExtraMounts = append(o.ExtraMounts, cacheDir)
 	}
 
