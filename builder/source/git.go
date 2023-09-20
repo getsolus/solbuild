@@ -82,7 +82,6 @@ func (g *GitSource) GetHead(repo *git.Repository) (string, error) {
 // reset has taken place.
 func (g *GitSource) submodules(tree *git.Worktree) error {
 	submodules, err := tree.Submodules()
-
 	if err != nil {
 		return err
 	}

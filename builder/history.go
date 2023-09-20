@@ -26,7 +26,7 @@ import (
 	"sort"
 	"time"
 
-	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
@@ -155,17 +155,9 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	repo, err := git.PlainOpenWithOptions(packageDir, &git.PlainOpenOptions{
 		DetectDotGit: true,
 	})
-
 	if err != nil {
 		return nil, err
 	}
-
-	// Get the commits for this path
-	//commits, err := repo.CommitObjects()
-
-	//if err != nil {
-	//	return nil, err
-	//}
 
 	var hashes []string
 
@@ -174,7 +166,6 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 	cIter, err := repo.Log(&git.LogOptions{
 		FileName: &packageDir,
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -185,15 +176,6 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 		updates[hash] = NewPackageUpdate(commit, hash)
 		return nil
 	})
-
-	//err = commits.ForEach(func(commit *object.Commit) error {
-	//	return commit.Parents().ForEach(func(commit *object.Commit) error {
-	//		hash := commit.ID().String()
-	//		hashes = append(hashes, hash)
-	//		updates[hash] = NewPackageUpdate(commit, hash)
-	//		return nil
-	//	})
-	//})
 
 	if err != nil {
 		return nil, err

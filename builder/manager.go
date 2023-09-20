@@ -185,6 +185,7 @@ func (m *Manager) SetPackage(pkg *Package) error {
 	if pkg.Type == PackageTypeYpkg {
 		if PathExists(filepath.Join("../../..", ".git")) {
 			log.Goodln("yay, found the root dir!")
+
 			if history, err := NewPackageHistory(pkg.Path); err == nil {
 				log.Debugln("Obtained package history")
 
