@@ -20,12 +20,12 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
+	"log/slog"
 	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 
-	log "github.com/DataDrake/waterlog"
 	"github.com/cavaliergopher/grab/v3"
 	"github.com/cheggaaa/pb/v3"
 )
@@ -159,7 +159,7 @@ func (s *SimpleSource) download(destination string) error {
 			pbar.SetCurrent(resp.BytesComplete())
 
 			if err := resp.Err(); err != nil {
-				log.Errorf("Error downloading %s: %v\n", s.URI, err)
+				slog.Error("Error downloading", "uri", s.URI, "err", err)
 				return err
 			}
 
@@ -171,7 +171,7 @@ func (s *SimpleSource) download(destination string) error {
 // Fetch will download the given source and cache it locally.
 func (s *SimpleSource) Fetch() error {
 	// Now go and download it
-	log.Debugf("Downloading source %s\n", s.URI)
+	slog.Debug("Downloading source", "uri", s.URI)
 
 	destPath := filepath.Join(SourceStagingDir, s.File)
 

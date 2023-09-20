@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,7 +29,6 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
 	"github.com/getsolus/libosdev/disk"
 )
@@ -48,7 +48,7 @@ type PidNotifier interface {
 // ActivateRoot will do the hard work of actually bring up the overlayfs
 // system to allow manipulation of the roots for builds, etc.
 func (p *Package) ActivateRoot(overlay *Overlay) error {
-	log.Debugln("Configuring overlay storage")
+	slog.Debug("Configuring overlay storage")
 
 	// Now mount the overlayfs
 	if err := overlay.Mount(); err != nil {
@@ -62,7 +62,7 @@ func (p *Package) ActivateRoot(overlay *Overlay) error {
 		}
 	}
 
-	log.Debugln("Bringing up virtual filesystems")
+	slog.Debug("Bringing up virtual filesystems")
 
 	return overlay.MountVFS()
 }
@@ -75,7 +75,7 @@ func (p *Package) DeactivateRoot(overlay *Overlay) {
 
 	commands.SetStdin(nil)
 	overlay.Unmount()
-	log.Debugln("Requesting unmount of all remaining mountpoints")
+	slog.Debug("Requesting unmount of all remaining mountpoints")
 	mountMan.UnmountAll()
 }
 
@@ -113,14 +113,14 @@ func MurderDeathKill(root string) error {
 			return fmt.Errorf("POSIX Weeps - broken pid identifier %s, reason: %w\n", spid, err)
 		}
 
-		log.Debugf("Killing child process in chroot %d\n", pid)
+		slog.Debug("Killing child process in chroot", "pid", pid)
 
 		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
-			log.Errorf("Error terminating process, attempting force kill %d\n", pid)
+			slog.Error("Error terminating process, attempting force kill", "pid", pid)
 			time.Sleep(400 * time.Millisecond)
 
 			if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
-				log.Errorf("Error killing (-9) process %d\n", pid)
+				slog.Error("Error killing (-9) process", "pid", pid)
 			}
 		}
 	}
@@ -238,7 +238,8 @@ func AddBuildUser(rootfs string) error {
 		return nil
 	}
 
-	log.Debugf("Adding build user to system: user='%s' uid='%d' gid='%d' home='%s' shell='%s' gecos='%s'\n", BuildUser, BuildUserID, BuildUserGID, BuildUserHome, BuildUserShell, BuildUserGecos)
+	slog.Debug("Adding build user to system", "user", BuildUser, "uid", BuildUserID, "gid", BuildUserGID,
+		"home", BuildUserHome, "shell", BuildUserShell, "gecos", BuildUserGecos)
 
 	// Add the build group
 	if err := commands.AddGroup(rootfs, BuildUser, BuildUserGID); err != nil {
@@ -280,7 +281,7 @@ func ValidMemSize(s string) bool {
 
 	_, err := strconv.ParseFloat(allButLast, 64)
 	if err != nil {
-		log.Errorf("Invalid Memory Size: %s: %s is not numeric\n", s, allButLast)
+		slog.Error(fmt.Sprintf("Invalid Memory Size: %s: %s is not numeric\n", s, allButLast))
 		return false
 	}
 
@@ -294,7 +295,7 @@ func ValidMemSize(s string) bool {
 		}
 	}
 
-	log.Errorf("Invalid Memory Size: %s doesn't end in a valid memory unit, e.g. G\n", s)
+	slog.Error(fmt.Sprintf("Invalid Memory Size: %s doesn't end in a valid memory unit, e.g. G\n", s))
 
 	return false
 }

@@ -17,22 +17,24 @@
 package main
 
 import (
-	log2 "log"
-
-	log "github.com/DataDrake/waterlog"
-	"github.com/DataDrake/waterlog/format"
-	"github.com/DataDrake/waterlog/level"
+	"os"
 
 	_ "github.com/getsolus/solbuild/builder"
 	"github.com/getsolus/solbuild/cli"
+	"github.com/getsolus/solbuild/cli/log"
 )
 
-func init() {
-	log.SetFormat(format.Min)
-	log.SetLevel(level.Info)
-	log.SetFlags(log2.Ltime | log2.Ldate | log2.LUTC)
+func exit() {
+	if r := recover(); r != nil {
+		os.Exit(1)
+	}
+
+	os.Exit(0)
 }
 
 func main() {
+	defer exit()
+
+	log.SetLogger()
 	cli.Root.Run()
 }

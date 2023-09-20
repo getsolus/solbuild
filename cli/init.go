@@ -20,17 +20,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
-	log "github.com/DataDrake/waterlog"
-	"github.com/DataDrake/waterlog/format"
-	"github.com/DataDrake/waterlog/level"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/getsolus/libosdev/commands"
 
 	"github.com/getsolus/solbuild/builder"
+	"github.com/getsolus/solbuild/cli/log"
 )
 
 func init() {
@@ -57,24 +56,27 @@ func InitRun(r *cmd.Root, s *cmd.Sub) {
 	sFlags := s.Flags.(*InitFlags)   //nolint:forcetypeassert // guaranteed by callee.
 
 	if rFlags.Debug {
-		log.SetLevel(level.Debug)
+		log.Level.Set(slog.LevelDebug)
 	}
 
 	if rFlags.NoColor {
-		log.SetFormat(format.Un)
+		log.SetUncoloredLogger()
 	}
 
 	if os.Geteuid() != 0 {
-		log.Fatalln("You must be root to run init profiles")
+		slog.Error("You must be root to run init profiles")
+		os.Exit(1)
 	}
 	// Now we'll update the newly initialised image
 	manager, err := builder.NewManager()
 	if err != nil {
-		log.Fatalln(err.Error())
+		slog.Error(err.Error())
+		panic(err)
 	}
-	// Safety first..
+	// Safety first...
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
-		log.Fatalln(err.Error())
+		slog.Error(err.Error())
+		panic(err)
 	}
 
 	doInit(manager)
@@ -89,7 +91,7 @@ func doInit(manager *builder.Manager) {
 	bk := builder.NewBackingImage(prof.Image)
 
 	if bk.IsInstalled() {
-		log.Warnf("'%s' has already been initialised\n", prof.Name)
+		slog.Warn("Image has already been initialised", "name", prof.Name)
 		return
 	}
 
@@ -97,25 +99,28 @@ func doInit(manager *builder.Manager) {
 	// Ensure directories exist
 	if !builder.PathExists(imgDir) {
 		if err := os.MkdirAll(imgDir, 0o0755); err != nil {
-			log.Fatalf("Failed to create images directory '%s', reason: %s", imgDir, err)
+			slog.Error("Failed to create images directory", "path", imgDir, "err", err)
+			panic(err)
 		}
 
-		log.Debugf("Created images directory '%s'\n", imgDir)
+		slog.Debug("Created images directory", "path", imgDir)
 	}
 	// Now ensure we actually have said image
 	if !bk.IsFetched() {
 		if err := downloadImage(bk); err != nil {
-			log.Fatalln(err.Error())
+			slog.Error("Failed to download image", "err", err)
+			panic(err)
 		}
 	}
 	// Decompress the image
-	log.Debugf("Decompressing backing image, source: '%s' target: '%s'\n", bk.ImagePathXZ, bk.ImagePath)
+	slog.Debug("Decompressing backing image", "source", bk.ImagePathXZ, "target", bk.ImagePath)
 
 	if err := commands.ExecStdoutArgsDir(builder.ImagesDir, "unxz", []string{bk.ImagePathXZ}); err != nil {
-		log.Fatalf("Failed to decompress image '%s', reason: %s\n", bk.ImagePathXZ, err)
+		slog.Error("Failed to decompress image", "source", bk.ImagePathXZ, "err", err)
+		panic(err)
 	}
 
-	log.Infoln("Profile successfully initialised")
+	slog.Info("Profile successfully initialised")
 }
 
 // Downloads an image using net/http.
@@ -169,6 +174,6 @@ func downloadImage(bk *builder.BackingImage) (err error) {
 // doUpdate will perform an update to the image after the initial init stage.
 func doUpdate(manager *builder.Manager) {
 	if err := manager.Update(); err != nil {
-		log.Fatalf("Update failed, reason: '%s'\n", err)
+		slog.Error("Update failed", "reason", err)
 	}
 }

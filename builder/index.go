@@ -19,10 +19,10 @@ package builder
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/disk"
 )
 
@@ -36,7 +36,7 @@ var (
 
 // Index will attempt to index the given directory.
 func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
-	log.Debugf("Beginning indexer: profile='%s'\n", overlay.Back.Name)
+	slog.Debug("Beginning indexer", "profile", overlay.Back.Name)
 
 	mman := disk.GetMountManager()
 
@@ -44,7 +44,7 @@ func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 
 	// Check the source exists first!
 	if !PathExists(dir) {
-		log.Errorf("Directory does not exist dir='%s'\n", dir)
+		slog.Error("Directory does not exist", "dir", dir)
 		return ErrCannotContinue
 	}
 
@@ -60,25 +60,25 @@ func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 	// Create the target
 	target := filepath.Join(overlay.MountPoint, IndexBindTarget[1:])
 	if err := os.MkdirAll(target, 0o0755); err != nil {
-		log.Errorf("Cannot create bind target %s, reason: %s\n", target, err)
+		slog.Error("Cannot create bind target", "target", target, "err", err)
 		return err
 	}
 
-	log.Debugf("Bind mounting directory for indexing %s\n", dir)
+	slog.Debug("Bind mounting directory for indexing", "dir", dir)
 
 	if err := mman.BindMount(dir, target); err != nil {
-		log.Errorf("Cannot bind mount directory %s, reason: %s\n", target, err)
+		slog.Error("Cannot bind mount directory", "target", target, "err", err)
 		return err
 	}
 
 	// Ensure it gets cleaned up
 	overlay.ExtraMounts = append(overlay.ExtraMounts, target)
 
-	log.Debugln("Now indexing")
+	slog.Debug("Now indexing")
 
 	command := fmt.Sprintf("cd %s; %s", IndexBindTarget, eopkgCommand("eopkg index --skip-signing ."))
 	if err := ChrootExec(notif, overlay.MountPoint, command); err != nil {
-		log.Errorf("Indexing failed: dir='%s', reason: %s\n", dir, err)
+		slog.Error("Indexing failed", "dir", dir, "err", err)
 		return err
 	}
 

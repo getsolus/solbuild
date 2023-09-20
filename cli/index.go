@@ -19,14 +19,13 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
-	log "github.com/DataDrake/waterlog"
-	"github.com/DataDrake/waterlog/format"
-	"github.com/DataDrake/waterlog/level"
 
 	"github.com/getsolus/solbuild/builder"
+	"github.com/getsolus/solbuild/cli/log"
 )
 
 func init() {
@@ -60,15 +59,15 @@ func IndexRun(r *cmd.Root, s *cmd.Sub) {
 	args := s.Args.(*IndexArgs)      //nolint:forcetypeassert // guaranteed by callee.
 
 	if rFlags.Debug {
-		log.SetLevel(level.Debug)
+		log.Level.Set(slog.LevelDebug)
 	}
 
 	if rFlags.NoColor {
-		log.SetFormat(format.Un)
+		log.SetUncoloredLogger()
 	}
 
 	if os.Geteuid() != 0 {
-		log.Fatalln("You must be root to use index")
+		log.Panic("You must be root to use index")
 	}
 	// Initialise the build manager
 	manager, err := builder.NewManager()
@@ -91,8 +90,8 @@ func IndexRun(r *cmd.Root, s *cmd.Sub) {
 	manager.SetTmpfs(sFlags.Tmpfs, sFlags.Memory)
 
 	if err := manager.Index(args.Dir); err != nil {
-		log.Fatalln("Index failure")
+		log.Panic("Index failure")
 	}
 
-	log.Infoln("Indexing complete")
+	slog.Info("Indexing complete")
 }

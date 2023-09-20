@@ -19,15 +19,14 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
-	log "github.com/DataDrake/waterlog"
-	"github.com/DataDrake/waterlog/format"
-	"github.com/DataDrake/waterlog/level"
 
 	"github.com/getsolus/solbuild/builder"
+	"github.com/getsolus/solbuild/cli/log"
 )
 
 func init() {
@@ -53,11 +52,11 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 	sArgs := s.Args.(*ChrootArgs)    //nolint:forcetypeassert // guaranteed by callee.
 
 	if rFlags.Debug {
-		log.SetLevel(level.Debug)
+		log.Level.Set(slog.LevelDebug)
 	}
 
 	if rFlags.NoColor {
-		log.SetFormat(format.Un)
+		log.SetUncoloredLogger()
 
 		builder.DisableColors = true
 	}
@@ -71,11 +70,11 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 	}
 
 	if len(pkgPath) == 0 {
-		log.Fatalln("No package.yml or pspec.xml found in current directory and no file provided.")
+		log.Panic("No package.yml or pspec.xml found in current directory and no file provided.")
 	}
 
 	if os.Geteuid() != 0 {
-		log.Fatalln("You must be root to use chroot")
+		log.Panic("You must be root to use chroot")
 	}
 
 	// Initialise the build manager
@@ -90,7 +89,7 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 
 	pkg, err := builder.NewPackage(pkgPath)
 	if err != nil {
-		log.Fatalf("Failed to load package: %s\n", err)
+		log.Panic("Failed to load package: %s\n", err)
 	}
 	// Set the package
 	if err := manager.SetPackage(pkg); err != nil {
@@ -102,8 +101,8 @@ func ChrootRun(r *cmd.Root, s *cmd.Sub) {
 	}
 
 	if err := manager.Chroot(); err != nil {
-		log.Fatalln("Chroot failure")
+		log.Panic("Chroot failure")
 	}
 
-	log.Infoln("Chroot complete")
+	slog.Info("Chroot complete")
 }

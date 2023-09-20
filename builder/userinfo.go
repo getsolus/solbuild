@@ -18,12 +18,12 @@ package builder
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
 
-	log "github.com/DataDrake/waterlog"
 	"gopkg.in/ini.v1"
 )
 
@@ -64,12 +64,12 @@ func (u *UserInfo) SetFromSudo() bool {
 	}
 
 	if uid, err = strconv.Atoi(sudoUID); err != nil {
-		log.Errorf("Malformed SUDO_UID in environment %s %s\n", sudoUID, err)
+		slog.Error("Malformed SUDO_UID in environment", "sudu_uid", sudoUID, "err", err)
 		return false
 	}
 
 	if gid, err = strconv.Atoi(sudoGID); err != nil {
-		log.Errorf("Malformed SUDO_GID in environment %s %s\n", sudoGID, err)
+		slog.Error("Malformed SUDO_GID in environment", "sudu_gid", sudoGID, "err", err)
 		return false
 	}
 
@@ -79,7 +79,7 @@ func (u *UserInfo) SetFromSudo() bool {
 	// Try to set the home directory
 	usr, err := user.LookupId(sudoUID)
 	if err != nil {
-		log.Errorf("Failed to lookup SUDO_USER entry %d %s\n", uid, err)
+		slog.Error("Failed to lookup SUDO_USER entry", "uid", uid, "err", err)
 		return false
 	}
 
@@ -102,7 +102,7 @@ func (u *UserInfo) SetFromCurrent() {
 		u.Username = usr.Username
 		u.Name = usr.Name
 	} else {
-		log.Errorf("Failed to lookup current user %d %s\n", u.UID, err)
+		slog.Error("Failed to lookup current user", "uid", u.UID, "err", err)
 		u.Username = os.Getenv("USERNAME")
 		u.Name = u.Username
 		u.HomeDir = filepath.Join("/home", u.Username)
@@ -125,32 +125,32 @@ func (u *UserInfo) SetFromPackager() bool {
 
 		cfg, err := ini.Load(p)
 		if err != nil {
-			log.Errorf("Error loading INI file %s %s\n", p, err)
+			slog.Error("Error loading INI file", "path", p, "err", err)
 			continue
 		}
 
 		section, err := cfg.GetSection("Packager")
 		if err != nil {
-			log.Errorf("Missing [Packager] section in file %s\n", p)
+			slog.Error("Missing [Packager] section in file", "path", p)
 			continue
 		}
 
 		uname, err := section.GetKey("Name")
 		if err != nil {
-			log.Errorf("Packager file has missing Name %s %s\n", p, err)
+			slog.Error("Packager file has missing Name", "path", p, "err", err)
 			continue
 		}
 
 		email, err := section.GetKey("Email")
 		if err != nil {
-			log.Errorf("Packager file has missing Email %s %s\n", p, err)
+			slog.Error("Packager file has missing Email", "path", p, "err", err)
 			continue
 		}
 
 		u.Name = uname.String()
 		u.Email = email.String()
 
-		log.Debugln("Setting packager details from packager INI file")
+		slog.Debug("Setting packager details from packager INI file")
 
 		return true
 	}
@@ -167,32 +167,32 @@ func (u *UserInfo) SetFromGit() bool {
 
 	cfg, err := ini.Load(gitConfPath)
 	if err != nil {
-		log.Errorf("Error loading gitconfig %s %s\n", gitConfPath, err)
+		slog.Error("Error loading gitconfig", "path", gitConfPath, "err", err)
 		return false
 	}
 
 	section, err := cfg.GetSection("user")
 	if err != nil {
-		log.Errorf("Missing [user] section in gitconfig %s\n", gitConfPath)
+		slog.Error("Missing [user] section in gitconfig", "path", gitConfPath, "err", err)
 		return false
 	}
 
 	uname, err := section.GetKey("name")
 	if err != nil {
-		log.Errorf("gitconfig file has missing name %s %s\n", gitConfPath, err)
+		slog.Error("gitconfig file has missing name", "path", gitConfPath, "err", err)
 		return false
 	}
 
 	email, err := section.GetKey("email")
 	if err != nil {
-		log.Errorf("gitconfig file has missing email %s %s\n", gitConfPath, err)
+		slog.Error("gitconfig file has missing email", "path", gitConfPath, "err", err)
 		return false
 	}
 
 	u.Name = uname.String()
 	u.Email = email.String()
 
-	log.Debugln("Setting packager details from git config")
+	slog.Debug("Setting packager details from git config")
 
 	return true
 }

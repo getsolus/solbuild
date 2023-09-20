@@ -4,10 +4,6 @@ github.com/BurntSushi/toml v1.3.2 h1:o7IhLm0Msx3BaB+n3Ag7L8EVlByGnpq14C4YWiu/gL8
 github.com/BurntSushi/toml v1.3.2/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/DataDrake/cli-ng/v2 v2.0.2 h1:7+25l25VmlERCE95glW6QKBUF13vxqAM2jasFiN02xQ=
 github.com/DataDrake/cli-ng/v2 v2.0.2/go.mod h1:bU9YaNNWWVq0eIdDsU3TCe9+7Jb398iBBoqee5EiKWQ=
-github.com/DataDrake/flair v0.5.1 h1:JHWOoBRiQGWg+k2bV2Mje2YmDtRjhMj51yDxQkzidWI=
-github.com/DataDrake/flair v0.5.1/go.mod h1:3KgdmkL8eJDbg/HdMwlHkeYH/mpSy/hsQvxYQFp9A/Y=
-github.com/DataDrake/waterlog v1.2.0 h1:T3Hs0D6YOQfz6GtViw+fYSIGpGimU41FubcxQQzaeHM=
-github.com/DataDrake/waterlog v1.2.0/go.mod h1:xSKEWChL8698jwSJSyjKPIpFpj/K5n+Eif2ztYXDjJI=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
@@ -108,6 +104,8 @@ github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
 github.com/xanzy/ssh-agent v0.3.3/go.mod h1:6dzNDKs0J9rVPHPhaGCukekBHKqfl+L3KghI1Bc68Uw=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
+gitlab.com/slxh/go/powerline v0.1.0 h1:/3lwpGRD5yW9HFS/hammtCI4kvtjKw8E1dcpHS9Udx8=
+gitlab.com/slxh/go/powerline v0.1.0/go.mod h1:vBTN83xoDyGejdTeZkMGs8l/qZvOjpUkRMYrthNhqJE=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=

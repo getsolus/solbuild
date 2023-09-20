@@ -18,10 +18,10 @@ package builder
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/disk"
 )
 
@@ -56,7 +56,7 @@ func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgM
 
 	// Attempt to autoindex the repo
 	if repo.AutoIndex {
-		log.Debugf("Reindexing repository %s\n", repo.Name)
+		slog.Debug("Reindexing repository", "name", repo.Name)
 
 		command := fmt.Sprintf("cd %s/%s; %s", BindRepoDir, repo.Name, eopkgCommand("eopkg index --skip-signing ."))
 		err := ChrootExec(notif, o.MountPoint, command)
@@ -68,7 +68,7 @@ func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgM
 	} else {
 		tgtIndex := filepath.Join(tgt, "eopkg-index.xml.xz")
 		if !PathExists(tgtIndex) {
-			log.Warnf("Repository index doesn't exist. Please index it to use it. %s\n", repo.Name)
+			slog.Warn("Repository index doesn't exist. Please index it to use it.", "repo", repo.Name)
 		}
 	}
 
@@ -84,7 +84,7 @@ func (p *Package) removeRepos(pkgManager *EopkgManager, repos []string) error {
 	}
 
 	for _, id := range repos {
-		log.Debugf("Removing repository %s\n", id)
+		slog.Debug("Removing repository", "repo", id)
 
 		if err := pkgManager.RemoveRepo(id); err != nil {
 			return fmt.Errorf("Failed to remove repository %s, reason: %w\n", id, err)
@@ -102,7 +102,7 @@ func (p *Package) addRepos(notif PidNotifier, o *Overlay, pkgManager *EopkgManag
 
 	for _, repo := range repos {
 		if repo.Local {
-			log.Debugf("Adding local repo to system %s %s\n", repo.Name, repo.URI)
+			slog.Debug("Adding local repo to system", "name", repo.Name, "uri", repo.URI)
 
 			if err := p.addLocalRepo(notif, o, pkgManager, repo); err != nil {
 				return fmt.Errorf("Failed to add local repo to system %s, reason: %w\n", repo.Name, err)
@@ -111,7 +111,7 @@ func (p *Package) addRepos(notif PidNotifier, o *Overlay, pkgManager *EopkgManag
 			continue
 		}
 
-		log.Debugf("Adding repo to system %s %s\n", repo.Name, repo.URI)
+		slog.Debug("Adding repo to system", "name", repo.Name, "uri", repo.URI)
 
 		if err := pkgManager.AddRepo(repo.Name, repo.URI); err != nil {
 			return fmt.Errorf("Failed to add repo to system %s, reason: %w\n", repo.Name, err)

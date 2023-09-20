@@ -18,41 +18,41 @@ package builder
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/disk"
 )
 
 func (b *BackingImage) updatePackages(_ PidNotifier, pkgManager *EopkgManager) error {
-	log.Debugln("Initialising package manager")
+	slog.Debug("Initialising package manager")
 
 	if err := pkgManager.Init(); err != nil {
 		return fmt.Errorf("Failed to initialise package manager, reason: %w\n", err)
 	}
 
 	// Bring up dbus to do Things
-	log.Debugln("Starting D-BUS")
+	slog.Debug("Starting D-BUS")
 
 	if err := pkgManager.StartDBUS(); err != nil {
 		return fmt.Errorf("Failed to start d-bus, reason: %w\n", err)
 	}
 
-	log.Debugln("Upgrading builder image")
+	slog.Debug("Upgrading builder image")
 
 	if err := pkgManager.Upgrade(); err != nil {
 		return fmt.Errorf("Failed to perform upgrade, reason: %w\n", err)
 	}
 
-	log.Debugln("Asserting system.devel component")
+	slog.Debug("Asserting system.devel component")
 
 	if err := pkgManager.InstallComponent("system.devel"); err != nil {
 		return fmt.Errorf("Failed to install system.devel, reason: %w\n", err)
 	}
 
 	// Cleanup now
-	log.Debugln("Stopping D-BUS")
+	slog.Debug("Stopping D-BUS")
 
 	if err := pkgManager.StopDBUS(); err != nil {
 		return fmt.Errorf("Failed to stop d-bus, reason: %w\n", err)
@@ -66,17 +66,17 @@ func (b *BackingImage) updatePackages(_ PidNotifier, pkgManager *EopkgManager) e
 func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error {
 	mountMan := disk.GetMountManager()
 
-	log.Debugf("Updating backing image %s\n", b.Name)
+	slog.Debug("Updating backing image", "name", b.Name)
 
 	if !PathExists(b.RootDir) {
 		if err := os.MkdirAll(b.RootDir, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create required directories, reason: %w\n", err)
 		}
 
-		log.Debugf("Created root directory %s\n", b.Name)
+		slog.Debug("Created root directory", "name", b.Name)
 	}
 
-	log.Debugf("Mounting rootfs %s %s\n", b.ImagePath, b.RootDir)
+	slog.Debug("Mounting rootfs", "image_path", b.ImagePath, "root_dir", b.RootDir)
 
 	// Mount the rootfs
 	if err := mountMan.Mount(b.ImagePath, b.RootDir, "auto", "loop"); err != nil {
@@ -90,7 +90,7 @@ func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error
 	procPoint := filepath.Join(b.RootDir, "proc")
 
 	// Bring up proc
-	log.Debugln("Mounting vfs /proc")
+	slog.Debug("Mounting vfs /proc")
 
 	if err := mountMan.Mount("proc", procPoint, "proc", "nosuid", "noexec"); err != nil {
 		return fmt.Errorf("Failed to mount /proc, reason: %w\n", err)
@@ -106,7 +106,7 @@ func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error
 		return err
 	}
 
-	log.Debugf("Image successfully updated %s\n", b.Name)
+	slog.Debug("Image successfully updated", "name", b.Name)
 
 	return nil
 }
