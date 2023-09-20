@@ -117,18 +117,15 @@ func (p *Package) BindSources(o *Overlay) error {
 
 // BindCache will make all cache defined in [caches] available to the build.
 func (p *Package) BindCaches(o *Overlay) error {
+	if p.Type == PackageTypeXML {
+		return fmt.Errorf("Failed to bind caches, reason: not YPKG build")
+	}
+
 	mountMan := disk.GetMountManager()
 
 	for _, c := range Caches {
-		var (
-			cacheSource string
-			cacheDir    string
-		)
-
-		if p.Type == PackageTypeYpkg {
-			cacheSource = filepath.Join(CacheDirectory, c.Name, "ypkg")
-			cacheDir = filepath.Join(o.MountPoint, c.CacheDir[1:])
-		}
+		cacheSource := filepath.Join(CacheDirectory, c.Name, "ypkg")
+		cacheDir := filepath.Join(o.MountPoint, c.CacheDir[1:])
 
 		log.Debugf("Exposing %s to build %s\n", c.Name, cacheDir)
 
@@ -171,36 +168,6 @@ func (p *Package) GetSourceDirInternal() string {
 	}
 
 	return filepath.Join(BuildUserHome, "YPKG", "sources")
-}
-
-// GetCcacheDir will return the externally visible ccache directory.
-func (p *Package) GetCcacheDir(o *Overlay) string {
-	return filepath.Join(o.MountPoint, p.GetCcacheDirInternal()[1:])
-}
-
-// GetCcacheDirInternal will return the chroot-internal ccache directory
-// for the given build type.
-func (p *Package) GetCcacheDirInternal() string {
-	if p.Type == PackageTypeXML {
-		return "/root/.ccache"
-	}
-
-	return filepath.Join(BuildUserHome, ".ccache")
-}
-
-// GetSccacheDir will return the externally visible sccache directory.
-func (p *Package) GetSccacheDir(o *Overlay) string {
-	return filepath.Join(o.MountPoint, p.GetSccacheDirInternal()[1:])
-}
-
-// GetSccacheDirInternal will return the chroot-internal sccache
-// directory for the given build type.
-func (p *Package) GetSccacheDirInternal() string {
-	if p.Type == PackageTypeXML {
-		return "/root/.cache/sccache"
-	}
-
-	return filepath.Join(BuildUserHome, ".cache", "sccache")
 }
 
 // CopyAssets will copy all of the required assets into the builder root.
