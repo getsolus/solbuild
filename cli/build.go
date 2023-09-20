@@ -162,7 +162,7 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	defer fd.Close()
 
 	if err := manager.Build(); err != nil {
-		log.Panic("Failed to build packages")
+		log.Panicf("Failed to build packages: %s\n", err)
 	}
 
 	log.Infoln("Building succeeded")
