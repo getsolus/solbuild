@@ -17,18 +17,24 @@
 package builder
 
 import (
+	"bytes"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/go-git/go-billy/v5/helper/chroot"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/storage/filesystem"
 )
 
 const (
@@ -148,45 +154,28 @@ func GetFileContents(repo *git.Repository, hash plumbing.Hash, path string) ([]b
 //
 // The repository path will be taken as the directory name of the pkgfile that
 // is given to this function.
-func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
-	// Get the root of the package repo
-	packageDir := filepath.Dir(pkgfile)
+func NewPackageHistory(repo *git.Repository, pkgfile string) (*PackageHistory, error) {
+	repoDir := abs(repoRootDir(repo))
+	pkgDir := abs(filepath.Dir(pkgfile))
 
-	repo, err := git.PlainOpenWithOptions(packageDir, &git.PlainOpenOptions{
-		DetectDotGit: true,
-	})
+	refs, err := gitLog(pkgDir)
 	if err != nil {
 		return nil, err
 	}
-
-	var hashes []string
 
 	updates := make(map[string]*PackageUpdate)
 
-	cIter, err := repo.Log(&git.LogOptions{
-		FileName: &packageDir,
-	})
-	if err != nil {
-		return nil, err
+	for _, ref := range refs {
+		commit, err := repo.CommitObject(plumbing.NewHash(ref))
+		if err != nil {
+			return nil, fmt.Errorf("unable to resolve commit %q: %w", ref, err)
+		}
+
+		updates[ref] = NewPackageUpdate(commit, ref)
 	}
 
-	err = cIter.ForEach(func(commit *object.Commit) error {
-		hash := commit.ID().String()
-		hashes = append(hashes, hash)
-		updates[hash] = NewPackageUpdate(commit, hash)
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	// Sort the tags by -refname
-	sort.Sort(sort.Reverse(sort.StringSlice(hashes)))
-
-	ret := &PackageHistory{pkgfile: pkgfile}
-	ret.scanUpdates(repo, updates, hashes)
-	updates = nil
+	ret := &PackageHistory{pkgfile: rel(repoDir, pkgfile)}
+	ret.scanUpdates(repo, updates)
 
 	if len(ret.Updates) < 1 {
 		return nil, errors.New("no usable git history found")
@@ -194,6 +183,54 @@ func NewPackageHistory(pkgfile string) (*PackageHistory, error) {
 
 	// All done!
 	return ret, nil
+}
+
+func repoRootDir(repo *git.Repository) string {
+	storer, ok := repo.Storer.(*filesystem.Storage)
+	if !ok {
+		return ""
+	}
+
+	ch, ok := storer.Filesystem().(*chroot.ChrootHelper)
+	if !ok {
+		return ""
+	}
+
+	return filepath.Dir(ch.Root())
+}
+
+func execGit(args ...string) (string, error) {
+	var buf bytes.Buffer
+
+	cmd := exec.Command("git", args...)
+	cmd.Stdout = &buf
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("error running Git: %w", err)
+	}
+
+	return buf.String(), nil
+}
+
+func gitLog(path string) ([]string, error) {
+	out, err := execGit("-C", path, "log", "--pretty=format:%H", path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get Git history: %w", err)
+	}
+
+	return strings.Split(out, "\n"), nil
+}
+
+func rel(base, target string) string {
+	s, _ := filepath.Rel(abs(base), abs(target))
+
+	return s
+}
+
+func abs(path string) string {
+	s, _ := filepath.Abs(path)
+
+	return s
 }
 
 // SortUpdatesByRelease is a simple wrapper to allowing sorting history.
@@ -208,24 +245,20 @@ func (a SortUpdatesByRelease) Swap(i, j int) {
 }
 
 func (a SortUpdatesByRelease) Less(i, j int) bool {
+	if a[i].Package.Release == a[j].Package.Release {
+		return a[i].Time.Before(a[j].Time)
+	}
+
 	return a[i].Package.Release < a[j].Package.Release
 }
 
 // scanUpdates will go back through the collected, "ok" tags, and analyze
 // them to be more useful.
-func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*PackageUpdate, hashes []string) {
-	// basename of file
-	fname := filepath.Base(p.pkgfile)
+func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*PackageUpdate) {
+	fname := p.pkgfile
+	updateSet := make(map[int]*PackageUpdate, len(updates))
 
-	updateSet := make([]*PackageUpdate, 0, len(hashes))
-
-	// Iterate the commit set in order
-	for _, tagID := range hashes {
-		update := updates[tagID]
-		if update == nil {
-			continue
-		}
-
+	for _, update := range updates {
 		b, err := GetFileContents(repo, update.Commit, fname)
 		if err != nil {
 			continue
@@ -237,16 +270,26 @@ func (p *PackageHistory) scanUpdates(repo *git.Repository, updates map[string]*P
 			continue
 		}
 
+		if u, ok := updateSet[pkg.Release]; ok && u.Time.Before(update.Time) {
+			continue
+		}
+
 		update.Package = pkg
-		updateSet = append(updateSet, update)
+		updateSet[pkg.Release] = update
 	}
 
-	sort.Sort(sort.Reverse(SortUpdatesByRelease(updateSet)))
+	updateList := make(SortUpdatesByRelease, 0, len(updates))
 
-	if len(updateSet) >= MaxChangelogEntries {
-		p.Updates = updateSet[:MaxChangelogEntries]
+	for _, update := range updateSet {
+		updateList = append(updateList, update)
+	}
+
+	sort.Sort(sort.Reverse(updateList))
+
+	if len(updateList) >= MaxChangelogEntries {
+		p.Updates = updateList[:MaxChangelogEntries]
 	} else {
-		p.Updates = updateSet
+		p.Updates = updateList
 	}
 }
 

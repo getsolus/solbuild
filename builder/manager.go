@@ -18,6 +18,7 @@ package builder
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -28,6 +29,7 @@ import (
 
 	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/disk"
+	"github.com/go-git/go-git/v5"
 )
 
 var (
@@ -183,10 +185,14 @@ func (m *Manager) SetPackage(pkg *Package) error {
 
 	// Obtain package history for git builds
 	if pkg.Type == PackageTypeYpkg {
-		if PathExists(filepath.Join("../../..", ".git")) {
-			log.Goodln("yay, found the root dir!")
+		repo, err := git.PlainOpenWithOptions(filepath.Dir(pkg.Path),
+			&git.PlainOpenOptions{DetectDotGit: true})
+		if err != nil && !errors.Is(err, git.ErrRepositoryNotExists) {
+			return fmt.Errorf("cannot open Git repository: %w", err)
+		}
 
-			if history, err := NewPackageHistory(pkg.Path); err == nil {
+		if err == nil {
+			if history, err := NewPackageHistory(repo, pkg.Path); err == nil {
 				log.Debugln("Obtained package history")
 
 				m.history = history
