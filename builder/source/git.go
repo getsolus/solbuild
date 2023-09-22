@@ -20,11 +20,13 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
 	log "github.com/DataDrake/waterlog"
 	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
@@ -80,70 +82,67 @@ func (g *GitSource) GetHead(repo *git.Repository) (string, error) {
 
 // submodules will handle setup of the git submodules after a
 // reset has taken place.
-func (g *GitSource) submodules(tree *git.Worktree) error {
-	submodules, err := tree.Submodules()
-	if err != nil {
-		return err
-	}
+func (g *GitSource) submodules() error {
+	// We call out to git directly because go-git takes far longer (if it
+	// ever actually completes) and takes way more resources than just
+	// calling git directly.
+	cmd := exec.Command("git", "submodule", "update", "--init", "--recursive")
 
-	if len(submodules) == 0 {
-		return nil
-	}
+	cmd.Dir = g.ClonePath
+	cmd.Stdout = os.Stdout
 
-	opts := git.SubmoduleUpdateOptions{
-		Init:              true,
-		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
-	}
-
-	return submodules.Update(&opts)
+	return cmd.Run()
 }
 
 func clone(uri, path, ref string) (*git.Repository, error) {
-	refName := plumbing.NewRemoteReferenceName("origin", ref)
+	// var refName plumbing.ReferenceName
+
+	// if len(ref) == 40 {
+	// 	refName = plumbing.NewBranchReferenceName(ref)
+	// } else {
+	// 	refName = plumbing.NewTagReferenceName(ref)
+	// }
+
 	cloneOpts := git.CloneOptions{
-		URL:               uri,
-		ReferenceName:     refName,
-		SingleBranch:      true,
-		Depth:             1,
-		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
-		Progress:          os.Stdout,
+		URL: uri,
+		// ReferenceName: refName,
+		SingleBranch: true,
+		Depth:        1,
+		Progress:     os.Stdout,
+		Tags:         git.NoTags,
 	}
 
-	return git.PlainClone(path, true, &cloneOpts)
+	return git.PlainClone(path, false, &cloneOpts)
 }
 
-// Fetch will attempt to download the git tree locally. If it already exists
-// then we'll make an attempt to update it.
-func (g *GitSource) Fetch() error {
-	// First things first, make sure we have a destination
-	if !PathExists(g.ClonePath) {
-		log.Debugf("making shallow clone of repo at '%s'\n", g.ClonePath)
-
-		_, err := clone(g.URI, g.ClonePath, g.Ref)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	// Repo already on disk, just open it
-	log.Debugf("source repo clone found on disk at '%s'\n", g.ClonePath)
-
-	repo, err := git.PlainOpen(g.ClonePath)
+func fixPackfilePerms(path string) error {
+	packDir := filepath.Join(path, ".git", "objects", "pack")
+	files, err := os.ReadDir(packDir)
 	if err != nil {
 		return err
 	}
 
-	// Get the ref we want
+	for _, file := range files {
+		filePath := filepath.Join(packDir, file.Name())
+
+		if err = os.Chmod(filePath, 644); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (g *GitSource) resolveHash(repo *git.Repository) (*plumbing.Hash, error) {
 	var hash plumbing.Hash
 
 	if len(g.Ref) != 40 {
 		log.Debugf("reference '%s' does not look like a hash; attempting to resolve\n", g.Ref)
 
-		h, resolveErr := repo.ResolveRevision(plumbing.Revision(g.Ref))
-		if resolveErr != nil {
-			return resolveErr
+		h, err := repo.ResolveRevision(plumbing.Revision(g.Ref))
+
+		if err != nil {
+			return nil, err
 		}
 
 		hash = *h
@@ -151,24 +150,106 @@ func (g *GitSource) Fetch() error {
 		hash = plumbing.NewHash(g.Ref)
 	}
 
-	log.Debugf("resolved reference: %s\n", hash.String())
+	return &hash, nil
+}
 
-	work, err := repo.Worktree()
+// Fetch will attempt to download the git tree locally. If it already exists
+// then we'll make an attempt to update it.
+func (g *GitSource) Fetch() error {
+	// First things first, make sure we have a destination
+	var (
+		repo *git.Repository
+		err  error
+	)
+
+	if !PathExists(g.ClonePath) {
+		//log.Debugf("making shallow clone of repo at '%s'\n", g.ClonePath)
+
+		//_, err := clone(g.URI, g.ClonePath, g.Ref)
+		//if err != nil {
+		//	return err
+		//}
+
+		//log.Debugln("fixing packfile permissions")
+
+		// For some reason, go-git creates the packfiles with read permissions
+		// for only the file owner, unlike git. This means that cloned sources
+		// cannot be copied to the work dir. So, attempt to fix the permissions.
+		//if err = fixPackfilePerms(g.ClonePath); err != nil {
+		//	return err
+		//}
+
+		repo, err = git.PlainClone(g.ClonePath, false, &git.CloneOptions{
+			URL:   g.URI,
+			Depth: 1,
+			Tags:  git.NoTags,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		//if _, err := repo.CreateRemote(&config.RemoteConfig{
+		//	Name:  git.DefaultRemoteName,
+		//	URLs:  []string{g.URI},
+		//	Fetch: []config.RefSpec{config.RefSpec(fmt.Sprintf(config.DefaultFetchRefSpec, git.DefaultRemoteName))},
+		//}); err != nil {
+		//	return err
+		//}
+	} else {
+		repo, err = git.PlainOpen(g.ClonePath)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Repo already on disk, just open it
+	//log.Debugf("source repo clone found on disk at '%s'\n", g.ClonePath)
+
+	//repo, err := git.PlainOpen(g.ClonePath)
+	//if err != nil {
+	//	return err
+	//}
+
+	// Get the ref we want
+	hash, err := g.resolveHash(repo)
+
 	if err != nil {
 		return err
 	}
 
-	checkoutOpts := git.CheckoutOptions{
-		Hash:  hash,
-		Force: true,
+	log.Debugf("resolved revision: %s\n", hash.String())
+	log.Debugln("fetching revision from remote")
+
+	if err = repo.Fetch(&git.FetchOptions{
+		Depth:      1,
+		Tags:       git.AllTags,
+		RemoteName: git.DefaultRemoteName,
+		RemoteURL:  g.URI,
+		RefSpecs: []config.RefSpec{
+			config.RefSpec(fmt.Sprintf("%s:%s", hash.String(), hash.String())),
+		},
+	}); err != nil {
+		return err
 	}
 
-	if err = work.Checkout(&checkoutOpts); err != nil {
+	work, err := repo.Worktree()
+
+	if err != nil {
+		return err
+	}
+
+	if err = work.Reset(&git.ResetOptions{
+		Commit: *hash,
+		Mode:   git.HardReset,
+	}); err != nil {
 		return err
 	}
 
 	// Check out submodules
-	return g.submodules(work)
+	log.Debugln("updating submodules")
+	return g.submodules()
 }
 
 // IsFetched will check if we have the ref available, if not it will return
