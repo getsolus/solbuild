@@ -67,7 +67,7 @@ The `-u` flag will automatically update the image.
     sudo solbuild update
 
     # Update a specific profile
-    sudo solbuild update unstable-x86_64
+    sudo solbuild update -p unstable-x86_64
 
 **Building packages**
 
