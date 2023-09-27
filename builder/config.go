@@ -27,6 +27,7 @@ import (
 // Config defines the global defaults for solbuild
 type Config struct {
 	DefaultProfile string `toml:"default_profile"`  // Name of the default profile to use
+	EnableHistory  bool   `toml:"enable_history"`   // Whether to enable history generation or not
 	EnableTmpfs    bool   `toml:"enable_tmpfs"`     // Whether to enable tmpfs builds or
 	OverlayRootDir string `toml:"overlay_root_dir"` // Custom Overlay Root Dir
 	TmpfsSize      string `toml:"tmpfs_size"`       // Bounding size on the tmpfs
@@ -49,6 +50,7 @@ func NewConfig() (*Config, error) {
 	// Set up some sane defaults just in case someone mangles the configs
 	config := &Config{
 		DefaultProfile: "main-x86_64",
+		EnableHistory:  false,
 		EnableTmpfs:    false,
 		OverlayRootDir: "/var/cache/solbuild",
 		TmpfsSize:      "",

@@ -48,6 +48,7 @@ type BuildFlags struct {
 	Memory          string `short:"m" long:"memory"             desc:"Set the tmpfs size to use, e.g. 8G"`
 	TransitManifest string `long:"transit-manifest"             desc:"Create transit manifest for the given target"`
 	ABIReport       bool   `short:"r" long:"disable-abi-report" desc:"Don't generate an ABI report of the completed build"`
+	History         bool   `short:"h" long:"history"            desc:"Enable history generation for this build"`
 }
 
 // BuildArgs are arguments for the "build" sub-command
@@ -96,6 +97,12 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		os.Exit(1)
 	}
+
+	// Enable history generation
+	if sFlags.History {
+		manager.Config.EnableHistory = true
+	}
+
 	pkg, err := builder.NewPackage(pkgPath)
 	if err != nil {
 		log.Fatalf("Failed to load package: %s\n", err)

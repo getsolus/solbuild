@@ -181,14 +181,18 @@ func (m *Manager) SetPackage(pkg *Package) error {
 	// Obtain package history for git builds
 	if pkg.Type == PackageTypeYpkg {
 		repoDir := filepath.Dir(pkg.Path)
-		repo, err := git.OpenRepositoryExtended(repoDir, 0, "/")
 
-		if err == nil {
-			if history, err := NewPackageHistory(repo, pkg.Path); err == nil {
-				log.Debugln("Obtained package history")
-				m.history = history
-			} else {
-				log.Warnf("Failed to obtain package git history %s\n", err)
+		if m.Config.EnableHistory {
+			log.Infoln("History generation enabled")
+
+			repo, err := git.OpenRepositoryExtended(repoDir, 0, "/")
+			if err == nil {
+				if history, err := NewPackageHistory(repo, pkg.Path); err == nil {
+					log.Debugln("Obtained package history")
+					m.history = history
+				} else {
+					log.Warnf("Failed to obtain package git history %s\n", err)
+				}
 			}
 		}
 	}
