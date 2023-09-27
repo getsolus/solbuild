@@ -23,11 +23,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-
-	log "github.com/DataDrake/waterlog"
-	git "github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
-	"github.com/go-git/go-git/v5/plumbing"
 )
 
 const (
@@ -70,185 +65,108 @@ func NewGit(uri, ref string) (*GitSource, error) {
 	return g, nil
 }
 
-// GetHead will attempt to gain the OID for head.
-func (g *GitSource) GetHead(repo *git.Repository) (string, error) {
-	head, err := repo.Head()
-	if err != nil {
-		return "", err
-	}
-
-	return head.Target().String(), nil
-}
-
 // submodules will handle setup of the git submodules after a
 // reset has taken place.
 func (g *GitSource) submodules() error {
-	// We call out to git directly because go-git takes far longer (if it
-	// ever actually completes) and takes way more resources than just
-	// calling git directly.
 	cmd := exec.Command("git", "submodule", "update", "--init", "--recursive")
 
 	cmd.Dir = g.ClonePath
 	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
 }
 
-func clone(uri, path, ref string) (*git.Repository, error) {
-	// var refName plumbing.ReferenceName
+// clone shallow clones an upstream git repository to the local disk.
+func clone(uri, path, ref string) error {
+	var cmd *exec.Cmd
 
-	// if len(ref) == 40 {
-	// 	refName = plumbing.NewBranchReferenceName(ref)
-	// } else {
-	// 	refName = plumbing.NewTagReferenceName(ref)
-	// }
+	// Check if the reference is a commit
+	if len(ref) == 40 {
+		// Init a new repository at the checkout path
+		initCmd := exec.Command("git", "init", path)
 
-	cloneOpts := git.CloneOptions{
-		URL: uri,
-		// ReferenceName: refName,
-		SingleBranch: true,
-		Depth:        1,
-		Progress:     os.Stdout,
-		Tags:         git.NoTags,
+		if err := initCmd.Run(); err != nil {
+			return err
+		}
+
+		// Set the default remote to the upstream URI
+		addRemoteCmd := exec.Command("git", "remote", "add", "origin", uri)
+		addRemoteCmd.Dir = path
+
+		if err := addRemoteCmd.Run(); err != nil {
+			return err
+		}
+
+		// Shallow fetch the reference we want
+		fetchCmd := exec.Command("git", "fetch", "--depth", "1", "origin", ref)
+		fetchCmd.Dir = path
+
+		if err := fetchCmd.Run(); err != nil {
+			return err
+		}
+
+		// Set the next command to run to checkout the head
+		cmd = exec.Command("git", "checkout", "FETCH_HEAD")
+		cmd.Dir = path
+	} else {
+		// Not a git commit, so shallow clone the repo at the reference
+		cmd = exec.Command("git", "clone", "--depth", "1", "--branch", ref, uri, path)
 	}
 
-	return git.PlainClone(path, false, &cloneOpts)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }
 
-func fixPackfilePerms(path string) error {
-	packDir := filepath.Join(path, ".git", "objects", "pack")
-	files, err := os.ReadDir(packDir)
-	if err != nil {
+// reset fetches the new git reference (a tag or commit SHA1 hash) and
+// hard resets the repository on that reference.
+func reset(path, ref string) error {
+	fetchArgs := []string{
+		"fetch",
+		"--depth",
+		"1",
+		"origin",
+	}
+
+	// We have to add the tag keyword if the ref is a tag, otherwise
+	// git won't actually fetch the tag
+	if len(ref) != 40 {
+		fetchArgs = append(fetchArgs, "tag")
+	}
+
+	fetchArgs = append(fetchArgs, ref)
+
+	fetchCmd := exec.Command("git", fetchArgs...)
+	fetchCmd.Dir = path
+
+	if err := fetchCmd.Run(); err != nil {
 		return err
 	}
 
-	for _, file := range files {
-		filePath := filepath.Join(packDir, file.Name())
+	resetCmd := exec.Command("git", "reset", "--hard", ref)
+	resetCmd.Dir = path
 
-		if err = os.Chmod(filePath, 644); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (g *GitSource) resolveHash(repo *git.Repository) (*plumbing.Hash, error) {
-	var hash plumbing.Hash
-
-	if len(g.Ref) != 40 {
-		log.Debugf("reference '%s' does not look like a hash; attempting to resolve\n", g.Ref)
-
-		h, err := repo.ResolveRevision(plumbing.Revision(g.Ref))
-
-		if err != nil {
-			return nil, err
-		}
-
-		hash = *h
-	} else {
-		hash = plumbing.NewHash(g.Ref)
-	}
-
-	return &hash, nil
+	return resetCmd.Run()
 }
 
 // Fetch will attempt to download the git tree locally. If it already exists
 // then we'll make an attempt to update it.
 func (g *GitSource) Fetch() error {
 	// First things first, make sure we have a destination
-	var (
-		repo *git.Repository
-		err  error
-	)
-
 	if !PathExists(g.ClonePath) {
-		//log.Debugf("making shallow clone of repo at '%s'\n", g.ClonePath)
-
-		//_, err := clone(g.URI, g.ClonePath, g.Ref)
-		//if err != nil {
-		//	return err
-		//}
-
-		//log.Debugln("fixing packfile permissions")
-
-		// For some reason, go-git creates the packfiles with read permissions
-		// for only the file owner, unlike git. This means that cloned sources
-		// cannot be copied to the work dir. So, attempt to fix the permissions.
-		//if err = fixPackfilePerms(g.ClonePath); err != nil {
-		//	return err
-		//}
-
-		repo, err = git.PlainClone(g.ClonePath, false, &git.CloneOptions{
-			URL:   g.URI,
-			Depth: 1,
-			Tags:  git.NoTags,
-		})
-
-		if err != nil {
+		if err := clone(g.URI, g.ClonePath, g.Ref); err != nil {
 			return err
 		}
-
-		//if _, err := repo.CreateRemote(&config.RemoteConfig{
-		//	Name:  git.DefaultRemoteName,
-		//	URLs:  []string{g.URI},
-		//	Fetch: []config.RefSpec{config.RefSpec(fmt.Sprintf(config.DefaultFetchRefSpec, git.DefaultRemoteName))},
-		//}); err != nil {
-		//	return err
-		//}
 	} else {
-		repo, err = git.PlainOpen(g.ClonePath)
-
-		if err != nil {
+		// Repo already exists locally, try to reset to the new reference
+		if err := reset(g.ClonePath, g.Ref); err != nil {
 			return err
 		}
-	}
-
-	// Repo already on disk, just open it
-	//log.Debugf("source repo clone found on disk at '%s'\n", g.ClonePath)
-
-	//repo, err := git.PlainOpen(g.ClonePath)
-	//if err != nil {
-	//	return err
-	//}
-
-	// Get the ref we want
-	hash, err := g.resolveHash(repo)
-
-	if err != nil {
-		return err
-	}
-
-	log.Debugf("resolved revision: %s\n", hash.String())
-	log.Debugln("fetching revision from remote")
-
-	if err = repo.Fetch(&git.FetchOptions{
-		Depth:      1,
-		Tags:       git.AllTags,
-		RemoteName: git.DefaultRemoteName,
-		RemoteURL:  g.URI,
-		RefSpecs: []config.RefSpec{
-			config.RefSpec(fmt.Sprintf("%s:%s", hash.String(), hash.String())),
-		},
-	}); err != nil {
-		return err
-	}
-
-	work, err := repo.Worktree()
-
-	if err != nil {
-		return err
-	}
-
-	if err = work.Reset(&git.ResetOptions{
-		Commit: *hash,
-		Mode:   git.HardReset,
-	}); err != nil {
-		return err
 	}
 
 	// Check out submodules
-	log.Debugln("updating submodules")
 	return g.submodules()
 }
 
