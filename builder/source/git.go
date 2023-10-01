@@ -20,12 +20,9 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
-
-	log "github.com/DataDrake/waterlog"
-	git "github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 )
 
 const (
@@ -68,48 +65,90 @@ func NewGit(uri, ref string) (*GitSource, error) {
 	return g, nil
 }
 
-// GetHead will attempt to gain the OID for head.
-func (g *GitSource) GetHead(repo *git.Repository) (string, error) {
-	head, err := repo.Head()
-	if err != nil {
-		return "", err
-	}
-
-	return head.Target().String(), nil
-}
-
 // submodules will handle setup of the git submodules after a
 // reset has taken place.
-func (g *GitSource) submodules(tree *git.Worktree) error {
-	submodules, err := tree.Submodules()
-	if err != nil {
+func (g *GitSource) submodules() error {
+	cmd := exec.Command("git", "submodule", "update", "--init", "--recursive")
+
+	cmd.Dir = g.ClonePath
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+// clone shallow clones an upstream git repository to the local disk.
+func clone(uri, path, ref string) error {
+	var cmd *exec.Cmd
+
+	// Check if the reference is a commit
+	if len(ref) == 40 {
+		// Init a new repository at the checkout path
+		initCmd := exec.Command("git", "init", path)
+
+		if err := initCmd.Run(); err != nil {
+			return err
+		}
+
+		// Set the default remote to the upstream URI
+		addRemoteCmd := exec.Command("git", "remote", "add", "origin", uri)
+		addRemoteCmd.Dir = path
+
+		if err := addRemoteCmd.Run(); err != nil {
+			return err
+		}
+
+		// Shallow fetch the reference we want
+		fetchCmd := exec.Command("git", "fetch", "--depth", "1", "origin", ref)
+		fetchCmd.Dir = path
+
+		if err := fetchCmd.Run(); err != nil {
+			return err
+		}
+
+		// Set the next command to run to checkout the head
+		cmd = exec.Command("git", "checkout", "FETCH_HEAD")
+		cmd.Dir = path
+	} else {
+		// Not a git commit, so shallow clone the repo at the reference
+		cmd = exec.Command("git", "clone", "--depth", "1", "--branch", ref, uri, path)
+	}
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+// reset fetches the new git reference (a tag or commit SHA1 hash) and
+// hard resets the repository on that reference.
+func reset(path, ref string) error {
+	fetchArgs := []string{
+		"fetch",
+		"--depth",
+		"1",
+		"origin",
+	}
+
+	// We have to add the tag keyword if the ref is a tag, otherwise
+	// git won't actually fetch the tag
+	if len(ref) != 40 {
+		fetchArgs = append(fetchArgs, "tag")
+	}
+
+	fetchArgs = append(fetchArgs, ref)
+
+	fetchCmd := exec.Command("git", fetchArgs...)
+	fetchCmd.Dir = path
+
+	if err := fetchCmd.Run(); err != nil {
 		return err
 	}
 
-	if len(submodules) == 0 {
-		return nil
-	}
+	resetCmd := exec.Command("git", "reset", "--hard", ref)
+	resetCmd.Dir = path
 
-	opts := git.SubmoduleUpdateOptions{
-		Init:              true,
-		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
-	}
-
-	return submodules.Update(&opts)
-}
-
-func clone(uri, path, ref string) (*git.Repository, error) {
-	refName := plumbing.NewRemoteReferenceName("origin", ref)
-	cloneOpts := git.CloneOptions{
-		URL:               uri,
-		ReferenceName:     refName,
-		SingleBranch:      true,
-		Depth:             1,
-		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
-		Progress:          os.Stdout,
-	}
-
-	return git.PlainClone(path, true, &cloneOpts)
+	return resetCmd.Run()
 }
 
 // Fetch will attempt to download the git tree locally. If it already exists
@@ -117,58 +156,18 @@ func clone(uri, path, ref string) (*git.Repository, error) {
 func (g *GitSource) Fetch() error {
 	// First things first, make sure we have a destination
 	if !PathExists(g.ClonePath) {
-		log.Debugf("making shallow clone of repo at '%s'\n", g.ClonePath)
-
-		_, err := clone(g.URI, g.ClonePath, g.Ref)
-		if err != nil {
+		if err := clone(g.URI, g.ClonePath, g.Ref); err != nil {
 			return err
 		}
-
-		return nil
-	}
-
-	// Repo already on disk, just open it
-	log.Debugf("source repo clone found on disk at '%s'\n", g.ClonePath)
-
-	repo, err := git.PlainOpen(g.ClonePath)
-	if err != nil {
-		return err
-	}
-
-	// Get the ref we want
-	var hash plumbing.Hash
-
-	if len(g.Ref) != 40 {
-		log.Debugf("reference '%s' does not look like a hash; attempting to resolve\n", g.Ref)
-
-		h, resolveErr := repo.ResolveRevision(plumbing.Revision(g.Ref))
-		if resolveErr != nil {
-			return resolveErr
-		}
-
-		hash = *h
 	} else {
-		hash = plumbing.NewHash(g.Ref)
-	}
-
-	log.Debugf("resolved reference: %s\n", hash.String())
-
-	work, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	checkoutOpts := git.CheckoutOptions{
-		Hash:  hash,
-		Force: true,
-	}
-
-	if err = work.Checkout(&checkoutOpts); err != nil {
-		return err
+		// Repo already exists locally, try to reset to the new reference
+		if err := reset(g.ClonePath, g.Ref); err != nil {
+			return err
+		}
 	}
 
 	// Check out submodules
-	return g.submodules(work)
+	return g.submodules()
 }
 
 // IsFetched will check if we have the ref available, if not it will return
