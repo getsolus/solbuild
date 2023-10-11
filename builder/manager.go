@@ -19,6 +19,7 @@ package builder
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -27,9 +28,10 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/disk"
 	"github.com/go-git/go-git/v5"
+
+	"github.com/getsolus/solbuild/cli/log"
 )
 
 var (
@@ -103,7 +105,7 @@ func NewManager() (*Manager, error) {
 	if config, err := NewConfig(); err == nil {
 		man.Config = config
 	} else {
-		log.Errorf("Failed to load solbuild configuration %s\n", err)
+		slog.Error("Failed to load solbuild configuration %s\n", err)
 		return nil, err
 	}
 
@@ -193,11 +195,11 @@ func (m *Manager) SetPackage(pkg *Package) error {
 
 		if err == nil {
 			if history, err := NewPackageHistory(repo, pkg.Path); err == nil {
-				log.Debugln("Obtained package history")
+				slog.Debug("Obtained package history")
 
 				m.history = history
 			} else {
-				log.Warnf("Failed to obtain package git history: %s\n", err)
+				slog.Warn("Failed to obtain package git history", "err", err)
 			}
 		}
 	}
@@ -235,10 +237,10 @@ func (m *Manager) Cleanup() {
 		return
 	}
 
-	log.Debugln("Acquiring global lock")
+	slog.Debug("Acquiring global lock")
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	log.Debugln("Cleaning up")
+	slog.Debug("Cleaning up")
 
 	if m.pkgManager != nil {
 		// Potentially unnecessary but meh
@@ -286,11 +288,11 @@ func (m *Manager) Cleanup() {
 	// Finally clean out the lock files
 	if m.lockfile != nil {
 		if err := m.lockfile.Unlock(); err != nil {
-			log.Errorf("Failure in unlocking root %s\n", err)
+			slog.Error("Failure in unlocking root", "err", err)
 		}
 
 		if err := m.lockfile.Clean(); err != nil {
-			log.Errorf("Failure in cleaning lockfile %s\n", err)
+			slog.Error("Failure in cleaning lockfile", "err", err)
 		}
 	}
 }
@@ -300,7 +302,7 @@ func (m *Manager) doLock(path, opType string) error {
 	// Handle file locking
 	lock, err := NewLockFile(path)
 	if err != nil {
-		log.Errorf("Failed to lock root for %s %s %s\n", opType, path, err)
+		slog.Error("Failed to lock root", "op_type", opType, "path", path, "err", err)
 		return err
 	}
 
@@ -308,9 +310,9 @@ func (m *Manager) doLock(path, opType string) error {
 
 	if err = m.lockfile.Lock(); err != nil {
 		if errors.Is(err, ErrOwnedLockFile) {
-			log.Errorf("Failed to lock root - another process (%s,%d) is using it, reason: %s\n", m.lockfile.GetOwnerProcess(), m.lockfile.GetOwnerPID(), err)
+			slog.Error("Failed to lock root - another process is using it", "process", m.lockfile.GetOwnerProcess(), "pid", m.lockfile.GetOwnerPID(), "err", err)
 		} else {
-			log.Errorf("Failed to lock root pid='%d' %s\n", m.lockfile.GetOwnerPID(), err)
+			slog.Error("Failed to lock root", "pid", m.lockfile.GetOwnerPID(), "err", err)
 		}
 
 		return err
@@ -328,10 +330,10 @@ func (m *Manager) SigIntCleanup() {
 
 	go func() {
 		<-ch
-		log.Warnln("CTRL+C interrupted, cleaning up")
+		slog.Warn("CTRL+C interrupted, cleaning up")
 		m.SetCancelled()
 		m.Cleanup()
-		log.Errorln("Exiting due to interruption")
+		slog.Error("Exiting due to interruption")
 		os.Exit(1)
 	}()
 }
@@ -359,7 +361,7 @@ func (m *Manager) Build() error {
 	m.overlay.TmpfsSize = m.Config.TmpfsSize
 
 	if !ValidMemSize(m.overlay.TmpfsSize) && m.overlay.EnableTmpfs {
-		log.Panicf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
+		log.Panic("Invalid memory size specified", "tmpfs_size", m.overlay.TmpfsSize)
 	}
 
 	if err := m.doLock(m.overlay.LockPath, "building"); err != nil {
@@ -446,7 +448,7 @@ func (m *Manager) Index(dir string) error {
 	m.overlay.TmpfsSize = m.Config.TmpfsSize
 
 	if !ValidMemSize(m.overlay.TmpfsSize) && m.overlay.EnableTmpfs {
-		log.Panicf("Invalid memory size specified: %s\n", m.overlay.TmpfsSize)
+		log.Panic("Invalid memory size specified", "tmpfs_size", m.overlay.TmpfsSize)
 	}
 
 	if err := m.doLock(m.overlay.LockPath, "indexing"); err != nil {

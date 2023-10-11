@@ -19,11 +19,11 @@ package builder
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
-	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
 	"github.com/getsolus/libosdev/disk"
 )
@@ -86,14 +86,14 @@ func (e *EopkgManager) CopyAssets() error {
 
 		dirName := filepath.Dir(value)
 		if !PathExists(dirName) {
-			log.Debugf("Creating required directory: %s\n", dirName)
+			slog.Debug("Creating required directory", "path", dirName)
 
 			if err := os.MkdirAll(dirName, 0o0755); err != nil {
 				return fmt.Errorf("Failed to create required asset directory %s, reason %w\n", dirName, err)
 			}
 		}
 
-		log.Debugf("Copying host asset %s\n", key)
+		slog.Debug("Copying host asset", "key", key)
 
 		if err := disk.CopyFile(key, value); err != nil {
 			return fmt.Errorf("Failed to copy host asset %s, reason: %w\n", key, err)
@@ -118,7 +118,7 @@ func (e *EopkgManager) Init() error {
 
 	// Ensure system wide cache exists
 	if !PathExists(e.cacheSource) {
-		log.Debugf("Creating system-wide package cache: %s\n", e.cacheSource)
+		slog.Debug("Creating system-wide package cache", "path", e.cacheSource)
 
 		if err := os.MkdirAll(e.cacheSource, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create package cache %s, reason: %w\n", e.cacheSource, err)
@@ -296,7 +296,7 @@ func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 
 	var repoFiles []string
 
-	log.Debugln("Discovering repos in rootfs")
+	slog.Debug("Discovering repos in rootfs")
 
 	repoFiles, _ = filepath.Glob(globPat)
 	// No repos
@@ -309,7 +309,7 @@ func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 	for _, repo := range repoFiles {
 		uri, err := readURIFile(repo)
 		if err != nil {
-			log.Errorf("Unable to read repository file %s, reason: %s\n", repo, err)
+			slog.Error("Unable to read repository file", "path", repo, "err", err)
 			return nil, err
 		}
 

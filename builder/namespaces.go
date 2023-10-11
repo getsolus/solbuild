@@ -18,14 +18,13 @@ package builder
 
 import (
 	"fmt"
+	"log/slog"
 	"syscall"
-
-	log "github.com/DataDrake/waterlog"
 )
 
 // ConfigureNamespace will unshare() context, entering a new namespace.
 func ConfigureNamespace() error {
-	log.Debugln("Configuring container namespace")
+	slog.Debug("Configuring container namespace")
 
 	if err := syscall.Unshare(syscall.CLONE_NEWNS | syscall.CLONE_NEWIPC); err != nil {
 		return fmt.Errorf("Failed to configure namespace, reason: %w\n", err)
@@ -36,7 +35,7 @@ func ConfigureNamespace() error {
 
 // DropNetworking will unshare() the context networking capabilities.
 func DropNetworking() error {
-	log.Debugln("Dropping container networking")
+	slog.Debug("Dropping container networking")
 
 	if err := syscall.Unshare(syscall.CLONE_NEWNET | syscall.CLONE_NEWUTS); err != nil {
 		return fmt.Errorf("Failed to drop networking capabilities, reason: %w\n", err)

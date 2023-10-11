@@ -18,17 +18,16 @@ package cli
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
 	"os"
 	"path/filepath"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
-	log "github.com/DataDrake/waterlog"
-	"github.com/DataDrake/waterlog/format"
-	"github.com/DataDrake/waterlog/level"
 
 	"github.com/getsolus/solbuild/builder"
 	"github.com/getsolus/solbuild/builder/source"
+	"github.com/getsolus/solbuild/cli/log"
 )
 
 func init() {
@@ -57,20 +56,20 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	sFlags := s.Flags.(*DeleteCacheFlags) //nolint:forcetypeassert // guaranteed by callee.
 
 	if rFlags.Debug {
-		log.SetLevel(level.Debug)
+		log.Level.Set(slog.LevelDebug)
 	}
 
 	if rFlags.NoColor {
-		log.SetFormat(format.Un)
+		log.SetUncoloredLogger()
 	}
 
 	if os.Geteuid() != 0 {
-		log.Fatalln("You must be root to delete caches")
+		log.Panic("You must be root to delete caches")
 	}
 
 	manager, err := builder.NewManager()
 	if err != nil {
-		log.Fatalf("Failed to create new Manager: %e\n", err)
+		log.Panic("Failed to create new Manager: %e\n", err)
 	}
 
 	// If sizes is requested just print disk usage of caches and return
@@ -92,13 +91,13 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 			totalSize += size
 
 			if err != nil {
-				log.Warnf("Couldn't get directory size, reason: %s\n", err)
+				slog.Warn("Couldn't get directory size", "reason", err)
 			}
 
-			log.Infof("Size of '%s' is '%s'\n", p, humanReadableFormat(float64(size)))
+			slog.Info(fmt.Sprintf("Size of '%s' is '%s'", p, humanReadableFormat(float64(size))))
 		}
 
-		log.Infof("Total size: '%s'\n", humanReadableFormat(float64(totalSize)))
+		slog.Info(fmt.Sprintf("Total size: '%s'", humanReadableFormat(float64(totalSize))))
 
 		return
 	}
@@ -133,18 +132,18 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 		totalSize += size
 
 		if err != nil {
-			log.Warnf("Couldn't get directory size, reason: %s\n", err)
+			slog.Warn("Couldn't get directory size", "reason", err)
 		}
 
-		log.Infof("Removing cache directory '%s', of size '%s\n", p, humanReadableFormat(float64(size)))
+		slog.Info(fmt.Sprintf("Removing cache directory '%s', of size '%s", p, humanReadableFormat(float64(size))))
 
 		if err := os.RemoveAll(p); err != nil {
-			log.Fatalf("Could not remove cache directory, reason: %s\n", err)
+			log.Panic("Could not remove cache directory", "reason", err)
 		}
 	}
 
 	if totalSize > 0 {
-		log.Infof("Total restored size: '%s'\n", humanReadableFormat(float64(totalSize)))
+		slog.Info(fmt.Sprintf("Total restored size: '%s'\n", humanReadableFormat(float64(totalSize))))
 	}
 }
 
@@ -155,7 +154,7 @@ func getDirSize(path string) (int64, error) {
 	// Return nothing if dir doesn't exist
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		log.Debugf("Directory doesn't exist: %s\n", path)
+		slog.Debug("Directory doesn't exist", "path", path)
 		return 0, nil
 	}
 

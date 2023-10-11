@@ -19,14 +19,13 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
-	log "github.com/DataDrake/waterlog"
-	"github.com/DataDrake/waterlog/format"
-	"github.com/DataDrake/waterlog/level"
 
 	"github.com/getsolus/solbuild/builder"
+	"github.com/getsolus/solbuild/cli/log"
 )
 
 func init() {
@@ -45,22 +44,22 @@ var Update = cmd.Sub{
 func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 	rFlags := r.Flags.(*GlobalFlags) //nolint:forcetypeassert // guaranteed by callee.
 	if rFlags.Debug {
-		log.SetLevel(level.Debug)
+		log.Level.Set(slog.LevelDebug)
 	}
 
 	if rFlags.NoColor {
-		log.SetFormat(format.Un)
+		log.SetUncoloredLogger()
 	}
 
 	if os.Geteuid() != 0 {
-		log.Fatalln("You must be root to run init profiles")
+		log.Panic("You must be root to run init profiles")
 	}
 	// Initialise the build manager
 	manager, err := builder.NewManager()
 	if err != nil {
-		log.Fatalln(err.Error())
+		log.Panic(err.Error())
 	}
-	// Safety first..
+	// Safety first...
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		if errors.Is(err, builder.ErrProfileNotInstalled) {
 			fmt.Fprintf(os.Stderr, "%v: Did you forget to init?\n", err)

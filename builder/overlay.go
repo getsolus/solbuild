@@ -18,12 +18,14 @@ package builder
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	log "github.com/DataDrake/waterlog"
 	"github.com/getsolus/libosdev/commands"
 	"github.com/getsolus/libosdev/disk"
+
+	"github.com/getsolus/solbuild/cli/log"
 )
 
 // An Overlay is formed from a backing image & Package combination.
@@ -94,7 +96,7 @@ func (o *Overlay) EnsureDirs() error {
 			continue
 		}
 
-		log.Debugf("Creating overlay storage directory: %s\n", p)
+		slog.Debug("Creating overlay storage directory", "path", p)
 
 		if err := os.MkdirAll(p, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create overlay storage directory: dir='%s', reason: %w\n", p, err)
@@ -111,7 +113,7 @@ func (o *Overlay) CleanExisting() error {
 		return nil
 	}
 
-	log.Debugf("Removing stale workspace: %s\n", o.BaseDir)
+	slog.Debug("Removing stale workspace", "path", o.BaseDir)
 
 	if err := os.RemoveAll(o.BaseDir); err != nil {
 		return fmt.Errorf("Failed to remove stale workspace: dir='%s', reason: %w\n", o.BaseDir, err)
@@ -123,18 +125,18 @@ func (o *Overlay) CleanExisting() error {
 // Mount will set up the overlayfs structure with the lower/upper respected
 // properly.
 func (o *Overlay) Mount() error {
-	log.Debugln("Mounting overlayfs")
+	slog.Debug("Mounting overlayfs")
 
 	mountMan := disk.GetMountManager()
 
 	// Mount tmpfs as the root of all other mounts if requested
 	if o.EnableTmpfs {
 		if err := os.MkdirAll(o.BaseDir, 0o0755); err != nil {
-			log.Errorf("Failed to create tmpfs directory: dir='%s', reason: %s\n", o.BaseDir, err)
+			slog.Error("Failed to create tmpfs directory", "dir", o.BaseDir, "err", err)
 			return nil
 		}
 
-		log.Debugf("Mounting root tmpfs: point='%s' size='%s'\n", o.BaseDir, o.TmpfsSize)
+		slog.Debug("Mounting root tmpfs", "dir", o.BaseDir, "size", o.TmpfsSize)
 
 		var tmpfsOptions []string
 		if o.TmpfsSize != "" {
@@ -156,7 +158,7 @@ func (o *Overlay) Mount() error {
 	}
 
 	// First up, mount the backing image
-	log.Debugf("Mounting backing image: point='%s'\n", o.Back.ImagePath)
+	slog.Debug("Mounting backing image", "point", o.Back.ImagePath)
 
 	if err := mountMan.Mount(o.Back.ImagePath, o.ImgDir, "auto", "ro", "loop"); err != nil {
 		return fmt.Errorf("Failed to mount backing image: point='%s', reason: %w\n", o.Back.ImagePath, err)
@@ -165,7 +167,8 @@ func (o *Overlay) Mount() error {
 	o.mountedImg = true
 
 	// Now mount the overlayfs
-	log.Debugf("Mounting overlayfs: upper='%s' lower='%s' workdir='%s' target='%s'\n", o.UpperDir, o.ImgDir, o.WorkDir, o.MountPoint)
+	slog.Debug("Mounting overlayfs", "upper", o.UpperDir, "lower", o.ImgDir,
+		"workdir", o.WorkDir, "target", o.MountPoint)
 
 	// Mounting overlayfs..
 	err := mountMan.Mount("overlay", o.MountPoint, "overlay",
@@ -174,7 +177,7 @@ func (o *Overlay) Mount() error {
 		fmt.Sprintf("workdir=%s", o.WorkDir))
 	// Check non-fatal..
 	if err != nil {
-		log.Fatalf("Failed to mount overlayfs: point='%s', reason: %s\n", o.MountPoint, err)
+		log.Panic("Failed to mount overlayfs", "point", o.MountPoint, "err", err)
 	}
 
 	o.mountedOverlay = true
@@ -252,7 +255,7 @@ func (o *Overlay) MountVFS() error {
 			continue
 		}
 
-		log.Debugf("Creating VFS directory: dir='%s'\n", p)
+		slog.Debug("Creating VFS directory", "dir", p)
 
 		if err := os.MkdirAll(p, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create VFS directory. dir='%s', reason: %w\n", p, err)
@@ -260,7 +263,7 @@ func (o *Overlay) MountVFS() error {
 	}
 
 	// Bring up dev
-	log.Debugln("Mounting vfs /dev")
+	slog.Debug("Mounting vfs /dev")
 
 	if err := mountMan.Mount("devtmpfs", vfsPoints[0], "devtmpfs", "nosuid", "mode=755"); err != nil {
 		return fmt.Errorf("Failed to mount /dev, reason: %w\n", err)
@@ -269,28 +272,28 @@ func (o *Overlay) MountVFS() error {
 	o.mountedVFS = true
 
 	// Bring up dev/pts
-	log.Debugln("Mounting vfs /dev/pts")
+	slog.Debug("Mounting vfs /dev/pts")
 
 	if err := mountMan.Mount("devpts", vfsPoints[1], "devpts", "gid=5", "mode=620", "nosuid", "noexec"); err != nil {
 		return fmt.Errorf("Failed to mount /dev/pts, reason: %w\n", err)
 	}
 
 	// Bring up proc
-	log.Debugln("Mounting vfs /proc")
+	slog.Debug("Mounting vfs /proc")
 
 	if err := mountMan.Mount("proc", vfsPoints[2], "proc", "nosuid", "noexec"); err != nil {
 		return fmt.Errorf("Failed to mount /proc, reason: %w\n", err)
 	}
 
 	// Bring up sys
-	log.Debugln("Mounting vfs /sys")
+	slog.Debug("Mounting vfs /sys")
 
 	if err := mountMan.Mount("sysfs", vfsPoints[3], "sysfs"); err != nil {
 		return fmt.Errorf("Failed to mount /sys, reason: %w\n", err)
 	}
 
 	// Bring up shm
-	log.Debugln("Mounting vfs /dev/shm")
+	slog.Debug("Mounting vfs /dev/shm")
 
 	if err := mountMan.Mount("tmpfs-shm", vfsPoints[4], "tmpfs"); err != nil {
 		return fmt.Errorf("Failed to mount /dev/shm, reason: %w\n", err)
@@ -304,7 +307,7 @@ func (o *Overlay) MountVFS() error {
 func (o *Overlay) ConfigureNetworking() error {
 	ipCommand := "/sbin/ip link set lo up"
 
-	log.Debugln("Configuring container networking")
+	slog.Debug("Configuring container networking")
 
 	if err := commands.ChrootExec(o.MountPoint, ipCommand); err != nil {
 		return fmt.Errorf("Failed to configure networking, reason: %w\n", err)

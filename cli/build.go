@@ -19,16 +19,15 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
-	log "github.com/DataDrake/waterlog"
-	"github.com/DataDrake/waterlog/format"
-	"github.com/DataDrake/waterlog/level"
 	login "github.com/coreos/go-systemd/v22/login1"
 
 	"github.com/getsolus/solbuild/builder"
+	"github.com/getsolus/solbuild/cli/log"
 )
 
 func init() {
@@ -66,17 +65,17 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	sArgs := s.Args.(*BuildArgs)     //nolint:forcetypeassert // guaranteed by callee.
 
 	if rFlags.Debug {
-		log.SetLevel(level.Debug)
+		log.Level.Set(slog.LevelDebug)
 	}
 
 	if rFlags.NoColor {
-		log.SetFormat(format.Un)
+		log.SetUncoloredLogger()
 
 		builder.DisableColors = true
 	}
 
 	if sFlags.ABIReport {
-		log.Debugln("Not attempting generation of an ABI report")
+		slog.Debug("Not attempting generation of an ABI report")
 
 		builder.DisableABIReport = true
 	}
@@ -90,25 +89,25 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	}
 
 	if len(pkgPath) == 0 {
-		log.Fatalln("No package.yml or pspec.xml file in current directory and no file provided.")
+		log.Panic("No package.yml or pspec.xml file in current directory and no file provided.")
 	}
 
 	if os.Geteuid() != 0 {
-		log.Fatalln("You must be root to run build packages")
+		log.Panic("You must be root to run build packages")
 	}
 	// Initialise the build manager
 	manager, err := builder.NewManager()
 	if err != nil {
 		os.Exit(1)
 	}
-	// Safety first..
+	// Safety first...
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		os.Exit(1)
 	}
 
 	pkg, err := builder.NewPackage(pkgPath)
 	if err != nil {
-		log.Fatalf("Failed to load package: %s\n", err)
+		log.Panic("Failed to load package", "err", err)
 	}
 
 	manager.SetManifestTarget(sFlags.TransitManifest)
@@ -129,13 +128,13 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 		case sFlags.Memory == "" && manager.Config.TmpfsSize != "":
 			manager.SetTmpfs(sFlags.Tmpfs, manager.Config.TmpfsSize)
 		default:
-			log.Fatalln("tmpfs: No memory size specified")
+			log.Panic("tmpfs: No memory size specified")
 		}
 	}
 
 	if sFlags.Memory != "" && !sFlags.Tmpfs {
 		if !manager.Config.EnableTmpfs {
-			log.Fatalln("tmpfs: Memory size specified but tmpfs was not enabled, pass -t to enable tmpfs")
+			slog.Error("tmpfs: Memory size specified but tmpfs was not enabled, pass -t to enable tmpfs")
 		} else {
 			manager.SetTmpfs(manager.Config.EnableTmpfs, sFlags.Memory)
 		}
@@ -144,11 +143,11 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	// Set a inhibitor lock to prevent system from accidentally going down
 	conn, err := login.New()
 	if err != nil {
-		log.Errorln("org.freedesktop.login1: Failed to initialize dbus connection")
+		slog.Error("org.freedesktop.login1: Failed to initialize dbus connection")
 	}
 
 	if !conn.Connected() {
-		log.Errorln("org.freedesktop.login1: Not connected to dbus system bus")
+		slog.Error("org.freedesktop.login1: Not connected to dbus system bus")
 	}
 
 	inhibitMsg := fmt.Sprintf("Build in Progress: %s-%s-%d. Please wait for the build to complete",
@@ -156,14 +155,14 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 
 	fd, err := conn.Inhibit("shutdown:idle:sleep", "solbuild", inhibitMsg, "block")
 	if err != nil {
-		log.Errorln("org.freedesktop.login1: Failed to send inhibitor lock")
+		slog.Error("org.freedesktop.login1: Failed to send inhibitor lock")
 	}
 	// defer release the inhibitor lock
 	defer fd.Close()
 
 	if err := manager.Build(); err != nil {
-		log.Panicf("Failed to build packages: %s\n", err)
+		log.Panic("Failed to build packages", "err", err)
 	}
 
-	log.Infoln("Building succeeded")
+	slog.Info("Building succeeded")
 }
