@@ -32,6 +32,12 @@ func (p *Package) CreateDirs(o *Overlay) error {
 		p.GetWorkDir(o),
 		p.GetSourceDir(o),
 	}
+	if p.Type == PackageTypeYpkg {
+		for _, cache := range Caches {
+			dirs = append(dirs, filepath.Join(o.MountPoint, cache.CacheDir[1:]))
+		}
+	}
+
 	for _, p := range dirs {
 		if err := os.MkdirAll(p, 0o0755); err != nil {
 			return fmt.Errorf("Failed to create required directory %s. Reason: %w\n", p, err)
@@ -44,7 +50,7 @@ func (p *Package) CreateDirs(o *Overlay) error {
 	// maintenance burden.
 	if p.Type == PackageTypeYpkg {
 		for _, cache := range Caches {
-			if err := os.MkdirAll(cache.CacheDir, 0o0755); err != nil {
+			if err := os.MkdirAll(filepath.Join(CacheDirectory, cache.Name), 0o0755); err != nil {
 				return fmt.Errorf("Failed to create cache directory %s for %s, reason: %w\n", cache.CacheDir, cache.Name, err)
 			}
 		}
@@ -87,7 +93,7 @@ func (p *Package) BindSources(o *Overlay) error {
 		}
 
 		// Find the target path in the chroot
-		slog.Debug("Exposing source to container", "target", bindConfig.BindTarget)
+		slog.Debug("Exposing source to container", "source", bindConfig.BindSource, "target", bindConfig.BindTarget)
 
 		if st, err := os.Stat(bindConfig.BindSource); err == nil && st != nil {
 			if st.IsDir() {
@@ -124,10 +130,10 @@ func (p *Package) BindCaches(o *Overlay) error {
 	mountMan := disk.GetMountManager()
 
 	for _, c := range Caches {
-		cacheSource := filepath.Join(CacheDirectory, c.Name, "ypkg")
+		cacheSource := filepath.Join(CacheDirectory, c.Name)
 		cacheDir := filepath.Join(o.MountPoint, c.CacheDir[1:])
 
-		log.Debugf("Exposing %s to build %s\n", c.Name, cacheDir)
+		slog.Debug("Exposing cache to build", "cache", c.Name, "source", cacheSource, "target", cacheDir)
 
 		// Bind mount local ccache into chroot
 		if err := mountMan.BindMount(cacheSource, cacheDir); err != nil {
