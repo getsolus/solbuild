@@ -60,7 +60,6 @@ func (p *Package) CreateDirs(o *Overlay) error {
 			if err := os.Chown(hostCacheDir, BuildUserID, BuildUserGID); err != nil {
 				return fmt.Errorf("Failed to chown cache directory %s in build root, reason: %w", inRootCacheDir, err)
 			}
-
 		}
 	}
 
