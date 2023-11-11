@@ -32,6 +32,8 @@ func (p *Package) CreateDirs(o *Overlay) error {
 		p.GetWorkDir(o),
 		p.GetSourceDir(o),
 	}
+
+	// Add cache directories.
 	if p.Type == PackageTypeYpkg {
 		for _, cache := range Caches {
 			dirs = append(dirs, filepath.Join(o.MountPoint, cache.CacheDir[1:]))
