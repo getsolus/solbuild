@@ -33,28 +33,34 @@ func (p *Package) CreateDirs(o *Overlay) error {
 		p.GetSourceDir(o),
 	}
 
-	// Add cache directories.
-	if p.Type == PackageTypeYpkg {
-		for _, cache := range Caches {
-			dirs = append(dirs, filepath.Join(o.MountPoint, cache.CacheDir[1:]))
-		}
-	}
-
 	for _, p := range dirs {
 		if err := os.MkdirAll(p, 0o0755); err != nil {
-			return fmt.Errorf("Failed to create required directory %s. Reason: %w\n", p, err)
+			return fmt.Errorf("Failed to create required directory %s. Reason: %w", p, err)
 		}
 	}
 
-	// Ensure we have root owned cache directories.
-	//
-	// Currently we are only using build caches for YPKG builds to reduce
-	// maintenance burden.
+	// Create cache directories
 	if p.Type == PackageTypeYpkg {
 		for _, cache := range Caches {
-			if err := os.MkdirAll(filepath.Join(CacheDirectory, cache.Name), 0o0755); err != nil {
-				return fmt.Errorf("Failed to create cache directory %s for %s, reason: %w\n", cache.CacheDir, cache.Name, err)
+			inRootCacheDir := filepath.Join(o.MountPoint, cache.CacheDir[1:])
+			hostCacheDir := filepath.Join(CacheDirectory, cache.Name)
+
+			// Cache directories in build root.
+			if err := os.MkdirAll(inRootCacheDir, 0o0755); err != nil {
+				return fmt.Errorf("Failed to create cache directory %s in build root, reason: %w", inRootCacheDir, err)
 			}
+
+			// Cache directory in host.
+			// Ensure we have root owned cache directories.
+			if err := os.MkdirAll(hostCacheDir, 0o0755); err != nil {
+				return fmt.Errorf("Failed to create cache directory %s for %s, reason: %w", cache.CacheDir, cache.Name, err)
+			}
+
+			// Ensure the build user can write to the cache directories.
+			if err := os.Chown(hostCacheDir, BuildUserID, BuildUserGID); err != nil {
+				return fmt.Errorf("Failed to chown cache directory %s in build root, reason: %w", inRootCacheDir, err)
+			}
+
 		}
 	}
 

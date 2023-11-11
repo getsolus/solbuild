@@ -15,7 +15,17 @@ var (
 		CacheDir: path.Join(BuildUserHome, ".cache", "sccache"),
 	}
 
-	Caches = []Cache{Ccache, Sccache}
+	Bazel = Cache{
+		Name:     "bazel",
+		CacheDir: path.Join(BuildUserHome, ".cache", "bazel"),
+	}
+
+	GoBuild = Cache{
+		Name:     "go-build",
+		CacheDir: path.Join(BuildUserHome, ".cache", "go-build"),
+	}
+
+	Caches = []Cache{Bazel, Ccache, GoBuild, Sccache}
 )
 
 type Cache struct {
