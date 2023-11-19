@@ -51,17 +51,16 @@ const (
 	// PackageCacheDirectory is where we share packages between all builders.
 	PackageCacheDirectory = "/var/lib/solbuild/packages"
 
-	// CcacheDirectory is the system wide ccache directory.
-	CcacheDirectory = "/var/lib/solbuild/ccache/ypkg"
+	// CacheDirectory is where packages' build cache are stored.
+	CacheDirectory = "/var/lib/solbuild/cache"
 
-	// LegacyCcacheDirectory is the root owned ccache directory for pspec.xml.
-	LegacyCcacheDirectory = "/var/lib/solbuild/ccache/legacy"
-
-	// SccacheDirectory is the root owned sccache directory.
-	SccacheDirectory = "/var/lib/solbuild/sccache/ypkg"
-
-	// LegacySccacheDirectory is the root owned ccache directory for pspec.xml.
-	LegacySccacheDirectory = "/var/lib/solbuild/sccache/legacy"
+	// Obsolete cache directories. These are only still specified so that the
+	// `delete-cache -a` subcommand will remove them. In the future they will
+	// be removed.
+	ObsoleteCcacheDirectory        = "/var/lib/solbuild/ccache/ypkg"
+	ObsoleteLegacyCcacheDirectory  = "/var/lib/solbuild/ccache/legacy"
+	ObsoleteSccacheDirectory       = "/var/lib/solbuild/sccache/ypkg"
+	ObsoleteLegacySccacheDirectory = "/var/lib/solbuild/sccache/legacy"
 )
 
 const (
