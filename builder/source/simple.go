@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -133,7 +134,17 @@ func (s *SimpleSource) download(destination string) error {
 		req.SetChecksum(sha256.New(), sum, false)
 	}
 
-	resp := grab.NewClient().Do(req)
+	// Keep go-grab defaults but also disable compression
+	// https://github.com/cavaliergopher/grab/blob/v3.0.1/v3/client.go#L53
+	tr := &http.Transport{
+		DisableCompression: true,
+		Proxy:              http.ProxyFromEnvironment,
+	}
+
+	client := grab.NewClient()
+	client.HTTPClient = &http.Client{Transport: tr}
+
+	resp := client.Do(req)
 
 	// Setup our progress bar
 	pbar := pb.Start64(resp.Size())
