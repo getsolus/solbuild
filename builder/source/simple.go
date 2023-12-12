@@ -134,15 +134,17 @@ func (s *SimpleSource) download(destination string) error {
 		req.SetChecksum(sha256.New(), sum, false)
 	}
 
-	// Keep go-grab defaults but also disable compression
-	// https://github.com/cavaliergopher/grab/blob/v3.0.1/v3/client.go#L53
-	tr := &http.Transport{
-		DisableCompression: true,
-		Proxy:              http.ProxyFromEnvironment,
+	// Create a client with compression disabled.
+	// See: https://github.com/cavaliergopher/grab/blob/v3.0.1/v3/client.go#L53
+	client := &grab.Client{
+		UserAgent: "solbuild",
+		HTTPClient: &http.Client{
+			Transport: &http.Transport{
+				DisableCompression: true,
+				Proxy:              http.ProxyFromEnvironment,
+			},
+		},
 	}
-
-	client := grab.NewClient()
-	client.HTTPClient = &http.Client{Transport: tr}
 
 	resp := client.Do(req)
 
