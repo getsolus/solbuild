@@ -20,11 +20,8 @@ import (
 	"fmt"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
-)
 
-const (
-	// SolbuildVersion is the current public version of solbuild.
-	SolbuildVersion = "1.5.3.0"
+	"github.com/getsolus/solbuild/util"
 )
 
 func init() {
@@ -42,6 +39,6 @@ var Version = cmd.Sub{
 //
 //nolint:forbidigo // the point of this function is to print the version
 func VersionRun(_ *cmd.Root, _ *cmd.Sub) {
-	fmt.Printf("solbuild version %v\n\nCopyright © 2016-2021 Solus Project\n", SolbuildVersion)
+	fmt.Printf("solbuild version %v\n\nCopyright © 2016-2021 Solus Project\n", util.SolbuildVersion)
 	fmt.Println("Licensed under the Apache License, Version 2.0")
 }
