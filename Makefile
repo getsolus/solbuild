@@ -3,7 +3,7 @@ BINNAME := solbuild
 
 .PHONY: build
 build:
-	go build -o bin/$(BINNAME) $(CURDIR)/main.go
+	go build -ldflags "-X github.com/getsolus/solbuild/util.SolbuildVersion=$(VERSION)" -o bin/$(BINNAME) $(CURDIR)/main.go
 
 .PHONY: install
 install:
