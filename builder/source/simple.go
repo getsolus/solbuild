@@ -128,6 +128,9 @@ func (s *SimpleSource) download(destination string) error {
 		return err
 	}
 
+	// Indicate that we will accept any response content-type. Some servers will fail without this (like netfilter.org)
+	req.HTTPRequest.Header.Add("Accept", `*/*`)
+
 	// Ensure the checksum matches
 	if !s.legacy {
 		sum, err := hex.DecodeString(s.validator)
