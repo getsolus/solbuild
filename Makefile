@@ -1,4 +1,4 @@
-VERSION := 1.5.3.0
+VERSION := 1.6.0
 BINNAME := solbuild
 
 .PHONY: build
