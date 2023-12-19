@@ -14,27 +14,6 @@
 // limitations under the License.
 //
 
-package cli
+package util
 
-import (
-	"fmt"
-	"github.com/DataDrake/cli-ng/v2/cmd"
-	"github.com/getsolus/solbuild/util"
-)
-
-func init() {
-	cmd.Register(&Version)
-}
-
-// Version prints out the version of this executable
-var Version = cmd.Sub{
-	Name:  "version",
-	Short: "Print the solbuild version and exit",
-	Run:   VersionRun,
-}
-
-// VersionRun carries out the "version" sub-command
-func VersionRun(_ *cmd.Root, _ *cmd.Sub) {
-	fmt.Printf("solbuild version %v\n\nCopyright © 2016-2021 Solus Project\n", util.SolbuildVersion)
-	fmt.Println("Licensed under the Apache License, Version 2.0")
-}
+var SolbuildVersion = "development"

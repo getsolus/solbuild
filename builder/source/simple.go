@@ -31,6 +31,7 @@ import (
 	"github.com/cheggaaa/pb/v3"
 
 	log "github.com/DataDrake/waterlog"
+	"github.com/getsolus/solbuild/util"
 )
 
 const progressBarTemplate string = `{{with string . "prefix"}}{{.}} {{end}}{{printf "%25s" (counters .) }} {{bar . }} {{printf "%7s" (percent .) }} {{printf "%14s" (speed . "%s/s" "??/s")}}{{with string . "suffix"}} {{.}}{{end}}`
@@ -137,7 +138,7 @@ func (s *SimpleSource) download(destination string) error {
 	// Create a client with compression disabled.
 	// See: https://github.com/cavaliergopher/grab/blob/v3.0.1/v3/client.go#L53
 	client := &grab.Client{
-		UserAgent: "solbuild",
+		UserAgent: "solbuild/" + util.SolbuildVersion,
 		HTTPClient: &http.Client{
 			Transport: &http.Transport{
 				DisableCompression: true,
