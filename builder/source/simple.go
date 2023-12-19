@@ -25,6 +25,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/cavaliergopher/grab/v3"
@@ -120,14 +121,46 @@ func (s *SimpleSource) IsFetched() bool {
 
 // download downloads simple files using go grab
 func (s *SimpleSource) download(destination string) error {
+	// Some web servers (*cough* sourceforge) have strange redirection behavior. It's possible to work around this by clearing the Referer header on every redirect
+	headHttpClient := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			for k := range req.Header {
+				if strings.ToLower(k) == "referer" {
+					delete(req.Header, k)
+				}
+			}
+			return nil
+		},
+		Transport: &http.Transport{
+			DisableCompression: true,
+			Proxy:              http.ProxyFromEnvironment,
+		},
+	}
 
-	req, err := grab.NewRequest(destination, s.URI)
+	// Do a HEAD request, following all redirects until we get the final URL.
+	headResp, err := headHttpClient.Head(s.URI)
+	if err != nil {
+		return err
+	}
+	defer headResp.Body.Close()
+
+	finalURL := headResp.Request.URL.String()
+	if s.URI != finalURL {
+		slog.Info("Source URL redirected", "uri", finalURL)
+	}
+
+	req, err := grab.NewRequest(destination, finalURL)
 	if err != nil {
 		return err
 	}
 
 	// Indicate that we will accept any response content-type. Some servers will fail without this (like netfilter.org)
-	req.HTTPRequest.Header.Add("Accept", `*/*`)
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept#sect1
+	req.HTTPRequest.Header.Add("Accept", "*/*")
+
+	// Request content without modification or compression
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding#identity
+	req.HTTPRequest.Header.Add("Accept-Encoding", "identity")
 
 	// Ensure the checksum matches
 	if !s.legacy {
@@ -141,6 +174,8 @@ func (s *SimpleSource) download(destination string) error {
 	// Create a client with compression disabled.
 	// See: https://github.com/cavaliergopher/grab/blob/v3.0.1/v3/client.go#L53
 	client := &grab.Client{
+		// To be fully compliant with the User-Agent spec we need to include the version
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
 		UserAgent: "solbuild/" + util.SolbuildVersion,
 		HTTPClient: &http.Client{
 			Transport: &http.Transport{
