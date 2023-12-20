@@ -33,6 +33,7 @@ import (
 )
 
 func init() {
+	commands.SetStderr(os.Stdout)
 	cmd.Register(&Init)
 	cmd.Register(&cmd.Help)
 }
