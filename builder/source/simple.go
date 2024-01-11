@@ -146,7 +146,7 @@ func (s *SimpleSource) download(destination string) error {
 
 	finalURL := headResp.Request.URL.String()
 	if s.URI != finalURL {
-		slog.Info("Source URL redirected", "uri", finalURL)
+		log.Infof("Source URL redirected: %s\n", finalURL)
 	}
 
 	req, err := grab.NewRequest(destination, finalURL)
