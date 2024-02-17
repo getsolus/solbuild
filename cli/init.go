@@ -115,7 +115,7 @@ func doInit(manager *builder.Manager) {
 	// Decompress the image
 	slog.Debug("Decompressing backing image", "source", bk.ImagePathXZ, "target", bk.ImagePath)
 
-	if err := commands.ExecStdoutArgsDir(builder.ImagesDir, "unxz", []string{bk.ImagePathXZ}); err != nil {
+	if err := commands.ExecStdoutArgsDir(builder.ImagesDir, "unxz", []string{"-T0", bk.ImagePathXZ}); err != nil {
 		slog.Error("Failed to decompress image", "source", bk.ImagePathXZ, "err", err)
 		panic(err)
 	}
