@@ -192,7 +192,7 @@ func ChrootExec(notif PidNotifier, dir, command string) error {
 	args := []string{dir, "/bin/sh", "-c", command}
 	c := exec.Command("chroot", args...)
 	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
+	c.Stderr = os.Stdout
 	c.Stdin = nil
 	c.Env = ChrootEnvironment
 	c.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
@@ -212,7 +212,7 @@ func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 	args := []string{dir, "/bin/sh", "-c", command}
 	c := exec.Command("chroot", args...)
 	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
+	c.Stderr = os.Stdout
 	c.Stdin = os.Stdin
 	c.Env = ChrootEnvironment
 

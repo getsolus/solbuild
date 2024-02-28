@@ -24,6 +24,10 @@ import (
 	"github.com/getsolus/libosdev/commands"
 )
 
+func init() {
+	commands.SetStderr(os.Stdout)
+}
+
 // Chroot will attempt to spawn a chroot in the overlayfs system.
 func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay) error {
 	slog.Debug("Beginning chroot", "profile", overlay.Back.Name, "version", p.Version,
