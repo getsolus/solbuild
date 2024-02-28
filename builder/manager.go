@@ -187,21 +187,25 @@ func (m *Manager) SetPackage(pkg *Package) error {
 		return ErrProfileNotInstalled
 	}
 
-	// Obtain package history for git builds
-	if pkg.Type == PackageTypeYpkg {
-		repo, err := git.PlainOpenWithOptions(filepath.Dir(pkg.Path),
-			&git.PlainOpenOptions{DetectDotGit: true})
-		if err != nil && !errors.Is(err, git.ErrRepositoryNotExists) {
-			return fmt.Errorf("cannot open Git repository: %w", err)
-		}
+	if m.Config.EnableHistory {
+		slog.Info("History generation enabled")
 
-		if err == nil {
-			if history, err := NewPackageHistory(repo, pkg.Path); err == nil {
-				slog.Debug("Obtained package history")
+		// Obtain package history for git builds
+		if pkg.Type == PackageTypeYpkg {
+			repo, err := git.PlainOpenWithOptions(filepath.Dir(pkg.Path),
+				&git.PlainOpenOptions{DetectDotGit: true})
+			if err != nil && !errors.Is(err, git.ErrRepositoryNotExists) {
+				return fmt.Errorf("cannot open Git repository: %w", err)
+			}
 
-				m.history = history
-			} else {
-				slog.Warn("Failed to obtain package git history", "err", err)
+			if err == nil {
+				if history, err := NewPackageHistory(repo, pkg.Path); err == nil {
+					slog.Debug("Obtained package history")
+
+					m.history = history
+				} else {
+					slog.Warn("Failed to obtain package git history", "err", err)
+				}
 			}
 		}
 	}
