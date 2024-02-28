@@ -190,10 +190,31 @@ func (s *SimpleSource) download(destination string) error {
 			},
 		},
 	}
-
 	resp := client.Do(req)
 
-	// Setup our progress bar
+	// Show our progress bar
+	s.showProgress(resp)
+
+	if err := resp.Err(); err != nil {
+		slog.Error("Error downloading", "uri", s.URI, "err", err)
+
+		return err
+	}
+
+	return nil
+}
+
+func onTTY() bool {
+	s, _ := os.Stdout.Stat()
+
+	return s.Mode()&os.ModeCharDevice > 0
+}
+
+func (s *SimpleSource) showProgress(resp *grab.Response) {
+	if !onTTY() {
+		slog.Info("Downloading source", "uri", s.URI)
+	}
+
 	pbar := pb.Start64(resp.Size())
 	pbar.Set(pb.Bytes, true)
 	pbar.SetTemplateString(progressBarTemplate)
@@ -213,12 +234,7 @@ func (s *SimpleSource) download(destination string) error {
 			// Ensure progressbar completes to 100%
 			pbar.SetCurrent(resp.BytesComplete())
 
-			if err := resp.Err(); err != nil {
-				slog.Error("Error downloading", "uri", s.URI, "err", err)
-				return err
-			}
-
-			return nil
+			return
 		}
 	}
 }
