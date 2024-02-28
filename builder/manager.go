@@ -139,6 +139,8 @@ func (m *Manager) SetProfile(profile string) error {
 	// Passed an empty profile from the CLI flags, so set our default profile
 	// as the one to use.
 	if profile == "" {
+		slog.Info("Using default profile", "name", m.Config.DefaultProfile)
+
 		profile = m.Config.DefaultProfile
 	}
 
