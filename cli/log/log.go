@@ -38,20 +38,20 @@ func setLogger(h slog.Handler) {
 }
 
 func onTTY() bool {
-	s, _ := os.Stdout.Stat()
+	s, _ := os.Stderr.Stat()
 
 	return s.Mode()&os.ModeCharDevice > 0
 }
 
 func SetColoredLogger() {
-	setLogger(powerline.NewHandler(os.Stdout, &powerline.HandlerOptions{
+	setLogger(powerline.NewHandler(os.Stderr, &powerline.HandlerOptions{
 		Level:  &Level,
 		Colors: colors,
 	}))
 }
 
 func SetUncoloredLogger() {
-	setLogger(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+	setLogger(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: &Level,
 	}))
 }
