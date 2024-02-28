@@ -197,6 +197,7 @@ func (s *SimpleSource) download(destination string) error {
 	pbar := pb.Start64(resp.Size())
 	pbar.Set(pb.Bytes, true)
 	pbar.SetTemplateString(progressBarTemplate)
+	pbar.SetWriter(os.Stdout)
 
 	defer pbar.Finish()
 
