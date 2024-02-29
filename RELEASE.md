@@ -1,6 +1,8 @@
+# Solbuild Release Engineering Checklist
+
 Perform the following steps after tagging the Solbuild release in order to verify that it introduces no major regressions:
 
-- Build and install a local update of the solbuild package:
+- Build and install a local update of the solbuild package corresponding to the newly tagged release:
   ```
   gotosoluspkgs
   gotopkg solbuild
@@ -24,7 +26,7 @@ Perform the following steps after tagging the Solbuild release in order to verif
   ```
   sudo solbuild init -du
   ```
-  Verify that this uses the unstable profile.
+  Verify that this uses the unstable profile and shows debug output.
 
 - Initialise Shannon profile:
   ```
@@ -51,7 +53,7 @@ Perform the following steps after tagging the Solbuild release in order to verif
 - Build zlib against unstable and copy to local repo:
   ```
   sudo solbuild build -d
-  sudo cp zlib*.eopkg /var/lib/solbuild/local/
+  sudo cp -v zlib*.eopkg /var/lib/solbuild/local/
   ```
 
 - Index the local repo:
@@ -59,7 +61,7 @@ Perform the following steps after tagging the Solbuild release in order to verif
   sudo solbuild index -d /var/lib/solbuild/local/
   ```
 
-- Build the test set of packages:
+- Build the recommended test set of packages, which exercises problematic SourceForget URIs and git submodule functionality:
   ```
   for p in android-tools giflib glew zsh
   do
