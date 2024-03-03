@@ -72,7 +72,17 @@ func (g *GitSource) submodules() error {
 
 	cmd.Dir = g.ClonePath
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = os.Stdout
+
+	return cmd.Run()
+}
+
+// For some reason git blobless clones create pack files with 600 permissions. These break future operations
+// as those files cannot be read by non-root users. Fix those permissions so things work as they should.
+func (g *GitSource) fixPermissions() error {
+	cmd := exec.Command("bash", "-c", "chmod +r .git/objects/pack/*.promisor")
+
+	cmd.Dir = g.ClonePath
 
 	return cmd.Run()
 }
@@ -81,41 +91,21 @@ func (g *GitSource) submodules() error {
 func clone(uri, path, ref string) error {
 	var cmd *exec.Cmd
 
-	// Check if the reference is a commit
-	if len(ref) == 40 {
-		// Init a new repository at the checkout path
-		initCmd := exec.Command("git", "init", path)
+	// Create a blobless clone without checking out a ref
+	initCmd := exec.Command("git", "clone", "--filter=blob:none", "--no-checkout", uri, path)
+	initCmd.Stdout = os.Stdout
+	initCmd.Stderr = os.Stdout
 
-		if err := initCmd.Run(); err != nil {
-			return err
-		}
-
-		// Set the default remote to the upstream URI
-		addRemoteCmd := exec.Command("git", "remote", "add", "origin", uri)
-		addRemoteCmd.Dir = path
-
-		if err := addRemoteCmd.Run(); err != nil {
-			return err
-		}
-
-		// Shallow fetch the reference we want
-		fetchCmd := exec.Command("git", "fetch", "--depth", "1", "origin", ref)
-		fetchCmd.Dir = path
-
-		if err := fetchCmd.Run(); err != nil {
-			return err
-		}
-
-		// Set the next command to run to checkout the head
-		cmd = exec.Command("git", "checkout", "FETCH_HEAD")
-		cmd.Dir = path
-	} else {
-		// Not a git commit, so shallow clone the repo at the reference
-		cmd = exec.Command("git", "clone", "--depth", "1", "--branch", ref, uri, path)
+	if err := initCmd.Run(); err != nil {
+		return err
 	}
 
+	// Checkout the ref we want
+	cmd = exec.Command("git", "switch", "--discard-changes", "--recurse-submodules", "--detach", ref)
+	cmd.Dir = path
+
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = os.Stdout
 
 	return cmd.Run()
 }
@@ -125,18 +115,8 @@ func clone(uri, path, ref string) error {
 func reset(path, ref string) error {
 	fetchArgs := []string{
 		"fetch",
-		"--depth",
-		"1",
 		"origin",
 	}
-
-	// We have to add the tag keyword if the ref is a tag, otherwise
-	// git won't actually fetch the tag
-	if len(ref) != 40 {
-		fetchArgs = append(fetchArgs, "tag")
-	}
-
-	fetchArgs = append(fetchArgs, ref)
 
 	fetchCmd := exec.Command("git", fetchArgs...)
 	fetchCmd.Dir = path
@@ -145,7 +125,7 @@ func reset(path, ref string) error {
 		return err
 	}
 
-	resetCmd := exec.Command("git", "reset", "--hard", ref)
+	resetCmd := exec.Command("git", "switch", "--discard-changes", "--recurse-submodules", "--detach", ref)
 	resetCmd.Dir = path
 
 	return resetCmd.Run()
@@ -167,7 +147,12 @@ func (g *GitSource) Fetch() error {
 	}
 
 	// Check out submodules
-	return g.submodules()
+	err := g.submodules()
+	if err != nil {
+		return err
+	}
+
+	return g.fixPermissions()
 }
 
 // IsFetched will check if we have the ref available, if not it will return
