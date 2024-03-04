@@ -213,6 +213,8 @@ func onTTY() bool {
 func (s *SimpleSource) showProgress(resp *grab.Response) {
 	if !onTTY() {
 		slog.Info("Downloading source", "uri", s.URI)
+
+		return
 	}
 
 	pbar := pb.Start64(resp.Size())
