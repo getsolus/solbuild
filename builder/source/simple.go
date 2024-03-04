@@ -126,6 +126,10 @@ func (s *SimpleSource) IsFetched() bool {
 
 // download downloads simple files using go grab.
 func (s *SimpleSource) download(destination string) error {
+	if IsFileURI(s.url) {
+		return CopyFile(s.url.Path, destination)
+	}
+
 	// Some web servers (*cough* sourceforge) have strange redirection behavior. It's possible to work around this by clearing the Referer header on every redirect
 	headHttpClient := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
