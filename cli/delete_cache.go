@@ -88,7 +88,7 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 		var totalSize int64
 
 		for _, p := range sizeDirs {
-			size, err := getDirSize(p)
+			size, _ := getDirSize(p)
 			totalSize += size
 
 			if err != nil {
@@ -126,27 +126,59 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	var totalSize int64
 
 	for _, p := range nukeDirs {
-		if !builder.PathExists(p) {
-			continue
-		}
-
-		size, err := getDirSize(p)
-		totalSize += size
-
+		size, err := deleteDir(p)
 		if err != nil {
-			slog.Warn("Couldn't get directory size", "reason", err)
+			slog.Warn(fmt.Sprintf("Failed to remove cache directory '%s', reason: '%s'\n", p, err))
 		}
 
-		slog.Info(fmt.Sprintf("Removing cache directory '%s', of size '%s", p, humanReadableFormat(float64(size))))
+		slog.Info(fmt.Sprintf("Removed cache directory '%s', of size '%s", p, humanReadableFormat(float64(size))))
 
-		if err := os.RemoveAll(p); err != nil {
-			log.Panic("Could not remove cache directory", "reason", err)
-		}
+		totalSize += size
 	}
 
 	if totalSize > 0 {
 		slog.Info(fmt.Sprintf("Total restored size: '%s'\n", humanReadableFormat(float64(totalSize))))
 	}
+}
+
+func deleteDir(path string) (int64, error) {
+	var size int64
+
+	// Return nothing if dir doesn't exist
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		slog.Debug("Directory doesn't exist", "path", path)
+		return 0, nil
+	}
+
+	/* Parallelized file walk */
+	walk.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			size += info.Size()
+		}
+
+		/* Remove if file */
+		if info.Mode().IsRegular() {
+			if err = os.Remove(path); err != nil {
+				return err
+			}
+		}
+
+		return err
+	})
+
+	/* Remove the remaining directories */
+	/* Remove() instead of RemoveAll() would be slightly faster here but the
+	 * dirs would need to be sorted depth-first from the file walk */
+	if err = os.RemoveAll(path); err != nil {
+		slog.Warn("Could not remove directory", "reason", err)
+	}
+
+	return size, err
 }
 
 // getDirSize returns the disk usage of a directory.
