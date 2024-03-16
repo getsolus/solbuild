@@ -21,9 +21,9 @@ import (
 	"log/slog"
 	"math"
 	"os"
-	"path/filepath"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
+	"github.com/MichaelTJones/walk"
 
 	"github.com/getsolus/solbuild/builder"
 	"github.com/getsolus/solbuild/builder/source"
@@ -161,7 +161,7 @@ func getDirSize(path string) (int64, error) {
 	}
 
 	// Walk the dir, get size, add to totalSize
-	err = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+	err = walk.Walk(path, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
