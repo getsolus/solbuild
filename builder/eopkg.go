@@ -279,7 +279,6 @@ func readURIFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	defer fi.Close()
 
 	contents, err := io.ReadAll(fi)
