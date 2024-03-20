@@ -18,12 +18,13 @@ package cli
 
 import (
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"math"
 	"os"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
-	"github.com/MichaelTJones/walk"
+	"github.com/charlievieth/fastwalk"
 
 	"github.com/getsolus/solbuild/builder"
 	"github.com/getsolus/solbuild/builder/source"
@@ -142,7 +143,7 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 }
 
 func deleteDir(path string) (int64, error) {
-	var size int64
+	var totalSize int64
 
 	// Return nothing if dir doesn't exist
 	_, err := os.Stat(path)
@@ -151,20 +152,29 @@ func deleteDir(path string) (int64, error) {
 		return 0, nil
 	}
 
+	walkConf := fastwalk.Config{
+		Follow: false,
+	}
+
 	/* Parallelized file walk */
-	walk.Walk(path, func(path string, info os.FileInfo, err error) error {
+	err = fastwalk.Walk(&walkConf, path, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if !info.IsDir() {
-			size += info.Size()
-		}
+		if !d.IsDir() {
+			file, err2 := d.Info()
+			if err2 != nil {
+				return err2
+			}
 
-		/* Remove if file */
-		if info.Mode().IsRegular() {
-			if err = os.Remove(path); err != nil {
-				return err
+			totalSize += file.Size()
+
+			/* Remove if file */
+			if d.Type().IsRegular() {
+				if err = os.Remove(path); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -174,11 +184,11 @@ func deleteDir(path string) (int64, error) {
 	/* Remove the remaining directories */
 	/* Remove() instead of RemoveAll() would be slightly faster here but the
 	 * dirs would need to be sorted depth-first from the file walk */
-	if err = os.RemoveAll(path); err != nil {
-		slog.Warn("Could not remove directory", "reason", err)
+	if removeErr := os.RemoveAll(path); removeErr != nil {
+		slog.Warn("Could not remove directory", "reason", removeErr)
 	}
 
-	return size, err
+	return totalSize, err
 }
 
 // getDirSize returns the disk usage of a directory.
@@ -192,14 +202,23 @@ func getDirSize(path string) (int64, error) {
 		return 0, nil
 	}
 
+	walkConf := fastwalk.Config{
+		Follow: false,
+	}
+
 	// Walk the dir, get size, add to totalSize
-	err = walk.Walk(path, func(_ string, info os.FileInfo, err error) error {
+	err = fastwalk.Walk(&walkConf, path, func(_ string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if !info.IsDir() {
-			totalSize += info.Size()
+		if !d.IsDir() {
+			file, err2 := d.Info()
+			if err2 != nil {
+				return err2
+			}
+
+			totalSize += file.Size()
 		}
 
 		return err
