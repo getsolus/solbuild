@@ -33,7 +33,6 @@ import (
 	"time"
 
 	"github.com/getsolus/libosdev/commands"
-	"github.com/getsolus/libosdev/disk"
 )
 
 // ChrootEnvironment is the env used by ChrootExec calls.
@@ -46,40 +45,6 @@ func init() {
 // PidNotifier provides a simple way to set the PID on a blocking process.
 type PidNotifier interface {
 	SetActivePID(pid int)
-}
-
-// ActivateRoot will do the hard work of actually bring up the overlayfs
-// system to allow manipulation of the roots for builds, etc.
-func (p *Package) ActivateRoot(overlay *Overlay) error {
-	slog.Debug("Configuring overlay storage")
-
-	// Now mount the overlayfs
-	if err := overlay.Mount(); err != nil {
-		return err
-	}
-
-	// Add build user
-	if p.Type == PackageTypeYpkg {
-		if err := AddBuildUser(overlay.MountPoint); err != nil {
-			return err
-		}
-	}
-
-	slog.Debug("Bringing up virtual filesystems")
-
-	return overlay.MountVFS()
-}
-
-// DeactivateRoot will tear down the previously activated root.
-func (p *Package) DeactivateRoot(overlay *Overlay) {
-	MurderDeathKill(overlay.MountPoint)
-
-	mountMan := disk.GetMountManager()
-
-	commands.SetStdin(nil)
-	overlay.Unmount()
-	slog.Debug("Requesting unmount of all remaining mountpoints")
-	mountMan.UnmountAll()
 }
 
 // MurderDeathKill will find all processes with a root matching the given root

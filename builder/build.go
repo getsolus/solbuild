@@ -513,8 +513,15 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 	}
 
 	// Bring up the root
-	if err := p.ActivateRoot(overlay); err != nil {
+	if err := overlay.ActivateRoot(); err != nil {
 		return err
+	}
+
+	// Add build user if needed
+	if p.Type == PackageTypeYpkg {
+		if err := AddBuildUser(overlay.MountPoint); err != nil {
+			return err
+		}
 	}
 
 	// Ensure source assets are in place
@@ -541,7 +548,7 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 	}
 
 	// Get the repos in place before asserting anything
-	if err := p.ConfigureRepos(notif, overlay, pman, profile); err != nil {
+	if err := pman.ConfigureRepos(notif, overlay, profile); err != nil {
 		return fmt.Errorf("Configuring repositories failed, reason: %w\n", err)
 	}
 

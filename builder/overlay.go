@@ -315,3 +315,30 @@ func (o *Overlay) ConfigureNetworking() error {
 
 	return nil
 }
+
+// DeactivateRoot will tear down the previously activated root.
+func (overlay *Overlay) DeactivateRoot() {
+	MurderDeathKill(overlay.MountPoint)
+
+	mountMan := disk.GetMountManager()
+
+	commands.SetStdin(nil)
+	overlay.Unmount()
+	slog.Debug("Requesting unmount of all remaining mountpoints")
+	mountMan.UnmountAll()
+}
+
+// ActivateRoot will do the hard work of actually bring up the overlayfs
+// system to allow manipulation of the roots for builds, etc.
+func (overlay *Overlay) ActivateRoot() error {
+	slog.Debug("Configuring overlay storage")
+
+	// Now mount the overlayfs
+	if err := overlay.Mount(); err != nil {
+		return err
+	}
+
+	slog.Debug("Bringing up virtual filesystems")
+
+	return overlay.MountVFS()
+}

@@ -300,7 +300,7 @@ func (m *Manager) Cleanup() {
 	}
 
 	if m.pkg != nil {
-		m.pkg.DeactivateRoot(m.overlay)
+		m.overlay.DeactivateRoot()
 	}
 
 	// Deactivation may have started something off, kill them too
