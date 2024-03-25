@@ -229,6 +229,11 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 	return h.WriteXML(histPath)
 }
 
+func (p *Package) calcHashAndDeps() (hash string, deps []string, profile *Profile) {
+	hash = LayersFakeHash
+	return
+}
+
 // PrepYpkg will do the initial leg work of preparing us for a ypkg build.
 func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager, overlay *Overlay, h *PackageHistory) error {
 	slog.Debug("Writing packager file")
