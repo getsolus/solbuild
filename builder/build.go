@@ -229,6 +229,11 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 	return h.WriteXML(histPath)
 }
 
+func (p *Package) calcHashAndDeps() (hash string, deps []string, profile *Profile) {
+	hash = LayersFakeHash
+	return
+}
+
 // PrepYpkg will do the initial leg work of preparing us for a ypkg build.
 func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager, overlay *Overlay, h *PackageHistory) error {
 	slog.Debug("Writing packager file")
@@ -504,8 +509,15 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 	}
 
 	// Bring up the root
-	if err := p.ActivateRoot(overlay); err != nil {
+	if err := overlay.ActivateRoot(); err != nil {
 		return err
+	}
+
+	// Add build user if needed
+	if p.Type == PackageTypeYpkg {
+		if err := AddBuildUser(overlay.MountPoint); err != nil {
+			return err
+		}
 	}
 
 	// Ensure source assets are in place
@@ -532,7 +544,7 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 	}
 
 	// Get the repos in place before asserting anything
-	if err := p.ConfigureRepos(notif, overlay, pman, profile); err != nil {
+	if err := pman.ConfigureRepos(notif, overlay, profile); err != nil {
 		return fmt.Errorf("Configuring repositories failed, reason: %w\n", err)
 	}
 

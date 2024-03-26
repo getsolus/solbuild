@@ -30,8 +30,49 @@ const (
 	BindRepoDir = "/hostRepos"
 )
 
-// addLocalRepo will try to add the repo and bind mount it into the target.
-func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgManager, repo *Repo) error {
+func (e *EopkgManager) addRepos(notif PidNotifier, o *Overlay, repos []*Repo) error {
+	if len(repos) < 1 {
+		return nil
+	}
+
+	for _, repo := range repos {
+		if repo.Local {
+			slog.Debug("Adding local repo to system", "name", repo.Name, "uri", repo.URI)
+
+			if err := e.addLocalRepo(notif, o, repo); err != nil {
+				return fmt.Errorf("Failed to add local repo to system %s, reason: %w\n", repo.Name, err)
+			}
+
+			continue
+		}
+
+		slog.Debug("Adding repo to system", "name", repo.Name, "uri", repo.URI)
+
+		if err := e.AddRepo(repo.Name, repo.URI); err != nil {
+			return fmt.Errorf("Failed to add repo to system %s, reason: %w\n", repo.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (e *EopkgManager) removeRepos(repos []string) error {
+	if len(repos) < 1 {
+		return nil
+	}
+
+	for _, id := range repos {
+		slog.Debug("Removing repository", "repo", id)
+
+		if err := e.RemoveRepo(id); err != nil {
+			return fmt.Errorf("Failed to remove repository %s, reason: %w\n", id, err)
+		}
+	}
+
+	return nil
+}
+
+func (e *EopkgManager) addLocalRepo(notif PidNotifier, o *Overlay, repo *Repo) error {
 	// Ensure the source exists too. Sorta helpful like that.
 	if !PathExists(repo.URI) {
 		return fmt.Errorf("Local repo does not exist")
@@ -75,56 +116,11 @@ func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgM
 	// Now add the local repo
 	chrootLocal := filepath.Join(BindRepoDir, repo.Name, "eopkg-index.xml.xz")
 
-	return pkgManager.AddRepo(repo.Name, chrootLocal)
+	return e.AddRepo(repo.Name, chrootLocal)
 }
 
-func (p *Package) removeRepos(pkgManager *EopkgManager, repos []string) error {
-	if len(repos) < 1 {
-		return nil
-	}
-
-	for _, id := range repos {
-		slog.Debug("Removing repository", "repo", id)
-
-		if err := pkgManager.RemoveRepo(id); err != nil {
-			return fmt.Errorf("Failed to remove repository %s, reason: %w\n", id, err)
-		}
-	}
-
-	return nil
-}
-
-// addRepos will add the specified filtered set of repos to the rootfs.
-func (p *Package) addRepos(notif PidNotifier, o *Overlay, pkgManager *EopkgManager, repos []*Repo) error {
-	if len(repos) < 1 {
-		return nil
-	}
-
-	for _, repo := range repos {
-		if repo.Local {
-			slog.Debug("Adding local repo to system", "name", repo.Name, "uri", repo.URI)
-
-			if err := p.addLocalRepo(notif, o, pkgManager, repo); err != nil {
-				return fmt.Errorf("Failed to add local repo to system %s, reason: %w\n", repo.Name, err)
-			}
-
-			continue
-		}
-
-		slog.Debug("Adding repo to system", "name", repo.Name, "uri", repo.URI)
-
-		if err := pkgManager.AddRepo(repo.Name, repo.URI); err != nil {
-			return fmt.Errorf("Failed to add repo to system %s, reason: %w\n", repo.Name, err)
-		}
-	}
-
-	return nil
-}
-
-// ConfigureRepos will attempt to configure the repos according to the configuration
-// of the manager.
-func (p *Package) ConfigureRepos(notif PidNotifier, o *Overlay, pkgManager *EopkgManager, profile *Profile) error {
-	repos, err := pkgManager.GetRepos()
+func (e *EopkgManager) ConfigureRepos(notif PidNotifier, o *Overlay, profile *Profile) error {
+	repos, err := e.GetRepos()
 	if err != nil {
 		return err
 	}
@@ -140,7 +136,7 @@ func (p *Package) ConfigureRepos(notif PidNotifier, o *Overlay, pkgManager *Eopk
 		removals = append(removals, profile.RemoveRepos...)
 	}
 
-	if err := p.removeRepos(pkgManager, removals); err != nil {
+	if err := e.removeRepos(removals); err != nil {
 		return err
 	}
 
@@ -156,5 +152,5 @@ func (p *Package) ConfigureRepos(notif PidNotifier, o *Overlay, pkgManager *Eopk
 		}
 	}
 
-	return p.addRepos(notif, o, pkgManager, addRepos)
+	return e.addRepos(notif, o, addRepos)
 }
