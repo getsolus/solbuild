@@ -53,4 +53,7 @@ release:
 
 .PHONY: clean
 clean:
-	rm -rf $(CURDIR)/bin
+	rm -rvf $(CURDIR)/bin
+	rm -rvf $(CURDIR)/*.eopkg
+	rm -rvf $(CURDIR)/pspec_x86_64.xml
+	rm -rvf $(CURDIR)/abi*

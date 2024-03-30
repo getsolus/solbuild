@@ -38,6 +38,7 @@ type Overlay struct {
 	BaseDir    string // BaseDir is the base directory containing the root
 	WorkDir    string // WorkDir is the overlayfs workdir lock
 	UpperDir   string // UpperDir is where real inode changes happen (tmp)
+	LayerDir   string
 	ImgDir     string // Where the profile is mounted (ro)
 	MountPoint string // The actual mount point for the union'd directories
 	LockPath   string // Path to the lockfile for this overlay
@@ -167,12 +168,18 @@ func (o *Overlay) Mount() error {
 	o.mountedImg = true
 
 	// Now mount the overlayfs
-	slog.Debug("Mounting overlayfs", "upper", o.UpperDir, "lower", o.ImgDir,
+	var lowerDir string
+	if len(o.LayerDir) == 0 {
+		lowerDir = o.ImgDir
+	} else {
+		lowerDir = o.LayerDir + ":" + o.ImgDir
+	}
+	slog.Debug("Mounting overlayfs", "upper", o.UpperDir, "lower", lowerDir,
 		"workdir", o.WorkDir, "target", o.MountPoint)
 
 	// Mounting overlayfs..
 	err := mountMan.Mount("overlay", o.MountPoint, "overlay",
-		fmt.Sprintf("lowerdir=%s", o.ImgDir),
+		fmt.Sprintf("lowerdir=%s", lowerDir),
 		fmt.Sprintf("upperdir=%s", o.UpperDir),
 		fmt.Sprintf("workdir=%s", o.WorkDir))
 	// Check non-fatal..

@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -352,4 +353,26 @@ func ValidMemSize(s string) bool {
 	slog.Error(fmt.Sprintf("Invalid Memory Size: %s doesn't end in a valid memory unit, e.g. G\n", s))
 
 	return false
+}
+
+func hashFileBytes(path string) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return nil, err
+	}
+	return h.Sum(nil), nil
+}
+
+func hashFile(path string) (string, error) {
+	bytes, err := hashFileBytes(path)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", bytes), nil
 }
