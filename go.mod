@@ -16,6 +16,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+require github.com/klauspost/cpuid/v2 v2.0.12 // indirect
+
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
@@ -39,6 +41,7 @@ require (
 	github.com/skeema/knownhosts v1.2.2 // indirect
 	github.com/solus-project/libosdev v0.0.0-20171113084438-39032fc50772 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
+	github.com/zeebo/blake3 v0.2.3
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.22.0 // indirect

@@ -1,34 +1,69 @@
 package builder
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"path/filepath"
 	"strings"
+
+	"github.com/zeebo/blake3"
 )
 
 type Layer struct {
-	hash    string
 	deps    []string
 	profile *Profile
 	back    *BackingImage
 }
 
-func (l *Layer) BasePath() string {
-	return filepath.Join(LayersDir, l.hash)
+func (l Layer) MarshalJSON() ([]byte, error) {
+	var imageHash string
+	var err error
+	if PathExists(l.back.ImagePath) {
+		if imageHash, err = hashFile(l.back.ImagePath); err != nil {
+			return nil, err
+		}
+		// } else if PathExists(l.back.ImagePath) {
+		// 	if imageHash, err = hashFile(l.back.ImagePath); err != nil {
+		// 		return
+		// 	}
+	} else {
+		return nil, fmt.Errorf("Backing image doens't exist at %s", l.back.ImagePath)
+	}
+
+	return json.Marshal(struct {
+		Deps      []string
+		ImageHash string
+	}{Deps: l.deps, ImageHash: imageHash})
 }
 
-func (l *Layer) RequestOverlay(notif PidNotifier, pman *EopkgManager) (err error, ovly *Overlay) {
-	if PathExists(filepath.Join(l.BasePath(), "content")) {
-		return l.Create(notif, pman)
+func (l *Layer) Hash() string {
+	jsonBytes, err := json.Marshal(l)
+	if err != nil {
+		return LayersFakeHash
+	} else {
+		hashBytes := blake3.Sum256(jsonBytes)
+		return base64.StdEncoding.EncodeToString(hashBytes[:])
+	}
+}
+
+func (l *Layer) BasePath() string {
+	return filepath.Join(LayersDir, l.Hash())
+}
+
+func (l *Layer) RequestOverlay(notif PidNotifier) (contentPath string, err error) {
+	contentPath = filepath.Join(l.BasePath(), "content")
+	if !PathExists(contentPath) || l.Hash() == LayersFakeHash {
+		return l.Create(notif)
 	} else {
 		return
 	}
 }
 
-func (l *Layer) Create(notif PidNotifier, pman *EopkgManager) (err error, ovly *Overlay) {
+func (l *Layer) Create(notif PidNotifier) (contentPath string, err error) {
 	basePath := l.BasePath()
-	contentPath := filepath.Join(basePath, "content")
+	contentPath = filepath.Join(basePath, "content")
 
 	depsOverlay := Overlay{
 		Back:           l.back,
@@ -62,6 +97,8 @@ func (l *Layer) Create(notif PidNotifier, pman *EopkgManager) (err error, ovly *
 		return
 	}
 	defer depsOverlay.DeactivateRoot()
+
+	pman := NewEopkgManager(notif, depsOverlay.MountPoint)
 
 	// Init pman
 	if err = pman.Init(); err != nil {
