@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -97,7 +98,7 @@ func NewPackageUpdate(commit *object.Commit, objectID string) *PackageUpdate {
 		Commit:      commit.Hash,
 		Author:      signature.Name,
 		AuthorEmail: signature.Email,
-		Body:        commit.Message,
+		Body:        toASCII(commit.Message),
 		Time:        signature.When,
 		ObjectID:    objectID,
 	}
@@ -110,6 +111,20 @@ func NewPackageUpdate(commit *object.Commit, objectID string) *PackageUpdate {
 	}
 
 	return update
+}
+
+func toASCII(s string) string {
+	var enc string
+
+	for _, r := range s {
+		if r > 127 {
+			enc += strconv.QuoteRuneToASCII(r)
+		} else {
+			enc += string(r)
+		}
+	}
+
+	return enc
 }
 
 // CatGitBlob will return the contents of the given entry.
