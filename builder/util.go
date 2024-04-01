@@ -17,6 +17,7 @@
 package builder
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -24,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -223,6 +225,23 @@ func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 	notif.SetActivePID(c.Process.Pid)
 
 	return c.Wait()
+}
+
+func StartSccache(dir string) {
+	var buf bytes.Buffer
+
+	c := exec.Command("chroot", dir, "/bin/su", BuildUser, "-c", "sccache --start-server")
+	c.Stdout = &buf
+	c.Stderr = &buf
+	c.Env = slices.Clone(ChrootEnvironment)
+	c.Env = append(c.Env, "SCCACHE_IDLE_TIMEOUT=0")
+	c.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+
+	slog.Debug("Starting sccache server")
+
+	if err := c.Run(); err != nil {
+		slog.Warn("Unable to start sccache server", "err", err, "output", buf.String())
+	}
 }
 
 // AddBuildUser will attempt to add the solbuild user & group if they've not

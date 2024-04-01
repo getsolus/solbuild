@@ -335,6 +335,11 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 		cmd += fmt.Sprintf(" -t %v", h.GetLastVersionTimestamp())
 	}
 
+	if p.CanCCache {
+		// Start an sccache server to work around #87
+		StartSccache(overlay.MountPoint)
+	}
+
 	slog.Info("Now starting build", "package", p.Name)
 
 	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
