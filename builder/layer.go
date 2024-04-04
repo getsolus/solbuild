@@ -62,8 +62,10 @@ func (l *Layer) BasePath() string {
 func (l *Layer) RequestOverlay(notif PidNotifier) (contentPath string, err error) {
 	contentPath = filepath.Join(l.BasePath(), "content")
 	if !PathExists(contentPath) || l.Hash() == LayersFakeHash {
+		slog.Info("Creating layer", "hash", l.Hash())
 		return l.Create(notif)
 	} else {
+		slog.Info("Reusing layer", "hash", l.Hash())
 		return
 	}
 }
@@ -76,7 +78,6 @@ func (l *Layer) RemoveIfNotCreated() {
 }
 
 func (l *Layer) Create(notif PidNotifier) (contentPath string, err error) {
-	slog.Info("Creating layer", "hash", l.Hash())
 	basePath := l.BasePath()
 	contentPath = filepath.Join(basePath, "content")
 
