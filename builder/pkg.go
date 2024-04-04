@@ -63,6 +63,7 @@ type Package struct {
 	Sources    []source.Source // Each package has 0 or more sources that we fetch
 	CanNetwork bool            // Only applicable to ypkg builds
 	CanCCache  bool            // Flag to enable (s)ccache
+	Deps       []string        // Build-time dependencies
 }
 
 // YmlPackage is a parsed ypkg build file.
@@ -72,9 +73,9 @@ type YmlPackage struct {
 	Release    int                 `yaml:"release"`
 	Networking bool                `yaml:"networking"` // If set to false (default) we disable networking in the build
 	Source     []map[string]string `yaml:"source"`
-
-	// Disable (s)ccache for this build.
-	CCache bool `yaml:"ccache"`
+	CCache     bool                `yaml:"ccache"` // Disable (s)ccache for this build.
+	BuildDeps  []string            `yaml:"builddeps"`
+	CheckDeps  []string            `yaml:"checkdeps"`
 }
 
 // XMLUpdate represents an update in the package history.
@@ -225,6 +226,7 @@ func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 		Type:       PackageTypeYpkg,
 		CanNetwork: ypkg.Networking,
 		CanCCache:  ypkg.CCache,
+		Deps:       append(ypkg.BuildDeps, ypkg.CheckDeps...),
 	}
 
 	for _, row := range ypkg.Source {
