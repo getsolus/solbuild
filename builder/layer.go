@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -12,16 +13,18 @@ import (
 )
 
 type Layer struct {
-	deps    []string
+	deps    []Dep
 	profile *Profile
 	back    *BackingImage
+	created bool
+	hash    string
 }
 
 func (l Layer) MarshalJSON() ([]byte, error) {
 	var imageHash string
 	var err error
 	if PathExists(l.back.ImagePath) {
-		if imageHash, err = hashFile(l.back.ImagePath); err != nil {
+		if imageHash, err = xxh3128HashFile(l.back.ImagePath); err != nil {
 			return nil, err
 		}
 		// } else if PathExists(l.back.ImagePath) {
@@ -33,19 +36,23 @@ func (l Layer) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(struct {
-		Deps      []string
+		Deps      []Dep `json:"deps"`
 		ImageHash string
 	}{Deps: l.deps, ImageHash: imageHash})
 }
 
 func (l *Layer) Hash() string {
-	jsonBytes, err := json.Marshal(l)
-	if err != nil {
-		return LayersFakeHash
-	} else {
-		hashBytes := blake3.Sum256(jsonBytes)
-		return base64.StdEncoding.EncodeToString(hashBytes[:])
+	if l.hash == "" {
+		jsonBytes, err := json.Marshal(l)
+		if err != nil {
+			l.hash = LayersFakeHash
+		} else {
+			hashBytes := blake3.Sum256(jsonBytes)
+			l.hash = base64.StdEncoding.EncodeToString(hashBytes[:])
+		}
 	}
+	return l.hash
+
 }
 
 func (l *Layer) BasePath() string {
@@ -61,7 +68,15 @@ func (l *Layer) RequestOverlay(notif PidNotifier) (contentPath string, err error
 	}
 }
 
+func (l *Layer) RemoveIfNotCreated() {
+	slog.Debug("Layer not fully created, removing...", "path", l.BasePath())
+	if !l.created {
+		os.RemoveAll(l.BasePath())
+	}
+}
+
 func (l *Layer) Create(notif PidNotifier) (contentPath string, err error) {
+	slog.Info("Creating layer", "hash", l.Hash())
 	basePath := l.BasePath()
 	contentPath = filepath.Join(basePath, "content")
 
@@ -136,7 +151,12 @@ func (l *Layer) Create(notif PidNotifier) (contentPath string, err error) {
 	}
 
 	// Install our dependencies
-	cmd := fmt.Sprintf("eopkg it -y %s", strings.Join(l.deps, " "))
+	pkgs := make([]string, len(l.deps))
+	for idx, dep := range l.deps {
+		pkgs[idx] = dep.Name
+	}
+	slog.Debug("Installing dependencies", "size", len(pkgs), "pkgs", pkgs)
+	cmd := fmt.Sprintf("eopkg it -y %s", strings.Join(pkgs, " "))
 	if DisableColors {
 		cmd += " -n"
 	}

@@ -229,12 +229,9 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 	return h.WriteXML(histPath)
 }
 
-func (p *Package) calcDeps(profile *Profile) (deps []string) {
+func (p *Package) calcDeps(resolver *Resolver) ([]Dep, error) {
 	// hash = LayersFakeHash
-	deps = append(deps, "rust")
-	deps = append(deps, "cargo")
-	deps = append(deps, "llvm")
-	return
+	return resolver.Query(p.Deps, true, true)
 }
 
 // PrepYpkg will do the initial leg work of preparing us for a ypkg build.
@@ -500,7 +497,7 @@ func (p *Package) CollectAssets(overlay *Overlay, usr *UserInfo, manifestTarget 
 }
 
 // Build will attempt to build the package in the overlayfs system.
-func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Profile, pman *EopkgManager, overlay *Overlay, manifestTarget string) error {
+func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Profile, pman *EopkgManager, overlay *Overlay, resolver *Resolver, manifestTarget string) error {
 	slog.Debug("Building package", "name", p.Name, "version", p.Version, "release", p.Release, "type", p.Type,
 		"profile", overlay.Back.Name)
 
@@ -517,7 +514,11 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 
 	// Set up layers caching, only for YPKG
 	if p.Type == PackageTypeYpkg {
-		deps := p.calcDeps(profile)
+		deps, err := p.calcDeps(resolver)
+		if err != nil {
+			return fmt.Errorf("Failed to calculate dependencies: %w", err)
+		}
+
 		layer := Layer{
 			deps:    deps,
 			profile: profile,
@@ -529,6 +530,7 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 			return err
 		}
 		overlay.LayerDir = contentPath
+		slog.Info("Using layer", "hash", layer.Hash())
 	} else {
 		return errors.New("Under testing of layers feature, XML build is not enabled yet.")
 	}

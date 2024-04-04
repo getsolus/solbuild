@@ -9,9 +9,11 @@ require (
 	github.com/charlievieth/fastwalk v1.0.9
 	github.com/cheggaaa/pb/v3 v3.1.5
 	github.com/coreos/go-systemd/v22 v22.5.0
+	github.com/getsolus/libeopkg v0.1.1-0.20240404173503-db4343f6b8f8
 	github.com/getsolus/libosdev v0.0.0-20181023041421-9ab0f4b463fd
 	github.com/go-git/go-billy/v5 v5.6.1
 	github.com/go-git/go-git/v5 v5.13.1
+	github.com/ulikunitz/xz v0.5.12
 	gitlab.com/slxh/go/powerline v0.1.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1

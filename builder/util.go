@@ -34,6 +34,7 @@ import (
 	"time"
 
 	"github.com/getsolus/libosdev/commands"
+	"github.com/zeebo/blake3"
 )
 
 // ChrootEnvironment is the env used by ChrootExec calls.
@@ -362,7 +363,7 @@ func hashFileBytes(path string) ([]byte, error) {
 	}
 	defer f.Close()
 
-	h := sha256.New()
+	h := blake3.New()
 	if _, err := io.Copy(h, f); err != nil {
 		return nil, err
 	}
@@ -375,4 +376,14 @@ func hashFile(path string) (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%x", bytes), nil
+}
+
+func xxh3128HashFile(path string) (string, error) {
+	cmd := exec.Command("xxh128sum", path)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("Failed to run xxh128sum %s, reason: %w", path, err)
+	}
+	return strings.Split(string(output), " ")[0], nil
 }

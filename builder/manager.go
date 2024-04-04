@@ -17,19 +17,25 @@
 package builder
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/getsolus/libeopkg/index"
 	"github.com/getsolus/libosdev/disk"
 	"github.com/go-git/go-git/v5"
+	"github.com/ulikunitz/xz"
 
 	"github.com/getsolus/solbuild/cli/log"
 )
@@ -72,6 +78,7 @@ type Manager struct {
 	pkgManager *EopkgManager // Package manager, if any
 	lock       *sync.Mutex   // Lock on all operations to prevent.. damage.
 	profile    *Profile      // The profile we've been requested to use
+	resolver   *Resolver
 
 	lockfile *LockFile // We track the global lock for each operation
 	didStart bool      // Whether we got anything done.
@@ -394,7 +401,10 @@ func (m *Manager) Build() error {
 		return err
 	}
 
-	return m.pkg.Build(m, m.history, m.GetProfile(), m.pkgManager, m.overlay, m.manifestTarget)
+	m.InitResolver()
+	slog.Debug("Successfully initialized resolver")
+
+	return m.pkg.Build(m, m.history, m.GetProfile(), m.pkgManager, m.overlay, m.resolver, m.manifestTarget)
 }
 
 // Chroot will enter the build environment to allow users to introspect it.
@@ -497,4 +507,93 @@ func (m *Manager) SetTmpfs(enable bool, size string) {
 		m.Config.EnableTmpfs = enable
 		m.Config.TmpfsSize = strings.TrimSpace(size)
 	}
+}
+
+func (m *Manager) InitResolver() error {
+	m.resolver = NewResolver()
+
+	if m.profile == nil {
+		return errors.New("Profile not initialized!")
+	}
+
+	profile := m.profile
+	/// nameToUrl := make(map[string]string)
+	repos := []string{}
+
+	if strings.Contains(profile.Image, "unstable") {
+		// nameToUrl["Solus"] = "https://cdn.getsol.us/repo/unstable/eopkg-index.xml.xz"
+		repos = append(repos, "https://cdn.getsol.us/repo/unstable/eopkg-index.xml.xz")
+		// repos = append(repos, "https://packages.getsol.us/unstable/eopkg-index.xml.xz")
+	} else if strings.Contains(profile.Image, "stable") {
+		// nameToUrl["Solus"] = "https://cdn.getsol.us/repo/shannon/eopkg-index.xml.xz"
+		repos = append(repos, "https://cdn.getsol.us/repo/shannon/eopkg-index.xml.xz")
+	} else {
+		slog.Warn("Unrecognized image name, not adding default repo", "image", profile.Image)
+	}
+
+	// Realistically, remove can only be * or Solus
+	// for _, remove := range profile.RemoveRepos {
+	// 	if remove == "*" {
+	// 		repos = []string{}
+	// 		continue
+	// 	}
+
+	// 	if idx := slices.Index(repos, remove); idx != -1 {
+	// 		repos = slices.Delete(repos, idx, idx+1)
+	// 	} else {
+	// 		slog.Warn("Cannot remove noexistent repo", "name", remove)
+	// 	}
+	// }
+	if len(profile.RemoveRepos) != 0 {
+		repos = []string{}
+		if len(profile.RemoveRepos) > 1 {
+			slog.Warn("Unexpectedly requested removing of more than 1 repo", "removes", profile.RemoveRepos)
+		}
+	}
+
+	for _, add := range profile.AddRepos {
+		if repo := profile.Repos[add]; repo != nil {
+			repos = append(repos, repo.URI)
+		} else {
+			slog.Warn("Cannot add nonexistent repo", "name", add)
+		}
+	}
+
+	for _, repo := range repos {
+		slog.Debug("Fetching repo", "url", repo)
+
+		var r io.Reader
+		ext := path.Ext(repo)
+		resp, err := http.Get(repo)
+		if err != nil {
+			// slog.Error("Failed to fetch", "url", repo, "error", err)
+			return fmt.Errorf("Failed to fetch %s: %w", repo, err)
+		}
+		slog.Debug("Fetched")
+
+		if ext == ".xz" {
+			// slog.Debug("Decoding .xz")
+			if r, err = xz.NewReader(resp.Body); err != nil {
+				// slog.Error("Failed to init xz reader", "error", err)
+				return fmt.Errorf("Failed to init xz reader for %s: %w", repo, err)
+			}
+		} else if ext == ".xml" {
+			r = resp.Body
+		} else {
+			// slog.Error("Unrecognized repo url extension", "url", repo, "ext", ext)
+			return fmt.Errorf("Unrecognized repo url extension %s for %s", ext, repo)
+		}
+
+		dec := xml.NewDecoder(r)
+		var i index.Index
+		if err := dec.Decode(&i); err != nil {
+			// slog.Error("Failed to decode index", "error", err)
+			return fmt.Errorf("Failed to decode index for %s: %w", repo, err)
+		}
+
+		m.resolver.AddIndex(&i)
+		slog.Info("Parsed and added repo to resolver", "url", repo)
+	}
+
+	return nil
 }
