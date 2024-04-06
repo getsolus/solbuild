@@ -51,7 +51,7 @@ func (r *Resolver) AddIndex(i *index.Index) {
 	}
 }
 
-func (r *Resolver) Query(pkgs []string, withBase bool, withDevel bool) (res []Dep, err error) {
+func (r *Resolver) Query(pkgs []string, withBase bool, withDevel bool, emul32 bool) (res []Dep, err error) {
 	visited := make(map[string]bool)
 
 	var dfs func(name string) error
@@ -72,11 +72,17 @@ func (r *Resolver) Query(pkgs []string, withBase bool, withDevel bool) (res []De
 		pkg := r.nameToPkg[name]
 		res = append(res, Dep{Name: pkg.Name, Hash: pkg.PackageHash})
 		for _, dep := range r.nameToPkg[name].RuntimeDependencies {
-			err = dfs(dep.Name)
-			if err != nil {
+			if err = dfs(dep.Name); err != nil {
 				return err
 			}
 		}
+
+		// // Take 32-bit packages into account as well
+		// if bit32pkg, ok := r.nameToPkg[name+"-32bit"]; ok {
+		// 	if err = dfs(bit32pkg.Name); err != nil {
+		// 		return err
+		// 	}
+		// }
 
 		return nil
 	}
@@ -88,6 +94,12 @@ func (r *Resolver) Query(pkgs []string, withBase bool, withDevel bool) (res []De
 			} else if withDevel && pkg.PartOf == "system.devel" {
 				dfs(pkg.Name)
 			}
+		}
+	}
+
+	if emul32 {
+		for _, pkg := range []string{"glibc-32bit-devel", "libgcc-32bit", "libstdc++-32bit"} {
+			dfs(pkg)
 		}
 	}
 
