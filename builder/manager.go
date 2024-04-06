@@ -407,6 +407,7 @@ func (m *Manager) Build() error {
 	slog.Debug("Successfully initialized resolver")
 
 	return m.pkg.Build(m, m.history, m.GetProfile(), m.pkgManager, m.overlay, m.resolver, m.manifestTarget)
+	// TODO: should we put layer here, so we can output the hash later?
 }
 
 // Chroot will enter the build environment to allow users to introspect it.

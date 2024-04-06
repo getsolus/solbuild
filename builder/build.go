@@ -231,7 +231,7 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 
 func (p *Package) calcDeps(resolver *Resolver) ([]Dep, error) {
 	// hash = LayersFakeHash
-	return resolver.Query(p.Deps, true, true)
+	return resolver.Query(p.Deps, true, true, p.Emul32)
 }
 
 // PrepYpkg will do the initial leg work of preparing us for a ypkg build.
@@ -518,6 +518,7 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 		if err != nil {
 			return fmt.Errorf("Failed to calculate dependencies: %w", err)
 		}
+		slog.Debug("Calculated dependencies", "deps", deps)
 
 		layer := Layer{
 			deps:    deps,
@@ -530,7 +531,6 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 			return err
 		}
 		overlay.LayerDir = contentPath
-		slog.Info("Using layer", "hash", layer.Hash())
 	} else {
 		return errors.New("Under testing of layers feature, XML build is not enabled yet.")
 	}

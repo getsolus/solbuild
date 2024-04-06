@@ -64,6 +64,7 @@ type Package struct {
 	CanNetwork bool            // Only applicable to ypkg builds
 	CanCCache  bool            // Flag to enable (s)ccache
 	Deps       []string        // Build-time dependencies
+	Emul32     bool            // Whether we are building emul32 packages
 }
 
 // YmlPackage is a parsed ypkg build file.
@@ -76,6 +77,7 @@ type YmlPackage struct {
 	CCache     bool                `yaml:"ccache"` // Disable (s)ccache for this build.
 	BuildDeps  []string            `yaml:"builddeps"`
 	CheckDeps  []string            `yaml:"checkdeps"`
+	Emul32     bool                `yaml:"emul32"`
 }
 
 // XMLUpdate represents an update in the package history.
@@ -227,6 +229,7 @@ func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 		CanNetwork: ypkg.Networking,
 		CanCCache:  ypkg.CCache,
 		Deps:       append(ypkg.BuildDeps, ypkg.CheckDeps...),
+		Emul32:     ypkg.Emul32,
 	}
 
 	for _, row := range ypkg.Source {
