@@ -231,7 +231,11 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 
 func (p *Package) calcDeps(resolver *Resolver) ([]Dep, error) {
 	// hash = LayersFakeHash
-	return resolver.Query(p.Deps, true, true, p.Emul32)
+	if p.HasGitSource() {
+		return resolver.Query(p.Deps, true, true, p.Emul32, []string{"git"})
+	} else {
+		return resolver.Query(p.Deps, true, true, p.Emul32, []string{})
+	}
 }
 
 // PrepYpkg will do the initial leg work of preparing us for a ypkg build.

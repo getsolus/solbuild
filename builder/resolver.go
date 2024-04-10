@@ -51,7 +51,7 @@ func (r *Resolver) AddIndex(i *index.Index) {
 	}
 }
 
-func (r *Resolver) Query(pkgs []string, withBase bool, withDevel bool, emul32 bool) (res []Dep, err error) {
+func (r *Resolver) Query(pkgs []string, withBase bool, withDevel bool, emul32 bool, extras []string) (res []Dep, err error) {
 	visited := make(map[string]bool)
 
 	var dfs func(name string) error
@@ -104,6 +104,13 @@ func (r *Resolver) Query(pkgs []string, withBase bool, withDevel bool, emul32 bo
 	}
 
 	for _, pkg := range pkgs {
+		err = dfs(pkg)
+		if err != nil {
+			return
+		}
+	}
+
+	for _, pkg := range extras {
 		err = dfs(pkg)
 		if err != nil {
 			return
