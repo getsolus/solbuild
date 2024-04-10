@@ -257,3 +257,12 @@ func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 
 	return ret, nil
 }
+
+func (p *Package) HasGitSource() bool {
+	for _, source := range p.Sources {
+		if source.IsGit() {
+			return true
+		}
+	}
+	return false
+}
