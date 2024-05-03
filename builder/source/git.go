@@ -115,6 +115,7 @@ func clone(uri, path, ref string) error {
 func reset(path, ref string) error {
 	fetchArgs := []string{
 		"fetch",
+		"--tags",
 		"origin",
 	}
 
