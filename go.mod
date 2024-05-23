@@ -3,7 +3,7 @@ module github.com/getsolus/solbuild
 go 1.21.6
 
 require (
-	github.com/BurntSushi/toml v1.3.2
+	github.com/BurntSushi/toml v1.4.0
 	github.com/DataDrake/cli-ng/v2 v2.0.2
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/cheggaaa/pb/v3 v3.1.5
