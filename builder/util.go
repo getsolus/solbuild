@@ -269,6 +269,14 @@ func AddBuildUser(rootfs string) error {
 		return fmt.Errorf("Failed to add build user to system, reason: %w\n", err)
 	}
 
+	if err := commands.AddUserSubUserRange(rootfs, BuildUser, 100000, 65536); err != nil {
+		return fmt.Errorf("Failed to write /etc/subuid file, reason: %w\n", err)
+	}
+
+	if err := commands.AddUserSubGroupRange(rootfs, BuildUser, 100000, 65536); err != nil {
+		return fmt.Errorf("Failed to write /etc/subgid file, reason: %w\n", err)
+	}
+
 	return nil
 }
 
