@@ -229,7 +229,7 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 	return h.WriteXML(histPath)
 }
 
-func (p *Package) calcDeps(resolver *Resolver) ([]Dep, error) {
+func (p *Package) CalcDeps(resolver *Resolver) ([]Dep, error) {
 	// hash = LayersFakeHash
 	extras := []string{}
 
@@ -527,7 +527,7 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 
 	// Set up layers caching, only for YPKG
 	if p.Type == PackageTypeYpkg {
-		deps, err := p.calcDeps(resolver)
+		deps, err := p.CalcDeps(resolver)
 		if err != nil {
 			return fmt.Errorf("Failed to calculate dependencies: %w", err)
 		}

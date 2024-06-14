@@ -78,6 +78,7 @@ type Manager struct {
 	pkgManager *EopkgManager // Package manager, if any
 	lock       *sync.Mutex   // Lock on all operations to prevent.. damage.
 	profile    *Profile      // The profile we've been requested to use
+	layer      *Layer
 	resolver   *Resolver
 
 	lockfile *LockFile // We track the global lock for each operation
@@ -318,6 +319,11 @@ func (m *Manager) Cleanup() {
 	// Unmount anything we may have mounted
 	disk.GetMountManager().UnmountAll()
 
+	// Remove the layer if it's unfinished
+	if m.layer != nil {
+		m.layer.RemoveIfNotCreated()
+	}
+
 	// Finally clean out the lock files
 	if m.lockfile != nil {
 		if err := m.lockfile.Unlock(); err != nil {
@@ -406,8 +412,34 @@ func (m *Manager) Build() error {
 	}
 	slog.Debug("Successfully initialized resolver")
 
+	if err := m.prepareLayer(); err != nil {
+		return fmt.Errorf("Failed to prepare layer: %w", err)
+	}
+
 	return m.pkg.Build(m, m.history, m.GetProfile(), m.pkgManager, m.overlay, m.resolver, m.manifestTarget)
 	// TODO: should we put layer here, so we can output the hash later?
+}
+
+func (m *Manager) prepareLayer() error {
+	p := m.pkg
+	deps, err := p.CalcDeps(m.resolver)
+	if err != nil {
+		return fmt.Errorf("Failed to calculate dependencies: %w", err)
+	}
+	slog.Debug("Calculated dependencies", "deps", deps)
+
+	m.layer = &Layer{
+		deps:    deps,
+		profile: m.profile,
+		back:    m.overlay.Back,
+	}
+
+	contentPath, err := m.layer.RequestOverlay(m)
+	if err != nil {
+		return err
+	}
+	m.overlay.LayerDir = contentPath
+	return nil
 }
 
 // Chroot will enter the build environment to allow users to introspect it.
@@ -572,7 +604,7 @@ func (m *Manager) InitResolver() error {
 		var r io.Reader
 
 		if len(repo) > 7 && repo[0:7] == "file://" {
-			// Local repo
+			// local repo
 			if file, err := os.Open(repo[7:]); err != nil {
 				return fmt.Errorf("Failed to open index file %s", repo[7:])
 			} else {
@@ -586,9 +618,7 @@ func (m *Manager) InitResolver() error {
 				// slog.Error("Failed to fetch", "url", repo, "error", err)
 				return fmt.Errorf("Failed to fetch %s: %w", repo, err)
 			}
-			slog.Debug("Fetched")
 
-			// TODO: do local resolution
 			if ext == ".xz" {
 				// slog.Debug("Decoding .xz")
 				if r, err = xz.NewReader(resp.Body); err != nil {
