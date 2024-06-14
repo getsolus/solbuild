@@ -231,11 +231,20 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 
 func (p *Package) calcDeps(resolver *Resolver) ([]Dep, error) {
 	// hash = LayersFakeHash
+	extras := []string{}
+
 	if p.HasGitSource() {
-		return resolver.Query(p.Deps, true, true, p.Emul32, []string{"git"})
-	} else {
-		return resolver.Query(p.Deps, true, true, p.Emul32, []string{})
+		extras = append(extras, "git")
 	}
+	if p.Clang {
+		extras = append(extras, "llvm-clang-devel")
+	}
+	if p.CanCCache {
+		extras = append(extras, "ccache", "sccache")
+	}
+
+	slog.Debug("Extra dependencyes from recipe", "extras", extras)
+	return resolver.Query(p.Deps, true, true, p.Emul32, extras)
 }
 
 // PrepYpkg will do the initial leg work of preparing us for a ypkg build.
