@@ -71,8 +71,8 @@ func (l *Layer) RequestOverlay(notif PidNotifier) (contentPath string, err error
 }
 
 func (l *Layer) RemoveIfNotCreated() {
-	slog.Debug("Layer not fully created, removing...", "path", l.BasePath())
 	if !l.created {
+		slog.Debug("Removing incomplete layer", "path", l.BasePath())
 		os.RemoveAll(l.BasePath())
 	}
 }
