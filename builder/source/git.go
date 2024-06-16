@@ -65,10 +65,46 @@ func NewGit(uri, ref string) (*GitSource, error) {
 	return g, nil
 }
 
+// clone shallow clones an upstream git repository to the local disk.
+func (g *GitSource) clone() error {
+	// Create a blobless clone without checking out a ref
+	cmd := exec.Command("git", "clone", "--filter=blob:none", "--no-checkout", g.URI, g.ClonePath)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+
+	return cmd.Run()
+}
+
+// updateRefs checks the upstream for new refs and tags in case we need them for future git commands.
+func (g *GitSource) updateRefs() error {
+	// --tags: Update git tags as well
+	// --force: Force overwrite any refs locally (such as when upstream moves a tag)
+	cmd := exec.Command("git", "fetch", "--tags", "--force", "origin")
+
+	cmd.Dir = g.ClonePath
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+
+	return cmd.Run()
+}
+
+// switch will switch to the given ref.
+func (g *GitSource) switchRef() error {
+	cmd := exec.Command("git", "switch", "--discard-changes", "--detach", g.Ref)
+
+	cmd.Dir = g.ClonePath
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+
+	return cmd.Run()
+}
+
 // submodules will handle setup of the git submodules after a
 // reset has taken place.
 func (g *GitSource) submodules() error {
-	cmd := exec.Command("git", "submodule", "update", "--init", "--recursive")
+	// --init initializes the submodule if it hasn't been initialized alredy
+	cmd := exec.Command("git", "submodule", "update", "--init", "--filter=blob:none", "--recursive")
 
 	cmd.Dir = g.ClonePath
 	cmd.Stdout = os.Stdout
@@ -80,56 +116,11 @@ func (g *GitSource) submodules() error {
 // For some reason git blobless clones create pack files with 600 permissions. These break future operations
 // as those files cannot be read by non-root users. Fix those permissions so things work as they should.
 func (g *GitSource) fixPermissions() error {
-	cmd := exec.Command("bash", "-c", "chmod +r .git/objects/pack/*.promisor")
+	cmd := exec.Command("bash", "-c", `find . -name "*.promisor" -type f -exec chmod +r "{}" \;`)
 
 	cmd.Dir = g.ClonePath
 
 	return cmd.Run()
-}
-
-// clone shallow clones an upstream git repository to the local disk.
-func clone(uri, path, ref string) error {
-	var cmd *exec.Cmd
-
-	// Create a blobless clone without checking out a ref
-	initCmd := exec.Command("git", "clone", "--filter=blob:none", "--no-checkout", uri, path)
-	initCmd.Stdout = os.Stdout
-	initCmd.Stderr = os.Stdout
-
-	if err := initCmd.Run(); err != nil {
-		return err
-	}
-
-	// Checkout the ref we want
-	cmd = exec.Command("git", "switch", "--discard-changes", "--recurse-submodules", "--detach", ref)
-	cmd.Dir = path
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stdout
-
-	return cmd.Run()
-}
-
-// reset fetches the new git reference (a tag or commit SHA1 hash) and
-// hard resets the repository on that reference.
-func reset(path, ref string) error {
-	fetchArgs := []string{
-		"fetch",
-		"--tags",
-		"origin",
-	}
-
-	fetchCmd := exec.Command("git", fetchArgs...)
-	fetchCmd.Dir = path
-
-	if err := fetchCmd.Run(); err != nil {
-		return err
-	}
-
-	resetCmd := exec.Command("git", "switch", "--discard-changes", "--recurse-submodules", "--detach", ref)
-	resetCmd.Dir = path
-
-	return resetCmd.Run()
 }
 
 // Fetch will attempt to download the git tree locally. If it already exists
@@ -137,18 +128,24 @@ func reset(path, ref string) error {
 func (g *GitSource) Fetch() error {
 	// First things first, make sure we have a destination
 	if !PathExists(g.ClonePath) {
-		if err := clone(g.URI, g.ClonePath, g.Ref); err != nil {
+		if err := g.clone(); err != nil {
 			return err
 		}
 	} else {
-		// Repo already exists locally, try to reset to the new reference
-		if err := reset(g.ClonePath, g.Ref); err != nil {
+		// Repo already exists locally, get the latest refs from origin
+		if err := g.updateRefs(); err != nil {
 			return err
 		}
 	}
 
-	// Check out submodules
-	err := g.submodules()
+	// Checkout the ref we want
+	err := g.switchRef()
+	if err != nil {
+		return err
+	}
+
+	// Update or checkout submodules
+	err = g.submodules()
 	if err != nil {
 		return err
 	}
