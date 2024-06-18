@@ -382,7 +382,7 @@ func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overl
 
 	// Now build the package, ignore-sandbox in case someone is stupid
 	// and activates it in eopkg.conf...
-	cmd := eopkgCommand(fmt.Sprintf("eopkg build --ignore-sandbox --yes-all -O %s %s", wdir, xmlFile))
+	cmd := eopkgCommand(fmt.Sprintf("eopkg.py3 build --ignore-sandbox --yes-all -O %s %s", wdir, xmlFile))
 
 	slog.Info("Now starting build", "package", p.Name)
 
