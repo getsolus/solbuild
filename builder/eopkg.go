@@ -219,7 +219,7 @@ func (e *EopkgManager) Upgrade() error {
 
 // InstallComponent will install the named component inside the chroot.
 func (e *EopkgManager) InstallComponent(comp string) error {
-	err := ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg install -c %v -y", comp)))
+	err := ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg install -y -c %v", comp)))
 	e.notif.SetActivePID(0)
 
 	return err
