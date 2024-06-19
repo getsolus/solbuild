@@ -205,6 +205,7 @@ func (e *EopkgManager) Upgrade() error {
 		"abi-wizard",
 		"iproute2",
 		"sccache",
+		"rootlesskit",
 	}
 
 	if err := ChrootExec(e.notif, e.root, eopkgCommand("eopkg upgrade -y")); err != nil {

@@ -326,7 +326,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 	ymlFile := filepath.Join(wdir, filepath.Base(p.Path))
 
 	// Now build the package
-	cmd := fmt.Sprintf("/bin/su %s -- fakeroot ypkg-build -D %s %s", BuildUser, wdir, ymlFile)
+	cmd := fmt.Sprintf("/bin/su %s -- rootlesskit ypkg-build -D %s %s", BuildUser, wdir, ymlFile)
 	if DisableColors {
 		cmd += " -n"
 	}
