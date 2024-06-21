@@ -1,7 +1,6 @@
 package builder
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -9,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/zeebo/blake3"
 )
 
@@ -16,6 +16,7 @@ type Layer struct {
 	deps    []Dep
 	profile *Profile
 	back    *BackingImage
+	// Note: created is only set in `RequestOverlay`
 	created bool
 	hash    string
 }
@@ -48,11 +49,10 @@ func (l *Layer) Hash() string {
 			l.hash = LayersFakeHash
 		} else {
 			hashBytes := blake3.Sum256(jsonBytes)
-			l.hash = base64.StdEncoding.EncodeToString(hashBytes[:])
+			l.hash = base58.Encode(hashBytes[:])
 		}
 	}
 	return l.hash
-
 }
 
 func (l *Layer) BasePath() string {
@@ -65,6 +65,7 @@ func (l *Layer) RequestOverlay(notif PidNotifier) (contentPath string, err error
 		slog.Info("Creating layer", "hash", l.Hash())
 		return l.Create(notif)
 	} else {
+		l.created = true
 		slog.Info("Reusing layer", "hash", l.Hash())
 		return
 	}
@@ -72,7 +73,7 @@ func (l *Layer) RequestOverlay(notif PidNotifier) (contentPath string, err error
 
 func (l *Layer) RemoveIfNotCreated() {
 	if !l.created {
-		slog.Debug("Removing incomplete layer", "path", l.BasePath())
+		slog.Info("Removing incomplete layer", "path", l.BasePath())
 		os.RemoveAll(l.BasePath())
 	}
 }
@@ -170,5 +171,6 @@ func (l *Layer) Create(notif PidNotifier) (contentPath string, err error) {
 	}
 	notif.SetActivePID(0)
 
+	l.created = true
 	return
 }

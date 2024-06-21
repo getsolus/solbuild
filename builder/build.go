@@ -525,29 +525,6 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 
 	ChrootEnvironment = env
 
-	// Set up layers caching, only for YPKG
-	if p.Type == PackageTypeYpkg {
-		deps, err := p.CalcDeps(resolver)
-		if err != nil {
-			return fmt.Errorf("Failed to calculate dependencies: %w", err)
-		}
-		slog.Debug("Calculated dependencies", "deps", deps)
-
-		layer := Layer{
-			deps:    deps,
-			profile: profile,
-			back:    overlay.Back,
-		}
-
-		contentPath, err := layer.RequestOverlay(notif)
-		if err != nil {
-			return err
-		}
-		overlay.LayerDir = contentPath
-	} else {
-		return errors.New("Under testing of layers feature, XML build is not enabled yet.")
-	}
-
 	// Set up environment
 	if err := overlay.CleanExisting(); err != nil {
 		return err

@@ -420,28 +420,6 @@ func (m *Manager) Build() error {
 	// TODO: should we put layer here, so we can output the hash later?
 }
 
-func (m *Manager) prepareLayer() error {
-	p := m.pkg
-	deps, err := p.CalcDeps(m.resolver)
-	if err != nil {
-		return fmt.Errorf("Failed to calculate dependencies: %w", err)
-	}
-	slog.Debug("Calculated dependencies", "deps", deps)
-
-	m.layer = &Layer{
-		deps:    deps,
-		profile: m.profile,
-		back:    m.overlay.Back,
-	}
-
-	contentPath, err := m.layer.RequestOverlay(m)
-	if err != nil {
-		return err
-	}
-	m.overlay.LayerDir = contentPath
-	return nil
-}
-
 // Chroot will enter the build environment to allow users to introspect it.
 func (m *Manager) Chroot() error {
 	if m.IsCancelled() {
@@ -644,5 +622,27 @@ func (m *Manager) InitResolver() error {
 		slog.Info("Parsed and added repo to resolver", "url", repo)
 	}
 
+	return nil
+}
+
+func (m *Manager) prepareLayer() error {
+	p := m.pkg
+	deps, err := p.CalcDeps(m.resolver)
+	if err != nil {
+		return fmt.Errorf("Failed to calculate dependencies: %w", err)
+	}
+	slog.Debug("Calculated dependencies", "deps", deps)
+
+	m.layer = &Layer{
+		deps:    deps,
+		profile: m.profile,
+		back:    m.overlay.Back,
+	}
+
+	contentPath, err := m.layer.RequestOverlay(m)
+	if err != nil {
+		return err
+	}
+	m.overlay.LayerDir = contentPath
 	return nil
 }

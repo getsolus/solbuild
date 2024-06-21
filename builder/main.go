@@ -51,7 +51,7 @@ const (
 	// LayersDir is where container layers are cached, identified by their
 	// sha256 hashes, e.g. `/var/cache/solbuild/layers/3c0de53d6017469...`
 	LayersDir      = "/var/cache/solbuild/layers"
-	// sha256sum <file> | awk '{ print $1 }' | xxd -r -p | base64
+	// sha256sum <file> | awk '{ print $1 }' | xxd -r -p | base58
 	LayersFakeHash = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 )
 
