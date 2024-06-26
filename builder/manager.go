@@ -321,7 +321,9 @@ func (m *Manager) Cleanup() {
 
 	// Remove the layer if it's unfinished
 	if m.layer != nil {
-		m.layer.RemoveIfNotCreated()
+		if err := m.layer.RemoveIfNotCreated(); err != nil {
+			slog.Error("Failure in cleaning incomplete layer", "err", err)
+		}
 	}
 
 	// Finally clean out the lock files
