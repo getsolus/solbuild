@@ -71,10 +71,12 @@ func (l *Layer) RequestOverlay(notif PidNotifier) (contentPath string, err error
 	}
 }
 
-func (l *Layer) RemoveIfNotCreated() {
+func (l *Layer) RemoveIfNotCreated() error {
 	if !l.created {
 		slog.Info("Removing incomplete layer", "path", l.BasePath())
-		os.RemoveAll(l.BasePath())
+		return os.RemoveAll(l.BasePath())
+	} else {
+		return nil
 	}
 }
 
