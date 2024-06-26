@@ -39,6 +39,10 @@ type GitSource struct {
 	ClonePath string // This is where we will have cloned into
 }
 
+func (s *GitSource) IsGit() bool {
+	return true
+}
+
 // NewGit will create a new GitSource for the given URI & ref combination.
 func NewGit(uri, ref string) (*GitSource, error) {
 	// Ensure we have a valid URL first.

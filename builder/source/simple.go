@@ -47,6 +47,10 @@ type SimpleSource struct {
 	url *url.URL
 }
 
+func (s *SimpleSource) IsGit() bool {
+	return false
+}
+
 // NewSimple will create a new source instance.
 func NewSimple(uri, validator string, legacy bool) (*SimpleSource, error) {
 	// Ensure the URI is actually valid.

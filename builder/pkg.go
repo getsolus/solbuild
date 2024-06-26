@@ -63,6 +63,9 @@ type Package struct {
 	Sources    []source.Source // Each package has 0 or more sources that we fetch
 	CanNetwork bool            // Only applicable to ypkg builds
 	CanCCache  bool            // Flag to enable (s)ccache
+	Deps       []string        // Build-time dependencies
+	Emul32     bool            // Whether we are building emul32 packages
+	Clang      bool            // Whether we're using LLVM toolchain
 }
 
 // YmlPackage is a parsed ypkg build file.
@@ -72,9 +75,11 @@ type YmlPackage struct {
 	Release    int                 `yaml:"release"`
 	Networking bool                `yaml:"networking"` // If set to false (default) we disable networking in the build
 	Source     []map[string]string `yaml:"source"`
-
-	// Disable (s)ccache for this build.
-	CCache bool `yaml:"ccache"`
+	CCache     bool                `yaml:"ccache"` // Disable (s)ccache for this build.
+	BuildDeps  []string            `yaml:"builddeps"`
+	CheckDeps  []string            `yaml:"checkdeps"`
+	Emul32     bool                `yaml:"emul32"`
+	Clang      bool                `yaml:"clang"`
 }
 
 // XMLUpdate represents an update in the package history.
@@ -225,6 +230,9 @@ func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 		Type:       PackageTypeYpkg,
 		CanNetwork: ypkg.Networking,
 		CanCCache:  ypkg.CCache,
+		Deps:       append(ypkg.BuildDeps, ypkg.CheckDeps...),
+		Emul32:     ypkg.Emul32,
+		Clang:      ypkg.Clang,
 	}
 
 	for _, row := range ypkg.Source {
@@ -251,4 +259,13 @@ func NewYmlPackageFromBytes(by []byte) (*Package, error) {
 	}
 
 	return ret, nil
+}
+
+func (p *Package) HasGitSource() bool {
+	for _, source := range p.Sources {
+		if source.IsGit() {
+			return true
+		}
+	}
+	return false
 }
