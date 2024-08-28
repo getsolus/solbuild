@@ -26,9 +26,9 @@ import (
 func ConfigureNamespace() error {
 	slog.Debug("Configuring container namespace")
 
-	if err := syscall.Unshare(syscall.CLONE_NEWNS | syscall.CLONE_NEWIPC); err != nil {
-		return fmt.Errorf("Failed to configure namespace, reason: %w\n", err)
-	}
+	// if err := syscall.Unshare(syscall.CLONE_NEWNS | syscall.CLONE_NEWIPC); err != nil {
+	//	return fmt.Errorf("Failed to configure namespace, reason: %w\n", err)
+	// }
 
 	return nil
 }
@@ -37,9 +37,9 @@ func ConfigureNamespace() error {
 func DropNetworking() error {
 	slog.Debug("Dropping container networking")
 
-	if err := syscall.Unshare(syscall.CLONE_NEWNET | syscall.CLONE_NEWUTS); err != nil {
-		return fmt.Errorf("Failed to drop networking capabilities, reason: %w\n", err)
-	}
+	// if err := syscall.Unshare(syscall.CLONE_NEWNET | syscall.CLONE_NEWUTS); err != nil {
+	//	return fmt.Errorf("Failed to drop networking capabilities, reason: %w\n", err)
+	// }
 
 	return nil
 }
