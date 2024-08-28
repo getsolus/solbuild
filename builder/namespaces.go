@@ -17,9 +17,9 @@
 package builder
 
 import (
-	"fmt"
+	//"fmt"
 	"log/slog"
-	"syscall"
+	//"syscall"
 )
 
 // ConfigureNamespace will unshare() context, entering a new namespace.
