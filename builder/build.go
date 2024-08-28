@@ -328,23 +328,33 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 	// Now build the package
 	// cmd := fmt.Sprintf("/bin/su %s -- fakeroot ypkg-build -D %s %s", BuildUser, wdir, ymlFile)
 	// use rootlesskit instead of fatfakeroot
-	cmd := fmt.Sprintf("/bin/su %s -- rootlesskit ypkg-build -D %s %s", BuildUser, wdir, ymlFile)
+	buildCmd := fmt.Sprintf("ypkg-build -D %s %s", wdir, ymlFile)
 	if DisableColors {
-		cmd += " -n"
+		buildCmd += " -n"
 	}
 	// Pass unix timestamp of last git update
 	if h != nil && len(h.Updates) > 0 {
-		cmd += fmt.Sprintf(" -t %v", h.GetLastVersionTimestamp())
+		buildCmd += fmt.Sprintf(" -t %v", h.GetLastVersionTimestamp())
 	}
+
+	// need to properly quote the innner -c 'command' syntax
+	suCmd := fmt.Sprintf("strace /bin/su %s --command='%s'", BuildUser, buildCmd)
 
 	if p.CanCCache {
 		// Start an sccache server to work around #87
 		StartSccache(overlay.MountPoint)
 	}
 
-	slog.Info("Now starting build", "package", p.Name)
+	// ensure that the BuildUser has /etc/sub{g,u}id files present for use with rootlesskit user namespaces
+	usermodCmd := fmt.Sprintf("touch /etc/sub{g,u}id && usermod --add-subuids 100000-165535 --add-subgids 100000-165535 %s", BuildUser)
+	if err := ChrootExec(notif, overlay.MountPoint, usermodCmd); err != nil {
+		slog.Error(fmt.Sprintf("Failed to ensure that user '%s' has /etc/sub{g,u}id files in chroot", BuildUser))
+	}
 
-	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
+	slog.Info("Now starting build", "package", p.Name)
+	slog.Info("Build", "command", suCmd)
+
+	if err := RootlesskitExec(notif, overlay.MountPoint, suCmd); err != nil {
 		return fmt.Errorf("Failed to start build of package, reason: %w\n", err)
 	}
 

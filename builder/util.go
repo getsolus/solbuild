@@ -208,6 +208,30 @@ func ChrootExec(notif PidNotifier, dir, command string) error {
 	return c.Wait()
 }
 
+// RootlesskitExec is a simple wrapper to return a correctly set up rootlesskit chroot command
+// using the 'solbuild' user (expected to exist a priori and have /etc/sub{g,u}id files),
+// such that we can store the PID for long running tasks.
+func RootlesskitExec(notif PidNotifier, dir, command string) error {
+	rootlesskitCmd := fmt.Sprintf("-c rootlesskit chroot %s %s", dir, command)
+	args := []string{"solbuild", rootlesskitCmd}
+	c := exec.Command("/bin/su", args...)
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stdout
+	c.Stdin = os.Stdin
+	c.Env = ChrootEnvironment
+	c.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+
+	slog.Info("RootlesskitExec", "command", c)
+
+	if err := c.Start(); err != nil {
+		return err
+	}
+
+	notif.SetActivePID(c.Process.Pid)
+
+	return c.Wait()
+}
+
 // ChrootExecStdin is almost identical to ChrootExec, except it permits a stdin
 // to be associated with the command.
 func ChrootExecStdin(notif PidNotifier, dir, command string) error {
