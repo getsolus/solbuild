@@ -212,7 +212,8 @@ func ChrootExec(notif PidNotifier, dir, command string) error {
 // using the 'solbuild' user (expected to exist a priori and have /etc/sub{g,u}id files),
 // such that we can store the PID for long running tasks.
 func RootlesskitExec(notif PidNotifier, dir, command string) error {
-	rootlesskitCmd := fmt.Sprintf("-c rootlesskit chroot %s %s", dir, command)
+	rootlesskitCmd := fmt.Sprintf(
+		"-c rootlesskit --copy-up=/var/cache/eopkg/archives chroot %s %s", dir, command)
 	args := []string{"solbuild", rootlesskitCmd}
 	c := exec.Command("/bin/su", args...)
 	c.Stdout = os.Stdout

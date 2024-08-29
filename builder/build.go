@@ -338,7 +338,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 	}
 
 	// need to properly quote the innner -c 'command' syntax
-	suCmd := fmt.Sprintf("strace /bin/su %s --command='%s'", BuildUser, buildCmd)
+	//suCmd := fmt.Sprintf("strace /bin/su %s --command='%s'", BuildUser, buildCmd)
 
 	if p.CanCCache {
 		// Start an sccache server to work around #87
@@ -352,9 +352,9 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 	}
 
 	slog.Info("Now starting build", "package", p.Name)
-	slog.Info("Build", "command", suCmd)
+	slog.Info("Build", "command", buildCmd)
 
-	if err := RootlesskitExec(notif, overlay.MountPoint, suCmd); err != nil {
+	if err := RootlesskitExec(notif, overlay.MountPoint, buildCmd); err != nil {
 		return fmt.Errorf("Failed to start build of package, reason: %w\n", err)
 	}
 
