@@ -24,6 +24,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -153,6 +154,8 @@ func SaneEnvironment(username, home string) []string {
 		fmt.Sprintf("HOME=%s", home),
 		fmt.Sprintf("USER=%s", username),
 		fmt.Sprintf("USERNAME=%s", username),
+		fmt.Sprintf("CCACHE_DIR=%s", path.Join(BuildUserHome, ".ccache")),
+		fmt.Sprintf("SCCACHE_DIR=%s", path.Join(BuildUserHome, ".cache", "sccache")),
 	}
 	// Consider an option to even filter these out
 	permitted := []string{
