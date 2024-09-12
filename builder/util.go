@@ -230,6 +230,68 @@ func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 	return c.Wait()
 }
 
+func ChrootShell(notif PidNotifier, dir, command, workdir string) error {
+
+	// Hold an fd for the og root
+	fd, err := os.Open("/")
+	if err != nil {
+		return err
+	}
+
+	// Remember our working directory
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	// Ensure chroot directory is available
+	if err := os.Chdir(dir); err != nil {
+		return err
+	}
+
+	if err := syscall.Chroot(dir); err != nil {
+		fd.Close()
+		return err
+	}
+
+	if err := os.Chdir("/"); err != nil {
+		return err
+	}
+
+	// Spawn a shell
+	args := []string{"--login"}
+	c := exec.Command("/bin/bash", args...)
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stdout
+	c.Stdin = os.Stdin
+	c.Env = ChrootEnvironment
+	c.Dir = workdir
+
+	if err := c.Start(); err != nil {
+		goto CLEANUP
+	}
+
+	notif.SetActivePID(c.Process.Pid)
+
+	if err := c.Wait(); err != nil {
+		goto CLEANUP
+	}
+
+CLEANUP:
+	// Return to our original root and working directory
+	defer fd.Close()
+	if err := fd.Chdir(); err != nil {
+		return err
+	}
+	if err := syscall.Chroot("."); err != nil {
+		return err
+	}
+	if err := os.Chdir(wd); err != nil {
+		return err
+	}
+	return err
+}
+
 func StartSccache(dir string) {
 	var buf bytes.Buffer
 
