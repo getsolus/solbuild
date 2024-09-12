@@ -363,6 +363,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 
 // BuildXML will take care of building the legacy pspec.xml format, and is called only
 // by Build().
+// NOTE: Change eopkgCommand to use eopkg.py3 for epoch.
 func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overlay) error {
 	// Just straight up build it with eopkg
 	slog.Warn("Full sandboxing is not possible with legacy format")
@@ -382,7 +383,8 @@ func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overl
 
 	// Now build the package, ignore-sandbox in case someone is stupid
 	// and activates it in eopkg.conf...
-	cmd := eopkgCommand(fmt.Sprintf("eopkg build --ignore-sandbox --yes-all -O %s %s", wdir, xmlFile))
+	// NOTE: ypkg already depends on python-eopkg, so this can be changed eopkg.py3 no problem.
+	cmd := eopkgCommand(fmt.Sprintf("eopkg.py2 build --ignore-sandbox --yes-all -O %s %s", wdir, xmlFile))
 
 	slog.Info("Now starting build", "package", p.Name)
 
