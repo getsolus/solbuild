@@ -18,12 +18,13 @@ package cli
 
 import (
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"math"
 	"os"
-	"path/filepath"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
+	"github.com/charlievieth/fastwalk"
 
 	"github.com/getsolus/solbuild/builder"
 	"github.com/getsolus/solbuild/builder/source"
@@ -88,7 +89,7 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 		var totalSize int64
 
 		for _, p := range sizeDirs {
-			size, err := getDirSize(p)
+			size, _ := getDirSize(p)
 			totalSize += size
 
 			if err != nil {
@@ -126,27 +127,68 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 	var totalSize int64
 
 	for _, p := range nukeDirs {
-		if !builder.PathExists(p) {
-			continue
-		}
-
-		size, err := getDirSize(p)
-		totalSize += size
-
+		size, err := deleteDir(p)
 		if err != nil {
-			slog.Warn("Couldn't get directory size", "reason", err)
+			slog.Warn(fmt.Sprintf("Failed to remove cache directory '%s', reason: '%s'\n", p, err))
 		}
 
-		slog.Info(fmt.Sprintf("Removing cache directory '%s', of size '%s", p, humanReadableFormat(float64(size))))
+		slog.Info(fmt.Sprintf("Removed cache directory '%s', of size '%s", p, humanReadableFormat(float64(size))))
 
-		if err := os.RemoveAll(p); err != nil {
-			log.Panic("Could not remove cache directory", "reason", err)
-		}
+		totalSize += size
 	}
 
 	if totalSize > 0 {
 		slog.Info(fmt.Sprintf("Total restored size: '%s'\n", humanReadableFormat(float64(totalSize))))
 	}
+}
+
+func deleteDir(path string) (int64, error) {
+	var totalSize int64
+
+	// Return nothing if dir doesn't exist
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		slog.Debug("Directory doesn't exist", "path", path)
+		return 0, nil
+	}
+
+	walkConf := fastwalk.Config{
+		Follow: false,
+	}
+
+	/* Parallelized file walk */
+	err = fastwalk.Walk(&walkConf, path, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !d.IsDir() {
+			file, err2 := d.Info()
+			if err2 != nil {
+				return err2
+			}
+
+			totalSize += file.Size()
+
+			/* Remove if file */
+			if d.Type().IsRegular() {
+				if err = os.Remove(path); err != nil {
+					return err
+				}
+			}
+		}
+
+		return err
+	})
+
+	/* Remove the remaining directories */
+	/* Remove() instead of RemoveAll() would be slightly faster here but the
+	 * dirs would need to be sorted depth-first from the file walk */
+	if removeErr := os.RemoveAll(path); removeErr != nil {
+		slog.Warn("Could not remove directory", "reason", removeErr)
+	}
+
+	return totalSize, err
 }
 
 // getDirSize returns the disk usage of a directory.
@@ -160,14 +202,23 @@ func getDirSize(path string) (int64, error) {
 		return 0, nil
 	}
 
+	walkConf := fastwalk.Config{
+		Follow: false,
+	}
+
 	// Walk the dir, get size, add to totalSize
-	err = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+	err = fastwalk.Walk(&walkConf, path, func(_ string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if !info.IsDir() {
-			totalSize += info.Size()
+		if !d.IsDir() {
+			file, err2 := d.Info()
+			if err2 != nil {
+				return err2
+			}
+
+			totalSize += file.Size()
 		}
 
 		return err
