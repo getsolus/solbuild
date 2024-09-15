@@ -231,7 +231,6 @@ func ChrootExecStdin(notif PidNotifier, dir, command string) error {
 }
 
 func ChrootShell(notif PidNotifier, dir, command, workdir string) error {
-
 	// Hold an fd for the og root
 	fd, err := os.Open("/")
 	if err != nil {
@@ -239,22 +238,22 @@ func ChrootShell(notif PidNotifier, dir, command, workdir string) error {
 	}
 
 	// Remember our working directory
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
+	wd, err2 := os.Getwd()
+	if err2 != nil {
+		return err2
 	}
 
 	// Ensure chroot directory is available
-	if err := os.Chdir(dir); err != nil {
+	if err = os.Chdir(dir); err != nil {
 		return err
 	}
 
-	if err := syscall.Chroot(dir); err != nil {
+	if err = syscall.Chroot(dir); err != nil {
 		fd.Close()
 		return err
 	}
 
-	if err := os.Chdir("/"); err != nil {
+	if err = os.Chdir("/"); err != nil {
 		return err
 	}
 
@@ -267,28 +266,32 @@ func ChrootShell(notif PidNotifier, dir, command, workdir string) error {
 	c.Env = ChrootEnvironment
 	c.Dir = workdir
 
-	if err := c.Start(); err != nil {
+	if err = c.Start(); err != nil {
 		goto CLEANUP
 	}
 
 	notif.SetActivePID(c.Process.Pid)
 
-	if err := c.Wait(); err != nil {
+	if err = c.Wait(); err != nil {
 		goto CLEANUP
 	}
 
 CLEANUP:
 	// Return to our original root and working directory
 	defer fd.Close()
-	if err := fd.Chdir(); err != nil {
+
+	if err = fd.Chdir(); err != nil {
 		return err
 	}
-	if err := syscall.Chroot("."); err != nil {
+
+	if err = syscall.Chroot("."); err != nil {
 		return err
 	}
-	if err := os.Chdir(wd); err != nil {
+
+	if err = os.Chdir(wd); err != nil {
 		return err
 	}
+
 	return err
 }
 
