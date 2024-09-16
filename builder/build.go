@@ -322,11 +322,12 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 		return err
 	}
 
-	wdir := p.GetWorkDirInternal()
-	ymlFile := filepath.Join(wdir, filepath.Base(p.Path))
+	workDir := p.GetWorkDirInternal()
+	ymlFile := filepath.Join(workDir, filepath.Base(p.Path))
+	buildDir := filepath.Join(BuildUserHome, "YPKG")
 
 	// Now build the package
-	cmd := fmt.Sprintf("/bin/su %s -- fakeroot ypkg-build -D %s %s", BuildUser, wdir, ymlFile)
+	cmd := fmt.Sprintf("ypkg-build -D %s -B %s %s", workDir, buildDir, ymlFile)
 	if DisableColors {
 		cmd += " -n"
 	}

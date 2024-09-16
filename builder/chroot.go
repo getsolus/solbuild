@@ -66,14 +66,8 @@ func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay
 	// Allow bash to work
 	commands.SetStdin(os.Stdin)
 
-	// Legacy package format requires root, stay as root.
-	user := BuildUser
-	if p.Type == PackageTypeXML {
-		user = "root"
-	}
-
-	loginCommand := fmt.Sprintf("/bin/su - %s -s %s", user, BuildUserShell)
-	err := ChrootExecStdin(notif, overlay.MountPoint, loginCommand)
+	loginCommand := fmt.Sprintf("/bin/su - root -s %s", BuildUserShell)
+	err := ChrootShell(notif, overlay.MountPoint, loginCommand, BuildUserHome)
 
 	commands.SetStdin(nil)
 	notif.SetActivePID(0)
