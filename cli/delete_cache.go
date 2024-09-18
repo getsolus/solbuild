@@ -48,7 +48,7 @@ var DeleteCache = cmd.Sub{
 type DeleteCacheFlags struct {
 	All    bool `short:"a" long:"all"    desc:"Additionally delete (s)ccache, packages and sources"`
 	Images bool `short:"i" long:"images" desc:"Additionally delete solbuild images"`
-	Sizes  bool `short:"s" long:"sizes"  desc:"Show disk usage of the caches"`
+	Sizes  bool `short:"s" long:"sizes"  desc:"Deprecated: use 'show-cache' instead"`
 }
 
 // DeleteCacheRun carries out the "delete-cache" sub-command.
@@ -75,31 +75,7 @@ func DeleteCacheRun(r *cmd.Root, s *cmd.Sub) {
 
 	// If sizes is requested just print disk usage of caches and return
 	if sFlags.Sizes {
-		sizeDirs := []string{
-			manager.Config.OverlayRootDir,
-			builder.CacheDirectory,
-			builder.ObsoleteCcacheDirectory,
-			builder.ObsoleteSccacheDirectory,
-			builder.ObsoleteLegacyCcacheDirectory,
-			builder.ObsoleteLegacySccacheDirectory,
-			builder.PackageCacheDirectory,
-			source.SourceDir,
-		}
-
-		var totalSize int64
-
-		for _, p := range sizeDirs {
-			size, _ := getDirSize(p)
-			totalSize += size
-
-			if err != nil {
-				slog.Warn("Couldn't get directory size", "reason", err)
-			}
-
-			slog.Info(fmt.Sprintf("Size of '%s' is '%s'", p, humanReadableFormat(float64(size))))
-		}
-
-		slog.Info(fmt.Sprintf("Total size: '%s'", humanReadableFormat(float64(totalSize))))
+		showCacheSizes(manager)
 
 		return
 	}
