@@ -105,7 +105,7 @@ func NewManager() (*Manager, error) {
 	if config, err := NewConfig(); err == nil {
 		man.Config = config
 	} else {
-		slog.Error("Failed to load solbuild configuration %s\n", err)
+		slog.Error("Failed to load solbuild configuration", "err", err)
 		return nil, err
 	}
 
@@ -274,7 +274,7 @@ func (m *Manager) Cleanup() {
 
 	// Still might have *something* alive in there, kill it with fire.
 	if deathPoint != "" {
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			MurderDeathKill(deathPoint)
 		}
 	}

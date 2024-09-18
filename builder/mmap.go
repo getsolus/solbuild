@@ -50,8 +50,8 @@ func MapFile(path string) (*MmapFile, error) {
 	}
 
 	ret.len = st.Size()
-	ret.Data, err = syscall.Mmap(int(ret.f.Fd()), 0, int(ret.len), syscall.PROT_READ, syscall.MAP_PRIVATE)
 
+	ret.Data, err = syscall.Mmap(int(ret.f.Fd()), 0, int(ret.len), syscall.PROT_READ, syscall.MAP_PRIVATE)
 	if err != nil {
 		ret.f.Close()
 		return nil, err

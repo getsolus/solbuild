@@ -45,7 +45,7 @@ func init() {
 
 // PidNotifier provides a simple way to set the PID on a blocking process.
 type PidNotifier interface {
-	SetActivePID(int)
+	SetActivePID(pid int)
 }
 
 // ActivateRoot will do the hard work of actually bring up the overlayfs

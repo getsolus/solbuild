@@ -79,12 +79,12 @@ type YmlPackage struct {
 
 // XMLUpdate represents an update in the package history.
 type XMLUpdate struct {
-	Release int `xml:"release,attr"`
-	Date    string
-	Version string
-	Comment string
-	Name    string
-	Email   string
+	Release int    `xml:"release,attr"`
+	Date    string `xml:"Date"`
+	Version string `xml:"Version"`
+	Comment string `xml:"Comment"`
+	Name    string `xml:"Name"`
+	Email   string `xml:"Email"`
 }
 
 // XMLArchive is an <Archive> line in Source section.

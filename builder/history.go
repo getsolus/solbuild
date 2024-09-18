@@ -302,15 +302,15 @@ type YPKG struct {
 type YPKGUpdate struct {
 	Release int    `xml:"release,attr"`
 	Type    string `xml:"type,attr,omitempty"`
-	Date    string
-	Version string
+	Date    string `xml:"Date"`
+	Version string `xml:"Version"`
 	Comment struct {
 		Value string `xml:",cdata"`
-	}
+	} `xml:"Comment"`
 	Name struct {
 		Value string `xml:",cdata"`
-	}
-	Email string
+	} `xml:"Name"`
+	Email string `xml:"Email"`
 }
 
 // WriteXML will attempt to dump the update history to an XML file
