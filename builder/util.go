@@ -298,7 +298,7 @@ CLEANUP:
 func StartSccache(dir string) {
 	var buf bytes.Buffer
 
-	c := exec.Command("chroot", dir, "/bin/su", BuildUser, "-c", "sccache --start-server")
+	c := exec.Command("chroot", dir, "/bin/su", "root", "-c", "sccache --start-server")
 	c.Stdout = &buf
 	c.Stderr = &buf
 	c.Env = slices.Clone(ChrootEnvironment)
