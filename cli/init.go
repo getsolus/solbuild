@@ -74,6 +74,9 @@ func InitRun(r *cmd.Root, s *cmd.Sub) {
 		slog.Error(err.Error())
 		panic(err)
 	}
+
+	manager.SetCommands(rFlags.Eopkg, rFlags.YPKG)
+
 	// Safety first...
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		slog.Error(err.Error())

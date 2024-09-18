@@ -327,7 +327,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 	buildDir := filepath.Join(BuildUserHome, "YPKG")
 
 	// Now build the package
-	cmd := fmt.Sprintf("ypkg-build -D %s -B %s %s", workDir, buildDir, ymlFile)
+	cmd := fmt.Sprintf("%s -D %s -B %s %s", ypkgBuildCommand, workDir, buildDir, ymlFile)
 	if DisableColors {
 		cmd += " -n"
 	}
@@ -385,7 +385,8 @@ func (p *Package) BuildXML(notif PidNotifier, pman *EopkgManager, overlay *Overl
 	// Now build the package, ignore-sandbox in case someone is stupid
 	// and activates it in eopkg.conf...
 	// NOTE: ypkg already depends on python-eopkg, so this can be changed eopkg.py3 no problem.
-	cmd := eopkgCommand(fmt.Sprintf("eopkg.py2 build --ignore-sandbox --yes-all -O %s %s", wdir, xmlFile))
+	cmd := eopkgCommand(fmt.Sprintf("%s build --ignore-sandbox --yes-all -O %s %s",
+		xmlBuildCommand, wdir, xmlFile))
 
 	slog.Info("Now starting build", "package", p.Name)
 

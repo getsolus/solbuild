@@ -35,10 +35,14 @@ var Root = cmd.Root{
 }
 
 // GlobalFlags are available to all sub-commands.
+//
+//nolint:tagalign // asks for weird alignment
 type GlobalFlags struct {
-	Debug   bool   `short:"d" long:"debug"    desc:"Enable debug message"`
-	NoColor bool   `short:"n" long:"no-color" desc:"Disable color output"`
-	Profile string `short:"p" long:"profile"  desc:"Build profile to use"`
+	Debug   bool   `short:"d" long:"debug"     desc:"Enable debug message"`
+	NoColor bool   `short:"n" long:"no-color"  desc:"Disable color output"`
+	Profile string `short:"p" long:"profile"   desc:"Build profile to use"`
+	Eopkg   string `          long:"eopkg-bin" desc:"eopkg binary to use"`
+	YPKG    string `          long:"ypkg-bin"  desc:"ypkg binary to use"`
 }
 
 // FindLikelyArg will look in the current directory to see if common path names exist,

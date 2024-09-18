@@ -59,6 +59,9 @@ func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 	if err != nil {
 		log.Panic(err.Error())
 	}
+
+	manager.SetCommands(rFlags.Eopkg, rFlags.YPKG)
+
 	// Safety first...
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		if errors.Is(err, builder.ErrProfileNotInstalled) {

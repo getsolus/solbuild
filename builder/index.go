@@ -76,7 +76,7 @@ func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 
 	slog.Debug("Now indexing")
 
-	command := fmt.Sprintf("cd %s; %s", IndexBindTarget, eopkgCommand("eopkg.bin index --skip-signing ."))
+	command := fmt.Sprintf("cd %s; %s", IndexBindTarget, eopkgCommand(installCommand+" index --skip-signing ."))
 	if err := ChrootExec(notif, overlay.MountPoint, command); err != nil {
 		slog.Error("Indexing failed", "dir", dir, "err", err)
 		return err
