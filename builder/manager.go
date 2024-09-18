@@ -105,7 +105,7 @@ func NewManager() (*Manager, error) {
 	if config, err := NewConfig(); err == nil {
 		man.Config = config
 	} else {
-		slog.Error("Failed to load solbuild configuration %s\n", err)
+		slog.Error("Failed to load solbuild configuration", "err", err)
 		return nil, err
 	}
 

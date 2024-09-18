@@ -5,16 +5,17 @@ linters:
     # Disabled to get codebase to pass the linter.
     # We can enable these one at a time.
     - cyclop
+    - err113
     - errcheck
     - funlen
     - gochecknoglobals
     - gochecknoinits
-    - goerr113
-    - gomnd
     - gosec
     - lll
+    - mnd
     - nestif
     - noctx
+    - perfsprint
     - revive
     - stylecheck
     - wrapcheck
@@ -26,17 +27,9 @@ linters:
     - depguard        # manage using go.mod for now
     - nonamedreturns  # named returns are acceptable in short functions
     # Deprecated
-    - exhaustivestruct
-    - scopelint
-    - interfacer
-    - maligned
-    - golint
-    - structcheck
-    - varcheck
-    - deadcode
-    - nosnakecase
-    - ifshort
-
+    - execinquery
+    - exportloopref
+    - gomnd
 severity:
   default-severity: major
 
