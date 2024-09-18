@@ -274,7 +274,7 @@ func (m *Manager) Cleanup() {
 
 	// Still might have *something* alive in there, kill it with fire.
 	if deathPoint != "" {
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			MurderDeathKill(deathPoint)
 		}
 	}
