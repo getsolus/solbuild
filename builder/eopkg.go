@@ -28,6 +28,12 @@ import (
 	"github.com/getsolus/libosdev/disk"
 )
 
+var (
+	installCommand   = "eopkg.bin"  // Command used for installing packages
+	ypkgBuildCommand = "ypkg-build" // Command used for building package.yml recipes
+	xmlBuildCommand  = "eopkg.py2"  // Command used for building pspec.xml recipes
+)
+
 // eopkgCommand utility wraps all eopkg calls to autodisable colours
 // where appropriate, as eopkg largely ignores the console type.
 func eopkgCommand(c string) string {
@@ -207,19 +213,22 @@ func (e *EopkgManager) Upgrade() error {
 		"sccache",
 	}
 
-	if err := ChrootExec(e.notif, e.root, eopkgCommand("eopkg.bin upgrade -y")); err != nil {
+	if err := ChrootExec(e.notif, e.root, eopkgCommand(installCommand+" upgrade -y")); err != nil {
 		return err
 	}
 
 	e.notif.SetActivePID(0)
-	err := ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg.bin install -y %s", strings.Join(newReqs, " "))))
+	err := ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("%s install -y %s",
+		installCommand, strings.Join(newReqs, " "))))
 
 	return err
 }
 
 // InstallComponent will install the named component inside the chroot.
 func (e *EopkgManager) InstallComponent(comp string) error {
-	err := ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg.bin install -c %v -y", comp)))
+	err := ChrootExec(e.notif, e.root,
+		eopkgCommand(fmt.Sprintf("%s install -y -c %v", installCommand, comp)))
+
 	e.notif.SetActivePID(0)
 
 	return err
@@ -325,11 +334,13 @@ func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 // AddRepo will attempt to add a repo to the filesystem.
 func (e *EopkgManager) AddRepo(id, source string) error {
 	e.notif.SetActivePID(0)
-	return ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg.bin add-repo '%s' '%s'", id, source)))
+	return ChrootExec(e.notif, e.root,
+		eopkgCommand(fmt.Sprintf("%s add-repo '%s' '%s'", installCommand, id, source)))
 }
 
 // RemoveRepo will attempt to remove a named repo from the filesystem.
 func (e *EopkgManager) RemoveRepo(id string) error {
 	e.notif.SetActivePID(0)
-	return ChrootExec(e.notif, e.root, eopkgCommand(fmt.Sprintf("eopkg.bin remove-repo '%s'", id)))
+	return ChrootExec(e.notif, e.root,
+		eopkgCommand(fmt.Sprintf("%s remove-repo '%s'", installCommand, id)))
 }

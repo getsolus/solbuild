@@ -129,6 +129,26 @@ func (m *Manager) SetManifestTarget(target string) {
 	m.manifestTarget = strings.TrimSpace(target)
 }
 
+// SetCommands overrides the eopkg binary used for all eopkg commands.
+func (m *Manager) SetCommands(eopkg string, ypkg string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if eopkg != "" {
+		installCommand = eopkg
+		xmlBuildCommand = eopkg
+	}
+
+	if ypkg != "" {
+		ypkgBuildCommand = ypkg
+	}
+
+	slog.Debug("Set binaries",
+		"eopkg", installCommand,
+		"eopkg_xml", xmlBuildCommand,
+		"ypkg", ypkgBuildCommand)
+}
+
 // SetProfile will attempt to initialise the manager with a given profile
 // Currently this is locked to a backing image specification, but in future
 // will be expanded to support profiles *based* on backing images.

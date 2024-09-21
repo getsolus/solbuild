@@ -101,6 +101,9 @@ func BuildRun(r *cmd.Root, s *cmd.Sub) {
 	if err != nil {
 		os.Exit(1)
 	}
+
+	manager.SetCommands(rFlags.Eopkg, rFlags.YPKG)
+
 	// Safety first...
 	if err = manager.SetProfile(rFlags.Profile); err != nil {
 		os.Exit(1)

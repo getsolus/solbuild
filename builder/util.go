@@ -194,6 +194,8 @@ func SaneEnvironment(username, home string) []string {
 // ChrootExec is a simple wrapper to return a correctly set up chroot command,
 // so that we can store the PID, for long running tasks.
 func ChrootExec(notif PidNotifier, dir, command string) error {
+	slog.Debug("Executing in chroot", "dir", dir, "command", command)
+
 	args := []string{dir, "/bin/sh", "-c", command}
 	c := exec.Command("chroot", args...)
 	c.Stdout = os.Stdout
