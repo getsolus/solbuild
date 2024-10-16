@@ -249,7 +249,7 @@ func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager,
 	wdir := p.GetWorkDirInternal()
 	ymlFile := filepath.Join(wdir, filepath.Base(p.Path))
 
-	cmd := fmt.Sprintf("ypkg-install-deps -f %s", ymlFile)
+	cmd := fmt.Sprintf("ypkg-install-deps --eopkg-cmd='%s' -f %s", installCommand, ymlFile)
 	if DisableColors {
 		cmd += " -n"
 	}
