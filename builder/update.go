@@ -29,33 +29,33 @@ func (b *BackingImage) updatePackages(_ PidNotifier, pkgManager *EopkgManager) e
 	slog.Debug("Initialising package manager")
 
 	if err := pkgManager.Init(); err != nil {
-		return fmt.Errorf("Failed to initialise package manager, reason: %w\n", err)
+		return fmt.Errorf("failed to initialise package manager, reason: %w", err)
 	}
 
 	// Bring up dbus to do Things
 	slog.Debug("Starting D-BUS")
 
 	if err := pkgManager.StartDBUS(); err != nil {
-		return fmt.Errorf("Failed to start d-bus, reason: %w\n", err)
+		return fmt.Errorf("failed to start d-bus, reason: %w", err)
 	}
 
 	slog.Debug("Upgrading builder image")
 
 	if err := pkgManager.Upgrade(); err != nil {
-		return fmt.Errorf("Failed to perform upgrade, reason: %w\n", err)
+		return fmt.Errorf("failed to perform upgrade, reason: %w", err)
 	}
 
 	slog.Debug("Asserting system.devel component")
 
 	if err := pkgManager.InstallComponent("system.devel"); err != nil {
-		return fmt.Errorf("Failed to install system.devel, reason: %w\n", err)
+		return fmt.Errorf("failed to install system.devel, reason: %w", err)
 	}
 
 	// Cleanup now
 	slog.Debug("Stopping D-BUS")
 
 	if err := pkgManager.StopDBUS(); err != nil {
-		return fmt.Errorf("Failed to stop d-bus, reason: %w\n", err)
+		return fmt.Errorf("failed to stop d-bus, reason: %w", err)
 	}
 
 	return nil
@@ -70,7 +70,7 @@ func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error
 
 	if !PathExists(b.RootDir) {
 		if err := os.MkdirAll(b.RootDir, 0o0755); err != nil {
-			return fmt.Errorf("Failed to create required directories, reason: %w\n", err)
+			return fmt.Errorf("failed to create required directories, reason: %w", err)
 		}
 
 		slog.Debug("Created root directory", "name", b.Name)
@@ -80,11 +80,11 @@ func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error
 
 	// Mount the rootfs
 	if err := mountMan.Mount(b.ImagePath, b.RootDir, "auto", "loop"); err != nil {
-		return fmt.Errorf("Failed to mount rootfs %s, reason: %w\n", b.ImagePath, err)
+		return fmt.Errorf("failed to mount rootfs %s, reason: %w", b.ImagePath, err)
 	}
 
 	if err := EnsureEopkgLayout(b.RootDir); err != nil {
-		return fmt.Errorf("Failed to fix filesystem layout %s, reason: %w\n", b.ImagePath, err)
+		return fmt.Errorf("failed to fix filesystem layout %s, reason: %w", b.ImagePath, err)
 	}
 
 	procPoint := filepath.Join(b.RootDir, "proc")
@@ -93,7 +93,7 @@ func (b *BackingImage) Update(notif PidNotifier, pkgManager *EopkgManager) error
 	slog.Debug("Mounting vfs /proc")
 
 	if err := mountMan.Mount("proc", procPoint, "proc", "nosuid", "noexec"); err != nil {
-		return fmt.Errorf("Failed to mount /proc, reason: %w\n", err)
+		return fmt.Errorf("failed to mount /proc, reason: %w", err)
 	}
 
 	// Hand over to package management to do the updates

@@ -147,10 +147,11 @@ func downloadImage(bk *builder.BackingImage) (err error) {
 	}
 
 	defer resp.Body.Close()
+
 	bar := pb.New64(resp.ContentLength).Set(pb.Bytes, true)
 	reader := bar.NewProxyReader(resp.Body)
-	bar.Start()
 
+	bar.Start()
 	defer bar.Finish()
 
 	bytesRemaining := resp.ContentLength

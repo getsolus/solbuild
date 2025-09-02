@@ -131,7 +131,7 @@ func (s *SimpleSource) download(destination string) error {
 	}
 
 	// Some web servers (*cough* sourceforge) have strange redirection behavior. It's possible to work around this by clearing the Referer header on every redirect
-	headHttpClient := &http.Client{
+	headHTTPClient := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			for k := range req.Header {
 				if strings.ToLower(k) == "referer" {
@@ -147,7 +147,7 @@ func (s *SimpleSource) download(destination string) error {
 	}
 
 	// Do a HEAD request, following all redirects until we get the final URL.
-	headResp, err := headHttpClient.Head(s.URI)
+	headResp, err := headHTTPClient.Head(s.URI)
 	if err != nil {
 		return err
 	}

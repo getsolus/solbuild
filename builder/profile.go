@@ -87,7 +87,7 @@ func GetAllProfiles() (map[string]*Profile, error) {
 func NewProfileFromPath(path string) (*Profile, error) {
 	basename := filepath.Base(path)
 	if !strings.HasSuffix(basename, ProfileSuffix) {
-		return nil, fmt.Errorf("Not a .profile file: %v", path)
+		return nil, fmt.Errorf("not a .profile file: %s", path)
 	}
 
 	fi, err := os.Open(path)
@@ -124,7 +124,7 @@ func NewProfileFromPath(path string) (*Profile, error) {
 	// Check all repo names are valid
 	for _, r := range profile.AddRepos {
 		if _, ok := profile.Repos[r]; !ok {
-			return nil, fmt.Errorf("Cannot enable unknown repo %v", r)
+			return nil, fmt.Errorf("cannot enable unknown repo %v", r)
 		}
 	}
 

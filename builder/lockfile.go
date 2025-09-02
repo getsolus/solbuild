@@ -27,11 +27,11 @@ import (
 
 var (
 	// ErrDeadLockFile is returned when an dead lockfile was encountered.
-	ErrDeadLockFile = errors.New("Dead lockfile")
+	ErrDeadLockFile = errors.New("dead lockfile")
 
 	// ErrOwnedLockFile is returned when the lockfile is already owned by
 	// another active process.
-	ErrOwnedLockFile = errors.New("File is locked")
+	ErrOwnedLockFile = errors.New("file is locked")
 )
 
 // A LockFile encapsulates locking functionality.
