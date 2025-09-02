@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -33,7 +34,7 @@ import (
 	"time"
 
 	"github.com/getsolus/libosdev/commands"
-	"github.com/getsolus/libosdev/disk"
+	"github.com/zeebo/blake3"
 )
 
 // ChrootEnvironment is the env used by ChrootExec calls.
@@ -46,40 +47,6 @@ func init() {
 // PidNotifier provides a simple way to set the PID on a blocking process.
 type PidNotifier interface {
 	SetActivePID(pid int)
-}
-
-// ActivateRoot will do the hard work of actually bring up the overlayfs
-// system to allow manipulation of the roots for builds, etc.
-func (p *Package) ActivateRoot(overlay *Overlay) error {
-	slog.Debug("Configuring overlay storage")
-
-	// Now mount the overlayfs
-	if err := overlay.Mount(); err != nil {
-		return err
-	}
-
-	// Add build user
-	if p.Type == PackageTypeYpkg {
-		if err := AddBuildUser(overlay.MountPoint); err != nil {
-			return err
-		}
-	}
-
-	slog.Debug("Bringing up virtual filesystems")
-
-	return overlay.MountVFS()
-}
-
-// DeactivateRoot will tear down the previously activated root.
-func (p *Package) DeactivateRoot(overlay *Overlay) {
-	MurderDeathKill(overlay.MountPoint)
-
-	mountMan := disk.GetMountManager()
-
-	commands.SetStdin(nil)
-	overlay.Unmount()
-	slog.Debug("Requesting unmount of all remaining mountpoints")
-	mountMan.UnmountAll()
 }
 
 // MurderDeathKill will find all processes with a root matching the given root
@@ -387,4 +354,36 @@ func ValidMemSize(s string) bool {
 	slog.Error(fmt.Sprintf("Invalid Memory Size: %s doesn't end in a valid memory unit, e.g. G\n", s))
 
 	return false
+}
+
+func hashFileBytes(path string) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	h := blake3.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return nil, err
+	}
+	return h.Sum(nil), nil
+}
+
+func hashFile(path string) (string, error) {
+	bytes, err := hashFileBytes(path)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", bytes), nil
+}
+
+func xxh3128HashFile(path string) (string, error) {
+	cmd := exec.Command("xxh128sum", path)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("Failed to run xxh128sum %s, reason: %w", path, err)
+	}
+	return strings.Split(string(output), " ")[0], nil
 }

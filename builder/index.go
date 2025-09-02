@@ -53,7 +53,7 @@ func (p *Package) Index(notif PidNotifier, dir string, overlay *Overlay) error {
 		return err
 	}
 
-	if err := p.ActivateRoot(overlay); err != nil {
+	if err := overlay.ActivateRoot(); err != nil {
 		return err
 	}
 

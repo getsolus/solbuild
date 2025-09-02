@@ -42,7 +42,7 @@ func (p *Package) Chroot(notif PidNotifier, pman *EopkgManager, overlay *Overlay
 
 	ChrootEnvironment = env
 
-	if err := p.ActivateRoot(overlay); err != nil {
+	if err := overlay.ActivateRoot(); err != nil {
 		return err
 	}
 

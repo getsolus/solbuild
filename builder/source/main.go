@@ -63,6 +63,8 @@ type Source interface {
 	// GetIdentifier will return the appropriate representation for a given
 	// source URL.
 	GetIdentifier() string
+
+	IsGit() bool
 }
 
 // New will return a new source for the specified URL.

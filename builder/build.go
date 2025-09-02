@@ -229,6 +229,24 @@ func (p *Package) CopyAssets(h *PackageHistory, o *Overlay) error {
 	return h.WriteXML(histPath)
 }
 
+func (p *Package) CalcDeps(resolver *Resolver) ([]Dep, error) {
+	// hash = LayersFakeHash
+	extras := []string{}
+
+	if p.HasGitSource() {
+		extras = append(extras, "git")
+	}
+	if p.Clang {
+		extras = append(extras, "llvm-clang-devel")
+	}
+	if p.CanCCache {
+		extras = append(extras, "ccache", "sccache")
+	}
+
+	slog.Debug("Extra dependencyes from recipe", "extras", extras)
+	return resolver.Query(p.Deps, true, true, p.Emul32, extras)
+}
+
 // PrepYpkg will do the initial leg work of preparing us for a ypkg build.
 func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager, overlay *Overlay, h *PackageHistory) error {
 	slog.Debug("Writing packager file")
@@ -246,32 +264,32 @@ func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager,
 		return fmt.Errorf("Failed to write packager file %s, reason: %w\n", fp, err)
 	}
 
-	wdir := p.GetWorkDirInternal()
-	ymlFile := filepath.Join(wdir, filepath.Base(p.Path))
+	// wdir := p.GetWorkDirInternal()
+	// ymlFile := filepath.Join(wdir, filepath.Base(p.Path))
 
-	cmd := fmt.Sprintf("ypkg-install-deps --eopkg-cmd='%s' -f %s", installCommand, ymlFile)
-	if DisableColors {
-		cmd += " -n"
-	}
+	// cmd := fmt.Sprintf("ypkg-install-deps --eopkg-cmd='%s' -f %s", installCommand, ymlFile)
+	// if DisableColors {
+	// 	cmd += " -n"
+	// }
 
-	// Install build dependencies
-	slog.Debug("Installing build dependencies", "file", ymlFile)
+	// // Install build dependencies
+	// slog.Debug("Installing build dependencies", "file", ymlFile)
 
-	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
-		return fmt.Errorf("Failed to install build dependencies %s, reason: %w\n", ymlFile, err)
-	}
+	// if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
+	// 	return fmt.Errorf("Failed to install build dependencies %s, reason: %w\n", ymlFile, err)
+	// }
 
-	notif.SetActivePID(0)
+	// notif.SetActivePID(0)
 
-	// Cleanup now
-	slog.Debug("Stopping D-BUS")
+	// // Cleanup now
+	// slog.Debug("Stopping D-BUS")
 
-	if err := pman.StopDBUS(); err != nil {
-		return fmt.Errorf("Failed to stop d-bus, reason: %w\n", err)
-	}
+	// if err := pman.StopDBUS(); err != nil {
+	// 	return fmt.Errorf("Failed to stop d-bus, reason: %w\n", err)
+	// }
 
 	// Chwn the directory before bringing up sources
-	cmd = fmt.Sprintf("chown -R %s:%s %s", BuildUser, BuildUser, BuildUserHome)
+	cmd := fmt.Sprintf("chown -R %s:%s %s", BuildUser, BuildUser, BuildUserHome)
 	if err := ChrootExec(notif, overlay.MountPoint, cmd); err != nil {
 		return fmt.Errorf("Failed to set home directory permissions, reason: %w\n", err)
 	}
@@ -492,7 +510,7 @@ func (p *Package) CollectAssets(overlay *Overlay, usr *UserInfo, manifestTarget 
 }
 
 // Build will attempt to build the package in the overlayfs system.
-func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Profile, pman *EopkgManager, overlay *Overlay, manifestTarget string) error {
+func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Profile, pman *EopkgManager, overlay *Overlay, resolver *Resolver, manifestTarget string) error {
 	slog.Debug("Building package", "name", p.Name, "version", p.Version, "release", p.Release, "type", p.Type,
 		"profile", overlay.Back.Name)
 
@@ -513,8 +531,15 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 	}
 
 	// Bring up the root
-	if err := p.ActivateRoot(overlay); err != nil {
+	if err := overlay.ActivateRoot(); err != nil {
 		return err
+	}
+
+	// Add build user if needed
+	if p.Type == PackageTypeYpkg {
+		if err := AddBuildUser(overlay.MountPoint); err != nil {
+			return err
+		}
 	}
 
 	// Ensure source assets are in place
@@ -528,34 +553,34 @@ func (p *Package) Build(notif PidNotifier, history *PackageHistory, profile *Pro
 		return err
 	}
 
-	// Set up package manager
-	if err := pman.Init(); err != nil {
-		return err
-	}
+	// // Set up package manager
+	// if err := pman.Init(); err != nil {
+	// 	return err
+	// }
 
-	// Bring up dbus to do Things
-	slog.Debug("Starting D-BUS")
+	// // Bring up dbus to do Things
+	// slog.Debug("Starting D-BUS")
 
-	if err := pman.StartDBUS(); err != nil {
-		return fmt.Errorf("Failed to start d-bus, reason: %w\n", err)
-	}
+	// if err := pman.StartDBUS(); err != nil {
+	// 	return fmt.Errorf("Failed to start d-bus, reason: %w\n", err)
+	// }
 
-	// Get the repos in place before asserting anything
-	if err := p.ConfigureRepos(notif, overlay, pman, profile); err != nil {
-		return fmt.Errorf("Configuring repositories failed, reason: %w\n", err)
-	}
+	// // Get the repos in place before asserting anything
+	// if err := pman.ConfigureRepos(notif, overlay, profile); err != nil {
+	// 	return fmt.Errorf("Configuring repositories failed, reason: %w\n", err)
+	// }
 
-	slog.Debug("Upgrading system base")
+	// slog.Debug("Upgrading system base")
 
-	if err := pman.Upgrade(); err != nil {
-		return fmt.Errorf("Failed to upgrade rootfs, reason: %w\n", err)
-	}
+	// if err := pman.Upgrade(); err != nil {
+	// 	return fmt.Errorf("Failed to upgrade rootfs, reason: %w\n", err)
+	// }
 
-	slog.Debug("Asserting system.devel component installation")
+	// slog.Debug("Asserting system.devel component installation")
 
-	if err := pman.InstallComponent("system.devel"); err != nil {
-		return fmt.Errorf("Failed to assert system.devel, reason: %w\n", err)
-	}
+	// if err := pman.InstallComponent("system.devel"); err != nil {
+	// 	return fmt.Errorf("Failed to assert system.devel, reason: %w\n", err)
+	// }
 
 	// Ensure all directories are in place
 	if err := p.CreateDirs(overlay); err != nil {
