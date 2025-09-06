@@ -29,9 +29,9 @@ import (
 )
 
 var (
-	installCommand   = "eopkg.bin"  // Command used for installing packages
-	ypkgBuildCommand = "ypkg-build" // Command used for building package.yml recipes
-	xmlBuildCommand  = "eopkg.py2"  // Command used for building pspec.xml recipes
+	installCommand   = "eopkg.bin" // Command used for installing packages
+	ypkgBuildCommand = ""          // Command used for building package.yml recipes
+	xmlBuildCommand  = "eopkg.py2" // Command used for building pspec.xml recipes
 )
 
 // eopkgCommand utility wraps all eopkg calls to autodisable colours
