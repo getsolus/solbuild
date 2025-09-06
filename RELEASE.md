@@ -38,17 +38,17 @@ Perform the following steps after tagging the Solbuild release in order to verif
   ```
   sudo rm -rvf /var/lib/solbuild/local/*
   ```
-- Build `zlib` against stable without colored output:
+- Build `zlib-ng` against stable without colored output:
   ```
   gotosoluspkgs
-  gotopkg zlib
+  gotopkg zlib-ng
   sudo solbuild build -n -p main-x86_64 > zlib-stable.log
   ```
   Verify that this shows non-colored output.
 
 - Chroot into the build environment:
   ```
-  sudo solbuild -d -n chroot -p main-x86_64
+  sudo solbuild chroot -p main-x86_64 -d -n
   ```
 - Build zlib against unstable and copy to local repo:
   ```
@@ -65,6 +65,7 @@ Perform the following steps after tagging the Solbuild release in order to verif
   ```
   for p in android-tools giflib glew zsh
   do
+    gotopkg $p
     sudo solbuild build >> /tmp/builds.log
   done
   ```
