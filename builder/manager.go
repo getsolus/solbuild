@@ -37,25 +37,25 @@ import (
 var (
 	// ErrManagerInitialised is returned when the library user attempts to set
 	// a core part of the Manager after it's already been initialised.
-	ErrManagerInitialised = errors.New("The manager has already been initialised")
+	ErrManagerInitialised = errors.New("the manager has already been initialised")
 
 	// ErrNoPackage is returned when we've got no package.
-	ErrNoPackage = errors.New("You must first set a package to build it")
+	ErrNoPackage = errors.New("you must first set a package to build it")
 
 	// ErrNotImplemented is returned as a placeholder when developing functionality.
-	ErrNotImplemented = errors.New("Function not yet implemented")
+	ErrNotImplemented = errors.New("function not yet implemented")
 
 	// ErrProfileNotInstalled is returned when a profile is not yet installed.
-	ErrProfileNotInstalled = errors.New("Profile is not installed")
+	ErrProfileNotInstalled = errors.New("profile is not installed")
 
 	// ErrInvalidProfile is returned when there is an invalid profile.
-	ErrInvalidProfile = errors.New("Invalid profile")
+	ErrInvalidProfile = errors.New("invalid profile")
 
 	// ErrInvalidImage is returned when the backing image is unknown.
-	ErrInvalidImage = errors.New("Invalid image")
+	ErrInvalidImage = errors.New("invalid image")
 
 	// ErrInterrupted is returned when the build is interrupted.
-	ErrInterrupted = errors.New("The operation was cancelled by the user")
+	ErrInterrupted = errors.New("the operation was cancelled by the user")
 )
 
 // A Manager is responsible for cleanly managing the entire session within solbuild,
@@ -118,6 +118,7 @@ func NewManager() (*Manager, error) {
 func (m *Manager) SetActivePID(pid int) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	m.activePID = pid
 }
 
@@ -126,6 +127,7 @@ func (m *Manager) SetActivePID(pid int) {
 func (m *Manager) SetManifestTarget(target string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	m.manifestTarget = strings.TrimSpace(target)
 }
 
@@ -251,6 +253,7 @@ func (m *Manager) IsCancelled() bool {
 func (m *Manager) SetCancelled() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	m.cancelled = true
 }
 
@@ -264,8 +267,10 @@ func (m *Manager) Cleanup() {
 	}
 
 	slog.Debug("Acquiring global lock")
+
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	slog.Debug("Cleaning up")
 
 	if m.pkgManager != nil {
@@ -371,16 +376,13 @@ func (m *Manager) Build() error {
 		return ErrInterrupted
 	}
 
-	m.lock.Lock()
-	if m.pkg == nil {
-		m.lock.Unlock()
-		return ErrNoPackage
+	if err := m.checkPackage(); err != nil {
+		return err
 	}
-	m.lock.Unlock()
 
 	// Now get on with the real work!
-	defer m.Cleanup()
 	m.SigIntCleanup()
+	defer m.Cleanup()
 
 	// Now set our options according to the config
 	m.overlay.EnableTmpfs = m.Config.EnableTmpfs
@@ -404,14 +406,17 @@ func (m *Manager) Chroot() error {
 	}
 
 	m.lock.Lock()
+
 	if m.pkg == nil {
 		m.lock.Unlock()
 		return ErrNoPackage
 	}
+
 	m.lock.Unlock()
 
 	// Now get on with the real work!
 	defer m.Cleanup()
+
 	m.SigIntCleanup()
 
 	if err := m.doLock(m.overlay.LockPath, "chroot"); err != nil {
@@ -427,23 +432,12 @@ func (m *Manager) Update() error {
 		return ErrInterrupted
 	}
 
-	m.lock.Lock()
-	if m.image == nil {
-		m.lock.Unlock()
-		return ErrInvalidProfile
+	if err := m.prepareUpdate(); err != nil {
+		return err
 	}
 
-	if !m.image.IsInstalled() {
-		m.lock.Unlock()
-		return ErrProfileNotInstalled
-	}
-
-	m.updateMode = true
-	m.pkgManager = NewEopkgManager(m, m.image.RootDir)
-	m.lock.Unlock()
-
-	defer m.Cleanup()
 	m.SigIntCleanup()
+	defer m.Cleanup()
 
 	if err := m.doLock(m.image.LockPath, "updating"); err != nil {
 		return err
@@ -452,22 +446,37 @@ func (m *Manager) Update() error {
 	return m.image.Update(m, m.pkgManager)
 }
 
+func (m *Manager) prepareUpdate() error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if m.image == nil {
+		return ErrInvalidProfile
+	}
+
+	if !m.image.IsInstalled() {
+		return ErrProfileNotInstalled
+	}
+
+	m.updateMode = true
+	m.pkgManager = NewEopkgManager(m, m.image.RootDir)
+
+	return nil
+}
+
 // Index will attempt to index the given directory for eopkgs.
 func (m *Manager) Index(dir string) error {
 	if m.IsCancelled() {
 		return ErrInterrupted
 	}
 
-	m.lock.Lock()
-	if m.pkg == nil {
-		m.lock.Unlock()
-		return ErrNoPackage
+	if err := m.checkPackage(); err != nil {
+		return err
 	}
-	m.lock.Unlock()
 
 	// Now get on with the real work!
-	defer m.Cleanup()
 	m.SigIntCleanup()
+	defer m.Cleanup()
 
 	// Now set our options according to the config
 	m.overlay.EnableTmpfs = m.Config.EnableTmpfs
@@ -497,4 +506,11 @@ func (m *Manager) SetTmpfs(enable bool, size string) {
 		m.Config.EnableTmpfs = enable
 		m.Config.TmpfsSize = strings.TrimSpace(size)
 	}
+}
+
+func (m *Manager) checkPackage() error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	return ErrNoPackage
 }

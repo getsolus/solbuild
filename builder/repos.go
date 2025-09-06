@@ -34,7 +34,7 @@ const (
 func (p *Package) addLocalRepo(notif PidNotifier, o *Overlay, pkgManager *EopkgManager, repo *Repo) error {
 	// Ensure the source exists too. Sorta helpful like that.
 	if !PathExists(repo.URI) {
-		return fmt.Errorf("Local repo does not exist")
+		return fmt.Errorf("local repo does not exist")
 	}
 
 	mman := disk.GetMountManager()
@@ -87,7 +87,7 @@ func (p *Package) removeRepos(pkgManager *EopkgManager, repos []string) error {
 		slog.Debug("Removing repository", "repo", id)
 
 		if err := pkgManager.RemoveRepo(id); err != nil {
-			return fmt.Errorf("Failed to remove repository %s, reason: %w\n", id, err)
+			return fmt.Errorf("failed to remove repository %s, reason: %w", id, err)
 		}
 	}
 
@@ -105,7 +105,7 @@ func (p *Package) addRepos(notif PidNotifier, o *Overlay, pkgManager *EopkgManag
 			slog.Debug("Adding local repo to system", "name", repo.Name, "uri", repo.URI)
 
 			if err := p.addLocalRepo(notif, o, pkgManager, repo); err != nil {
-				return fmt.Errorf("Failed to add local repo to system %s, reason: %w\n", repo.Name, err)
+				return fmt.Errorf("failed to add local repo to system %s, reason: %w", repo.Name, err)
 			}
 
 			continue
@@ -114,7 +114,7 @@ func (p *Package) addRepos(notif PidNotifier, o *Overlay, pkgManager *EopkgManag
 		slog.Debug("Adding repo to system", "name", repo.Name, "uri", repo.URI)
 
 		if err := pkgManager.AddRepo(repo.Name, repo.URI); err != nil {
-			return fmt.Errorf("Failed to add repo to system %s, reason: %w\n", repo.Name, err)
+			return fmt.Errorf("failed to add repo to system %s, reason: %w", repo.Name, err)
 		}
 	}
 

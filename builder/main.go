@@ -27,7 +27,7 @@ import (
 // Spelled this way so people don't get confused :P.
 var DisableColors bool
 
-// Controls whether or not we generate an ABI report.
+// DisableABIReport controls whether or not we generate an ABI report.
 var DisableABIReport bool
 
 const (

@@ -1,6 +1,35 @@
 ---
+version: "2"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+severity:
+  default: major
+
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/getsolus/solbuild)
+
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+
 linters:
-  enable-all: true
+  default: all
   disable:
     # Disabled to get codebase to pass the linter.
     # We can enable these one at a time.
@@ -17,99 +46,84 @@ linters:
     - noctx
     - perfsprint
     - revive
-    - stylecheck
     - wrapcheck
     # Disabled permanently
-    - exhaustruct     # structs may be uninitialized
-    - nlreturn        # covered by wsl cuddle rules
-    - paralleltest    # tests are acceptable in sequence
-    - goimports       # conflicts with GCI
     - depguard        # manage using go.mod for now
+    - exhaustruct     # structs may be uninitialized
+    - funcorder       # functions are allowed in any order
+    - nlreturn        # covered by wsl cuddle rules
+    - noinlineerr     # inline errors are allowed for readability
     - nonamedreturns  # named returns are acceptable in short functions
+    - paralleltest    # tests are acceptable in sequence
     # Deprecated
-    - execinquery
-    - exportloopref
-    - gomnd
-severity:
-  default-severity: major
+    - wsl
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - err113
+          - errcheck
+          - gochecknoglobals
+          - gosec
+          - wrapcheck
+        path: _test\.go
+      - linters: [staticcheck]
+        text: "ST1000:"
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    exhaustive:
+      default-signifies-exhaustive: true
 
-issues:
-  fast: false
-  max-issues-per-linter: 0
-  max-same-issues: 0
-  exclude-use-default: false
-  exclude-case-sensitive: true
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gochecknoglobals
-        - errcheck
-        - wrapcheck
-        - gosec
-        - goerr113
+    govet:
+      disable:
+        - fieldalignment
+      enable-all: true
 
-linters-settings:
-  varnamelen:
-    min-name-length: 1
+    misspell:
+      ignore-rules:
+        - evolveos
 
-  exhaustive:
-    default-signifies-exhaustive: true
+    revive:
+      enable-all-rules: false
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+        - name: if-return
+        - name: increment-decrement
+        - name: var-naming
+        - name: var-declaration
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unused-parameter
+        - name: unreachable-code
+        - name: redefines-builtin-id
 
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/getsolus/solbuild)
+    staticcheck:
+      checks:
+        - all
 
-  gomnd:
-    ignored-numbers: ['2', '4', '8', '16', '32', '64', '10']
+    tagalign:
+      order:
+        - zero
+        - short
+        - long
+        - desc
 
-  gosec:
-    excludes: []
-
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment  # misalignment is accepted
-
-  misspell:
-    ignore-words:
-      - evolveos
-
-  revive:
-    enable-all-rules: false
-    rules:  # see https://github.com/mgechev/revive#recommended-configuration
-      - name: blank-imports
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: dot-imports
-      - name: error-return
-      - name: error-strings
-      - name: error-naming
-      - name: exported
-      - name: if-return
-      - name: increment-decrement
-      - name: var-naming
-      - name: var-declaration
-      - name: package-comments
-      - name: range
-      - name: receiver-naming
-      - name: time-naming
-      - name: unexported-return
-      - name: indent-error-flow
-      - name: errorf
-      - name: empty-block
-      - name: superfluous-else
-      - name: unused-parameter
-      - name: unreachable-code
-      - name: redefines-builtin-id
-
-  stylecheck:
-    checks: [all]
-
-  tagalign:
-    order:
-      - zero
-      - short
-      - long
-      - desc
+    varnamelen:
+      min-name-length: 1

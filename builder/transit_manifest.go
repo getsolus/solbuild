@@ -32,7 +32,7 @@ const (
 )
 
 // ErrIllegalUpload is returned when someone is a spanner and tries uploading an unsupported file.
-var ErrIllegalUpload = errors.New("The manifest file is NOT an eopkg")
+var ErrIllegalUpload = errors.New("the manifest file is NOT an eopkg")
 
 // A TransitManifestHeader is required in all .tram uploads to ensure that both
 // the sender and recipient are talking in the same fashion.

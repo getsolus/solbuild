@@ -59,7 +59,7 @@ func CopyAll(source, destdir string) error {
 			slog.Debug("Creating target directory", "dir", destdir)
 
 			if err = os.MkdirAll(destdir, 0o0755); err != nil {
-				return fmt.Errorf("Failed to create target directory: %s, reason: %w\n", destdir, err)
+				return fmt.Errorf("failed to create target directory: %s, reason: %w", destdir, err)
 			}
 		}
 
@@ -67,7 +67,7 @@ func CopyAll(source, destdir string) error {
 		slog.Debug("Copying source", "source", source, "target", tgt)
 
 		if err = disk.CopyFile(source, tgt); err != nil {
-			return fmt.Errorf("Failed to copy source asset to target: source='%s' target='%s', reason: %w\n", source, tgt, err)
+			return fmt.Errorf("failed to copy source asset to target: source=%q, target=%q, reason: %w", source, tgt, err)
 		}
 	}
 

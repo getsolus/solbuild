@@ -95,14 +95,14 @@ func (e *EopkgManager) CopyAssets() error {
 			slog.Debug("Creating required directory", "path", dirName)
 
 			if err := os.MkdirAll(dirName, 0o0755); err != nil {
-				return fmt.Errorf("Failed to create required asset directory %s, reason %w\n", dirName, err)
+				return fmt.Errorf("failed to create required asset directory %s, reason %w", dirName, err)
 			}
 		}
 
 		slog.Debug("Copying host asset", "key", key)
 
 		if err := disk.CopyFile(key, value); err != nil {
-			return fmt.Errorf("Failed to copy host asset %s, reason: %w\n", key, err)
+			return fmt.Errorf("failed to copy host asset %s, reason: %w", key, err)
 		}
 	}
 
@@ -127,7 +127,7 @@ func (e *EopkgManager) Init() error {
 		slog.Debug("Creating system-wide package cache", "path", e.cacheSource)
 
 		if err := os.MkdirAll(e.cacheSource, 0o0755); err != nil {
-			return fmt.Errorf("Failed to create package cache %s, reason: %w\n", e.cacheSource, err)
+			return fmt.Errorf("failed to create package cache %s, reason: %w", e.cacheSource, err)
 		}
 	}
 
@@ -249,12 +249,12 @@ func EnsureEopkgLayout(root string) error {
 	runPath := filepath.Join(root, "run")
 	if PathExists(runPath) {
 		if err := os.RemoveAll(runPath); err != nil {
-			return fmt.Errorf("Failed to clean stale /run, reason: %w\n", err)
+			return fmt.Errorf("failed to clean stale /run, reason: %w", err)
 		}
 	}
 
 	if err := os.MkdirAll(runPath, 0o0755); err != nil {
-		return fmt.Errorf("Failed to clean stale /run, reason: %w\n", err)
+		return fmt.Errorf("failed to clean stale /run, reason: %w", err)
 	}
 
 	// Construct the required directories in the tree
@@ -334,6 +334,7 @@ func (e *EopkgManager) GetRepos() ([]*EopkgRepo, error) {
 // AddRepo will attempt to add a repo to the filesystem.
 func (e *EopkgManager) AddRepo(id, source string) error {
 	e.notif.SetActivePID(0)
+
 	return ChrootExec(e.notif, e.root,
 		eopkgCommand(fmt.Sprintf("%s add-repo '%s' '%s'", installCommand, id, source)))
 }
@@ -341,6 +342,7 @@ func (e *EopkgManager) AddRepo(id, source string) error {
 // RemoveRepo will attempt to remove a named repo from the filesystem.
 func (e *EopkgManager) RemoveRepo(id string) error {
 	e.notif.SetActivePID(0)
+
 	return ChrootExec(e.notif, e.root,
 		eopkgCommand(fmt.Sprintf("%s remove-repo '%s'", installCommand, id)))
 }

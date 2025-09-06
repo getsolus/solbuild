@@ -85,7 +85,7 @@ func ParseUsers(passwd string) (map[string]*User, error) {
 
 		splits := strings.Split(line, ":")
 		if len(splits) != 7 {
-			return nil, fmt.Errorf("Invalid number of fields in passwd file: %d", len(splits))
+			return nil, fmt.Errorf("invalid number of fields in passwd file: %d", len(splits))
 		}
 
 		user := &User{
@@ -133,7 +133,7 @@ func ParseGroups(grps string) (map[string]*Group, error) {
 
 		splits := strings.Split(line, ":")
 		if len(splits) != 4 {
-			return nil, fmt.Errorf("Invalid number of fields in group file: %d", len(splits))
+			return nil, fmt.Errorf("invalid number of fields in group file: %d", len(splits))
 		}
 
 		group := &Group{
