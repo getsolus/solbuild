@@ -405,14 +405,9 @@ func (m *Manager) Chroot() error {
 		return ErrInterrupted
 	}
 
-	m.lock.Lock()
-
-	if m.pkg == nil {
-		m.lock.Unlock()
-		return ErrNoPackage
+	if err := m.checkPackage(); err != nil {
+		return err
 	}
-
-	m.lock.Unlock()
 
 	// Now get on with the real work!
 	defer m.Cleanup()
@@ -512,5 +507,9 @@ func (m *Manager) checkPackage() error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	return ErrNoPackage
+	if m.pkg == nil {
+		return ErrNoPackage
+	}
+
+	return nil
 }
