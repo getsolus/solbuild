@@ -25,7 +25,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/cavaliergopher/grab/v3"
@@ -130,35 +129,7 @@ func (s *SimpleSource) download(destination string) error {
 		return CopyFile(s.url.Path, destination)
 	}
 
-	// Some web servers (*cough* sourceforge) have strange redirection behavior. It's possible to work around this by clearing the Referer header on every redirect
-	headHTTPClient := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			for k := range req.Header {
-				if strings.ToLower(k) == "referer" {
-					delete(req.Header, k)
-				}
-			}
-			return nil
-		},
-		Transport: &http.Transport{
-			DisableCompression: true,
-			Proxy:              http.ProxyFromEnvironment,
-		},
-	}
-
-	// Do a HEAD request, following all redirects until we get the final URL.
-	headResp, err := headHTTPClient.Head(s.URI)
-	if err != nil {
-		return err
-	}
-	defer headResp.Body.Close()
-
-	finalURL := headResp.Request.URL.String()
-	if s.URI != finalURL {
-		slog.Info("Source URL redirected", "uri", finalURL)
-	}
-
-	req, err := grab.NewRequest(destination, finalURL)
+	req, err := grab.NewRequest(destination, s.URI)
 	if err != nil {
 		return err
 	}
@@ -188,6 +159,7 @@ func (s *SimpleSource) download(destination string) error {
 		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
 		UserAgent: "solbuild/" + util.SolbuildVersion,
 		HTTPClient: &http.Client{
+			CheckRedirect: checkRedirect,
 			Transport: &http.Transport{
 				DisableCompression: true,
 				Proxy:              http.ProxyFromEnvironment,
@@ -204,6 +176,16 @@ func (s *SimpleSource) download(destination string) error {
 
 		return err
 	}
+
+	return nil
+}
+
+func checkRedirect(req *http.Request, via []*http.Request) error {
+	slog.Info("Source URL redirected", "to", req.URL, "from", via[len(via)-1].URL)
+
+	// Some web servers (*cough* sourceforge) have strange redirection behavior.
+	// It's possible to work around this by clearing the Referer header on every redirect
+	req.Header.Del("Referer")
 
 	return nil
 }
