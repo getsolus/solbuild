@@ -8,7 +8,7 @@ require (
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/charlievieth/fastwalk v1.0.14
 	github.com/cheggaaa/pb/v3 v3.1.7
-	github.com/coreos/go-systemd/v22 v22.6.0
+	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/getsolus/libosdev v0.0.0-20181023041421-9ab0f4b463fd
 	github.com/go-git/go-billy/v5 v5.7.0
 	github.com/go-git/go-git/v5 v5.16.4
