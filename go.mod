@@ -1,6 +1,6 @@
 module github.com/getsolus/solbuild
 
-go 1.23.1
+go 1.24.0
 
 require (
 	github.com/BurntSushi/toml v1.6.0
@@ -10,8 +10,8 @@ require (
 	github.com/cheggaaa/pb/v3 v3.1.7
 	github.com/coreos/go-systemd/v22 v22.6.0
 	github.com/getsolus/libosdev v0.0.0-20181023041421-9ab0f4b463fd
-	github.com/go-git/go-billy/v5 v5.7.0
-	github.com/go-git/go-git/v5 v5.16.4
+	github.com/go-git/go-billy/v5 v5.8.0
+	github.com/go-git/go-git/v5 v5.17.1
 	gitlab.com/slxh/go/powerline v0.1.0
 	gopkg.in/ini.v1 v1.67.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -22,7 +22,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
-	github.com/cloudflare/circl v1.6.1 // indirect
+	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
@@ -40,8 +40,8 @@ require (
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/solus-project/libosdev v0.0.0-20171113084438-39032fc50772 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	golang.org/x/crypto v0.37.0 // indirect
-	golang.org/x/net v0.39.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
