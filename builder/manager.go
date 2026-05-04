@@ -142,13 +142,13 @@ func (m *Manager) SetCommands(eopkg string, ypkg string) {
 	}
 
 	if ypkg != "" {
-		ypkgBuildCommand = ypkg
+		ypkgBin = ypkg
 	}
 
 	slog.Debug("Set binaries",
 		"eopkg", installCommand,
 		"eopkg_xml", xmlBuildCommand,
-		"ypkg", ypkgBuildCommand)
+		"ypkg", ypkgBin)
 }
 
 // SetProfile will attempt to initialise the manager with a given profile
