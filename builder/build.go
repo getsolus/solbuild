@@ -249,12 +249,7 @@ func (p *Package) PrepYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager,
 	wdir := p.GetWorkDirInternal()
 	ymlFile := filepath.Join(wdir, filepath.Base(p.Path))
 
-	var cmd string
-	if PathExists("/usr/bin/ypkg-install-deps") {
-		cmd = fmt.Sprintf("ypkg-install-deps --eopkg-cmd='%s' -f %s", installCommand, ymlFile)
-	} else {
-		cmd = fmt.Sprintf("ypkg install-deps --eopkg-cmd '%s' -f %s", installCommand, ymlFile)
-	}
+	cmd := fmt.Sprintf("%s install-deps --eopkg-cmd '%s' -f %s", ypkgBin, installCommand, ymlFile)
 
 	if DisableColors {
 		cmd += " -n"
@@ -333,16 +328,7 @@ func (p *Package) BuildYpkg(notif PidNotifier, usr *UserInfo, pman *EopkgManager
 	buildDir := filepath.Join(BuildUserHome, "YPKG")
 
 	// Now build the package
-
-	if ypkgBuildCommand == "" {
-		if PathExists("/usr/bin/ypkg-build") {
-			ypkgBuildCommand = "ypkg-build"
-		} else {
-			ypkgBuildCommand = "ypkg build"
-		}
-	}
-
-	cmd := fmt.Sprintf("%s -D %s -B %s %s", ypkgBuildCommand, workDir, buildDir, ymlFile)
+	cmd := fmt.Sprintf("%s build -D %s -B %s %s", ypkgBin, workDir, buildDir, ymlFile)
 	if DisableColors {
 		cmd += " -n"
 	}
