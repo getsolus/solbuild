@@ -378,10 +378,8 @@ func ValidMemSize(s string) bool {
 	lastChar := s[len(s)-1:]
 	validLastChars := []string{"G", "T", "P", "E"}
 
-	for _, v := range validLastChars {
-		if v == lastChar {
-			return true
-		}
+	if slices.Contains(validLastChars, lastChar) {
+		return true
 	}
 
 	slog.Error(fmt.Sprintf("Invalid Memory Size: %s doesn't end in a valid memory unit, e.g. G\n", s))

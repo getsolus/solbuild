@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 // DisableColors controls whether or not to use colours in the display.
@@ -54,9 +55,11 @@ const (
 	// CacheDirectory is where packages' build cache are stored.
 	CacheDirectory = "/var/lib/solbuild/cache"
 
-	// Obsolete cache directories. These are only still specified so that the
-	// `delete-cache -a` subcommand will remove them. In the future they will
-	// be removed.
+	/* Obsolete cache directories. These are only still specified so that the
+	* `delete-cache -a` subcommand will remove them. In the future they will
+	* be removed.
+	 */
+
 	ObsoleteCcacheDirectory        = "/var/lib/solbuild/ccache/ypkg"
 	ObsoleteLegacyCcacheDirectory  = "/var/lib/solbuild/ccache/legacy"
 	ObsoleteSccacheDirectory       = "/var/lib/solbuild/sccache/ypkg"
@@ -100,13 +103,7 @@ func PathExists(path string) bool {
 
 // IsValidImage will check if the specified profile is a valid one.
 func IsValidImage(profile string) bool {
-	for _, p := range ValidImages {
-		if p == profile {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(ValidImages, profile)
 }
 
 // EmitImageError emits the stock response to requesting an invalid image.
