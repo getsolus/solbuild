@@ -50,6 +50,7 @@ linters:
     # Disabled permanently
     - depguard        # manage using go.mod for now
     - exhaustruct     # structs may be uninitialized
+    - exhaustruct_v5  # structs may be uninitialized
     - funcorder       # functions are allowed in any order
     - nlreturn        # covered by wsl cuddle rules
     - noinlineerr     # inline errors are allowed for readability
