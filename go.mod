@@ -11,7 +11,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/getsolus/libosdev v0.0.0-20181023041421-9ab0f4b463fd
 	github.com/go-git/go-billy/v5 v5.9.0
-	github.com/go-git/go-git/v5 v5.19.0
+	github.com/go-git/go-git/v5 v5.19.1
 	gitlab.com/slxh/go/powerline v0.1.0
 	gopkg.in/ini.v1 v1.67.2
 	gopkg.in/yaml.v3 v3.0.1
