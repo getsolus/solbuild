@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/BurntSushi/toml"
 )
@@ -58,8 +59,8 @@ func NewConfig() (*Config, error) {
 	}
 
 	// Reverse because /etc takes precedence in stateless
-	for i := len(ConfigPaths) - 1; i >= 0; i-- {
-		globPat := filepath.Join(ConfigPaths[i], fmt.Sprintf("*%s", ConfigSuffix))
+	for _, path := range slices.Backward(ConfigPaths) {
+		globPat := filepath.Join(path, fmt.Sprintf("*%s", ConfigSuffix))
 
 		configs, _ := filepath.Glob(globPat)
 
