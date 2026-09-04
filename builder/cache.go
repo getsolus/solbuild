@@ -24,8 +24,12 @@ var (
 		Name:     "go-build",
 		CacheDir: path.Join(BuildUserHome, ".cache", "go-build"),
 	}
+	LtoCache = Cache{
+		Name:     "ltocache",
+		CacheDir: path.Join(BuildUserHome, ".cache", "ltocache"),
+	}
 
-	Caches = []Cache{Bazel, Ccache, GoBuild, Sccache}
+	Caches = []Cache{Bazel, Ccache, GoBuild, LtoCache, Sccache}
 )
 
 type Cache struct {
