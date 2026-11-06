@@ -192,7 +192,7 @@ func (e *EopkgManager) StopDBUS() error {
 		return err
 	}
 
-	pid := strings.Split(string(b), "\n")[0]
+	pid, _, _ := strings.Cut(string(b), "\n")
 
 	return commands.ExecStdoutArgs("kill", []string{"-9", pid})
 }
